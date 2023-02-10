@@ -1,0 +1,859 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="
+前言
+初级实现
+1. 链表实现无序符号表
+2. 二分查找实现有序符号表
+
+
+二叉查找树
+1. get()
+2. put()
+3. 分析
+4. floor()
+5. rank()
+6. min()
+7. deleteMin()
+8. delete()
+9. keys()
+10. 分析
+
+
+2-3 查找树
+1. 插入操作
+2. 性质
+
+
+红黑树
+1. 左旋转
+2. 右旋转
+3. 颜色转换
+4. 插入
+5. 分析
+
+
+散列表
+1. 散列函数
+2. 拉链法
+3. 线性探测法
+
+
+小结
+1. 符号表算法比较
+2. Java 的符号表实现
+3. 稀疏向量乘法
+
+
+
+前言符号表（Symbol Table）是一种存储键值对的数据结构，可以支持快速查找操作。
+符号表分为有序和无序两种，有序符号表主要指支持 min()、ma.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center"></p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%88%9D%E7%BA%A7%E5%AE%9E%E7%8E%B0"><span class="toc-text">初级实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%93%BE%E8%A1%A8%E5%AE%9E%E7%8E%B0%E6%97%A0%E5%BA%8F%E7%AC%A6%E5%8F%B7%E8%A1%A8"><span class="toc-text">1. 链表实现无序符号表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE%E5%AE%9E%E7%8E%B0%E6%9C%89%E5%BA%8F%E7%AC%A6%E5%8F%B7%E8%A1%A8"><span class="toc-text">2. 二分查找实现有序符号表</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E5%8F%89%E6%9F%A5%E6%89%BE%E6%A0%91"><span class="toc-text">二叉查找树</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-get"><span class="toc-text">1. get()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-put"><span class="toc-text">2. put()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%88%86%E6%9E%90"><span class="toc-text">3. 分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-floor"><span class="toc-text">4. floor()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-rank"><span class="toc-text">5. rank()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-min"><span class="toc-text">6. min()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-deleteMin"><span class="toc-text">7. deleteMin()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-delete"><span class="toc-text">8. delete()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-keys"><span class="toc-text">9. keys()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E5%88%86%E6%9E%90"><span class="toc-text">10. 分析</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-3-%E6%9F%A5%E6%89%BE%E6%A0%91"><span class="toc-text">2-3 查找树</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%8F%92%E5%85%A5%E6%93%8D%E4%BD%9C"><span class="toc-text">1. 插入操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%80%A7%E8%B4%A8"><span class="toc-text">2. 性质</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="toc-text">红黑树</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%B7%A6%E6%97%8B%E8%BD%AC"><span class="toc-text">1. 左旋转</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%8F%B3%E6%97%8B%E8%BD%AC"><span class="toc-text">2. 右旋转</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%A2%9C%E8%89%B2%E8%BD%AC%E6%8D%A2"><span class="toc-text">3. 颜色转换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%8F%92%E5%85%A5"><span class="toc-text">4. 插入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%88%86%E6%9E%90"><span class="toc-text">5. 分析</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%A3%E5%88%97%E8%A1%A8"><span class="toc-text">散列表</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%95%A3%E5%88%97%E5%87%BD%E6%95%B0"><span class="toc-text">1. 散列函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%8B%89%E9%93%BE%E6%B3%95"><span class="toc-text">2. 拉链法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%BA%BF%E6%80%A7%E6%8E%A2%E6%B5%8B%E6%B3%95"><span class="toc-text">3. 线性探测法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-%E6%9F%A5%E6%89%BE"><span class="toc-text">3.1 查找</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-%E6%8F%92%E5%85%A5"><span class="toc-text">3.2 插入</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-%E5%88%A0%E9%99%A4"><span class="toc-text">3.3 删除</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5-%E8%B0%83%E6%95%B4%E6%95%B0%E7%BB%84%E5%A4%A7%E5%B0%8F"><span class="toc-text">3.5 调整数组大小</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-text">小结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%AC%A6%E5%8F%B7%E8%A1%A8%E7%AE%97%E6%B3%95%E6%AF%94%E8%BE%83"><span class="toc-text">1. 符号表算法比较</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Java-%E7%9A%84%E7%AC%A6%E5%8F%B7%E8%A1%A8%E5%AE%9E%E7%8E%B0"><span class="toc-text">2. Java 的符号表实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%A8%80%E7%96%8F%E5%90%91%E9%87%8F%E4%B9%98%E6%B3%95"><span class="toc-text">3. 稀疏向量乘法</span></a></li></ol></li></ol></div><div class="column is-9"><header class="my-4"></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle"></h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.697Z">2023-01-31</time><article class="mt-2 post-content"><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#%E5%88%9D%E7%BA%A7%E5%AE%9E%E7%8E%B0">初级实现</a><ul>
+<li><a href="#1-%E9%93%BE%E8%A1%A8%E5%AE%9E%E7%8E%B0%E6%97%A0%E5%BA%8F%E7%AC%A6%E5%8F%B7%E8%A1%A8">1. 链表实现无序符号表</a></li>
+<li><a href="#2-%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE%E5%AE%9E%E7%8E%B0%E6%9C%89%E5%BA%8F%E7%AC%A6%E5%8F%B7%E8%A1%A8">2. 二分查找实现有序符号表</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BA%8C%E5%8F%89%E6%9F%A5%E6%89%BE%E6%A0%91">二叉查找树</a><ul>
+<li><a href="#1-get">1. get()</a></li>
+<li><a href="#2-put">2. put()</a></li>
+<li><a href="#3-%E5%88%86%E6%9E%90">3. 分析</a></li>
+<li><a href="#4-floor">4. floor()</a></li>
+<li><a href="#5-rank">5. rank()</a></li>
+<li><a href="#6-min">6. min()</a></li>
+<li><a href="#7-deletemin">7. deleteMin()</a></li>
+<li><a href="#8-delete">8. delete()</a></li>
+<li><a href="#9-keys">9. keys()</a></li>
+<li><a href="#10-%E5%88%86%E6%9E%90">10. 分析</a></li>
+</ul>
+</li>
+<li><a href="#2-3-%E6%9F%A5%E6%89%BE%E6%A0%91">2-3 查找树</a><ul>
+<li><a href="#1-%E6%8F%92%E5%85%A5%E6%93%8D%E4%BD%9C">1. 插入操作</a></li>
+<li><a href="#2-%E6%80%A7%E8%B4%A8">2. 性质</a></li>
+</ul>
+</li>
+<li><a href="#%E7%BA%A2%E9%BB%91%E6%A0%91">红黑树</a><ul>
+<li><a href="#1-%E5%B7%A6%E6%97%8B%E8%BD%AC">1. 左旋转</a></li>
+<li><a href="#2-%E5%8F%B3%E6%97%8B%E8%BD%AC">2. 右旋转</a></li>
+<li><a href="#3-%E9%A2%9C%E8%89%B2%E8%BD%AC%E6%8D%A2">3. 颜色转换</a></li>
+<li><a href="#4-%E6%8F%92%E5%85%A5">4. 插入</a></li>
+<li><a href="#5-%E5%88%86%E6%9E%90">5. 分析</a></li>
+</ul>
+</li>
+<li><a href="#%E6%95%A3%E5%88%97%E8%A1%A8">散列表</a><ul>
+<li><a href="#1-%E6%95%A3%E5%88%97%E5%87%BD%E6%95%B0">1. 散列函数</a></li>
+<li><a href="#2-%E6%8B%89%E9%93%BE%E6%B3%95">2. 拉链法</a></li>
+<li><a href="#3-%E7%BA%BF%E6%80%A7%E6%8E%A2%E6%B5%8B%E6%B3%95">3. 线性探测法</a></li>
+</ul>
+</li>
+<li><a href="#%E5%B0%8F%E7%BB%93">小结</a><ul>
+<li><a href="#1-%E7%AC%A6%E5%8F%B7%E8%A1%A8%E7%AE%97%E6%B3%95%E6%AF%94%E8%BE%83">1. 符号表算法比较</a></li>
+<li><a href="#2-java-%E7%9A%84%E7%AC%A6%E5%8F%B7%E8%A1%A8%E5%AE%9E%E7%8E%B0">2. Java 的符号表实现</a></li>
+<li><a href="#3-%E7%A8%80%E7%96%8F%E5%90%91%E9%87%8F%E4%B9%98%E6%B3%95">3. 稀疏向量乘法</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>符号表（Symbol Table）是一种存储键值对的数据结构，可以支持快速查找操作。</p>
+<p>符号表分为有序和无序两种，有序符号表主要指支持 min()、max() 等根据键的大小关系来实现的操作。</p>
+<p>有序符号表的键需要实现 Comparable 接口。</p>
+<pre><code class="java">public interface UnorderedST&lt;Key, Value&gt; &#123;
+
+    int size();
+
+    Value get(Key key);
+
+    void put(Key key, Value value);
+
+    void delete(Key key);
+&#125;
+</code></pre>
+<pre><code class="java">public interface OrderedST&lt;Key extends Comparable&lt;Key&gt;, Value&gt; &#123;
+
+    int size();
+
+    void put(Key key, Value value);
+
+    Value get(Key key);
+
+    Key min();
+
+    Key max();
+
+    int rank(Key key);
+
+    List&lt;Key&gt; keys(Key l, Key h);
+&#125;
+</code></pre>
+<h1 id="初级实现"><a href="#初级实现" class="headerlink" title="初级实现"></a>初级实现</h1><h2 id="1-链表实现无序符号表"><a href="#1-链表实现无序符号表" class="headerlink" title="1. 链表实现无序符号表"></a>1. 链表实现无序符号表</h2><pre><code class="java">public class ListUnorderedST&lt;Key, Value&gt; implements UnorderedST&lt;Key, Value&gt; &#123;
+
+    private Node first;
+
+    private class Node &#123;
+        Key key;
+        Value value;
+        Node next;
+
+        Node(Key key, Value value, Node next) &#123;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        &#125;
+    &#125;
+
+    @Override
+    public int size() &#123;
+        int cnt = 0;
+        Node cur = first;
+        while (cur != null) &#123;
+            cnt++;
+            cur = cur.next;
+        &#125;
+        return cnt;
+    &#125;
+
+    @Override
+    public void put(Key key, Value value) &#123;
+        Node cur = first;
+        // 如果在链表中找到节点的键等于 key 就更新这个节点的值为 value
+        while (cur != null) &#123;
+            if (cur.key.equals(key)) &#123;
+                cur.value = value;
+                return;
+            &#125;
+            cur = cur.next;
+        &#125;
+        // 否则使用头插法插入一个新节点
+        first = new Node(key, value, first);
+    &#125;
+
+    @Override
+    public void delete(Key key) &#123;
+        if (first == null)
+            return;
+        if (first.key.equals(key))
+            first = first.next;
+        Node pre = first, cur = first.next;
+        while (cur != null) &#123;
+            if (cur.key.equals(key)) &#123;
+                pre.next = cur.next;
+                return;
+            &#125;
+            pre = pre.next;
+            cur = cur.next;
+        &#125;
+    &#125;
+
+    @Override
+    public Value get(Key key) &#123;
+        Node cur = first;
+        while (cur != null) &#123;
+            if (cur.key.equals(key))
+                return cur.value;
+            cur = cur.next;
+        &#125;
+        return null;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="2-二分查找实现有序符号表"><a href="#2-二分查找实现有序符号表" class="headerlink" title="2. 二分查找实现有序符号表"></a>2. 二分查找实现有序符号表</h2><p>使用一对平行数组，一个存储键一个存储值。</p>
+<p>二分查找的 rank() 方法至关重要，当键在表中时，它能够知道该键的位置；当键不在表中时，它也能知道在何处插入新键。</p>
+<p>二分查找最多需要 logN+1 次比较，使用二分查找实现的符号表的查找操作所需要的时间最多是对数级别的。但是插入操作需要移动数组元素，是线性级别的。</p>
+<pre><code class="java">public class BinarySearchOrderedST&lt;Key extends Comparable&lt;Key&gt;, Value&gt; implements OrderedST&lt;Key, Value&gt; &#123;
+
+    private Key[] keys;
+    private Value[] values;
+    private int N = 0;
+
+    public BinarySearchOrderedST(int capacity) &#123;
+        keys = (Key[]) new Comparable[capacity];
+        values = (Value[]) new Object[capacity];
+    &#125;
+
+    @Override
+    public int size() &#123;
+        return N;
+    &#125;
+
+    @Override
+    public int rank(Key key) &#123;
+        int l = 0, h = N - 1;
+        while (l &lt;= h) &#123;
+            int m = l + (h - l) / 2;
+            int cmp = key.compareTo(keys[m]);
+            if (cmp == 0)
+                return m;
+            else if (cmp &lt; 0)
+                h = m - 1;
+            else
+                l = m + 1;
+        &#125;
+        return l;
+    &#125;
+
+    @Override
+    public List&lt;Key&gt; keys(Key l, Key h) &#123;
+        int index = rank(l);
+        List&lt;Key&gt; list = new ArrayList&lt;&gt;();
+        while (keys[index].compareTo(h) &lt;= 0) &#123;
+            list.add(keys[index]);
+            index++;
+        &#125;
+        return list;
+    &#125;
+
+    @Override
+    public void put(Key key, Value value) &#123;
+        int index = rank(key);
+        // 如果找到已经存在的节点键为 key，就更新这个节点的值为 value
+        if (index &lt; N &amp;&amp; keys[index].compareTo(key) == 0) &#123;
+            values[index] = value;
+            return;
+        &#125;
+        // 否则在数组中插入新的节点，需要先将插入位置之后的元素都向后移动一个位置
+        for (int j = N; j &gt; index; j--) &#123;
+            keys[j] = keys[j - 1];
+            values[j] = values[j - 1];
+        &#125;
+        keys[index] = key;
+        values[index] = value;
+        N++;
+    &#125;
+
+    @Override
+    public Value get(Key key) &#123;
+        int index = rank(key);
+        if (index &lt; N &amp;&amp; keys[index].compareTo(key) == 0)
+            return values[index];
+        return null;
+    &#125;
+
+    @Override
+    public Key min() &#123;
+        return keys[0];
+    &#125;
+
+    @Override
+    public Key max() &#123;
+        return keys[N - 1];
+    &#125;
+&#125;
+</code></pre>
+<h1 id="二叉查找树"><a href="#二叉查找树" class="headerlink" title="二叉查找树"></a>二叉查找树</h1><p><strong>二叉树</strong>   是一个空链接，或者是一个有左右两个链接的节点，每个链接都指向一颗子二叉树。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/c11528f6-fc71-4a2b-8d2f-51b8954c38f1.jpg" width="180"/> </div><br>
+
+<p><strong>二叉查找树</strong>  （BST）是一颗二叉树，并且每个节点的值都大于等于其左子树中的所有节点的值而小于等于右子树的所有节点的值。</p>
+<p>BST 有一个重要性质，就是它的中序遍历结果递增排序。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/ef552ae3-ae0d-4217-88e6-99cbe8163f0c.jpg" width="200"/> </div><br>
+
+<p>基本数据结构：</p>
+<pre><code class="java">public class BST&lt;Key extends Comparable&lt;Key&gt;, Value&gt; implements OrderedST&lt;Key, Value&gt; &#123;
+
+    protected Node root;
+
+    protected class Node &#123;
+        Key key;
+        Value val;
+        Node left;
+        Node right;
+        // 以该节点为根的子树节点总数
+        int N;
+        // 红黑树中使用
+        boolean color;
+
+        Node(Key key, Value val, int N) &#123;
+            this.key = key;
+            this.val = val;
+            this.N = N;
+        &#125;
+    &#125;
+
+    @Override
+    public int size() &#123;
+        return size(root);
+    &#125;
+
+    private int size(Node x) &#123;
+        if (x == null)
+            return 0;
+        return x.N;
+    &#125;
+
+    protected void recalculateSize(Node x) &#123;
+        x.N = size(x.left) + size(x.right) + 1;
+    &#125;
+&#125;
+</code></pre>
+<p>为了方便绘图，下文中二叉树的空链接不画出来。</p>
+<h2 id="1-get"><a href="#1-get" class="headerlink" title="1. get()"></a>1. get()</h2><ul>
+<li>如果树是空的，则查找未命中；</li>
+<li>如果被查找的键和根节点的键相等，查找命中；</li>
+<li>否则递归地在子树中查找：如果被查找的键较小就在左子树中查找，较大就在右子树中查找。</li>
+</ul>
+<pre><code class="java">@Override
+public Value get(Key key) &#123;
+    return get(root, key);
+&#125;
+
+private Value get(Node x, Key key) &#123;
+    if (x == null)
+        return null;
+    int cmp = key.compareTo(x.key);
+    if (cmp == 0)
+        return x.val;
+    else if (cmp &lt; 0)
+        return get(x.left, key);
+    else
+        return get(x.right, key);
+&#125;
+</code></pre>
+<h2 id="2-put"><a href="#2-put" class="headerlink" title="2. put()"></a>2. put()</h2><p>当插入的键不存在于树中，需要创建一个新节点，并且更新上层节点的链接指向该节点，使得该节点正确地链接到树中。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/58b70113-3876-49af-85a9-68eb00a72d59.jpg" width="200"/> </div><br>
+
+<pre><code class="java"> @Override
+public void put(Key key, Value value) &#123;
+    root = put(root, key, value);
+&#125;
+
+private Node put(Node x, Key key, Value value) &#123;
+    if (x == null)
+        return new Node(key, value, 1);
+    int cmp = key.compareTo(x.key);
+    if (cmp == 0)
+        x.val = value;
+    else if (cmp &lt; 0)
+        x.left = put(x.left, key, value);
+    else
+        x.right = put(x.right, key, value);
+    recalculateSize(x);
+    return x;
+&#125;
+</code></pre>
+<h2 id="3-分析"><a href="#3-分析" class="headerlink" title="3. 分析"></a>3. 分析</h2><p>二叉查找树的算法运行时间取决于树的形状，而树的形状又取决于键被插入的先后顺序。</p>
+<p>最好的情况下树是完全平衡的，每条空链接和根节点的距离都为 logN。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/c395a428-827c-405b-abd7-8a069316f583.jpg" width="200"/> </div><br>
+
+<p>在最坏的情况下，树的高度为 N。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/5ea609cb-8ad4-4c4c-aee6-45a40a81794a.jpg" width="200"/> </div><br>
+
+<h2 id="4-floor"><a href="#4-floor" class="headerlink" title="4. floor()"></a>4. floor()</h2><p>floor(key)：小于等于键的最大键</p>
+<ul>
+<li>如果键小于根节点的键，那么 floor(key) 一定在左子树中；</li>
+<li>如果键大于根节点的键，需要先判断右子树中是否存在 floor(key)，如果存在就返回，否则根节点就是 floor(key)。</li>
+</ul>
+<pre><code class="java">public Key floor(Key key) &#123;
+    Node x = floor(root, key);
+    if (x == null)
+        return null;
+    return x.key;
+&#125;
+
+private Node floor(Node x, Key key) &#123;
+    if (x == null)
+        return null;
+    int cmp = key.compareTo(x.key);
+    if (cmp == 0)
+        return x;
+    if (cmp &lt; 0)
+        return floor(x.left, key);
+    Node t = floor(x.right, key);
+    return t != null ? t : x;
+&#125;
+</code></pre>
+<h2 id="5-rank"><a href="#5-rank" class="headerlink" title="5. rank()"></a>5. rank()</h2><p>rank(key) 返回 key 的排名。</p>
+<ul>
+<li>如果键和根节点的键相等，返回左子树的节点数；</li>
+<li>如果小于，递归计算在左子树中的排名；</li>
+<li>如果大于，递归计算在右子树中的排名，加上左子树的节点数，再加上 1（根节点）。</li>
+</ul>
+<pre><code class="java">@Override
+public int rank(Key key) &#123;
+    return rank(key, root);
+&#125;
+
+private int rank(Key key, Node x) &#123;
+    if (x == null)
+        return 0;
+    int cmp = key.compareTo(x.key);
+    if (cmp == 0)
+        return size(x.left);
+    else if (cmp &lt; 0)
+        return rank(key, x.left);
+    else
+        return 1 + size(x.left) + rank(key, x.right);
+&#125;
+</code></pre>
+<h2 id="6-min"><a href="#6-min" class="headerlink" title="6. min()"></a>6. min()</h2><pre><code class="java">@Override
+public Key min() &#123;
+    return min(root).key;
+&#125;
+
+private Node min(Node x) &#123;
+    if (x == null)
+        return null;
+    if (x.left == null)
+        return x;
+    return min(x.left);
+&#125;
+</code></pre>
+<h2 id="7-deleteMin"><a href="#7-deleteMin" class="headerlink" title="7. deleteMin()"></a>7. deleteMin()</h2><p>令指向最小节点的链接指向最小节点的右子树。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/31b7e8de-ed11-4f69-b5fd-ba454120ac31.jpg" width="450"/> </div><br>
+
+<pre><code class="java">public void deleteMin() &#123;
+    root = deleteMin(root);
+&#125;
+
+public Node deleteMin(Node x) &#123;
+    if (x.left == null)
+        return x.right;
+    x.left = deleteMin(x.left);
+    recalculateSize(x);
+    return x;
+&#125;
+</code></pre>
+<h2 id="8-delete"><a href="#8-delete" class="headerlink" title="8. delete()"></a>8. delete()</h2><ul>
+<li>如果待删除的节点只有一个子树，  那么只需要让指向待删除节点的链接指向唯一的子树即可；</li>
+<li>否则，让右子树的最小节点替换该节点。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/23b9d625-ef28-42b5-bb22-d7aedd007e16.jpg" width="400"/> </div><br>
+
+<pre><code class="java">public void delete(Key key) &#123;
+    root = delete(root, key);
+&#125;
+private Node delete(Node x, Key key) &#123;
+    if (x == null)
+        return null;
+    int cmp = key.compareTo(x.key);
+    if (cmp &lt; 0)
+        x.left = delete(x.left, key);
+    else if (cmp &gt; 0)
+        x.right = delete(x.right, key);
+    else &#123;
+        if (x.right == null)
+            return x.left;
+        if (x.left == null)
+            return x.right;
+        Node t = x;
+        x = min(t.right);
+        x.right = deleteMin(t.right);
+        x.left = t.left;
+    &#125;
+    recalculateSize(x);
+    return x;
+&#125;
+</code></pre>
+<h2 id="9-keys"><a href="#9-keys" class="headerlink" title="9. keys()"></a>9. keys()</h2><p>利用二叉查找树中序遍历的结果为递增的特点。</p>
+<pre><code class="java">@Override
+public List&lt;Key&gt; keys(Key l, Key h) &#123;
+    return keys(root, l, h);
+&#125;
+
+private List&lt;Key&gt; keys(Node x, Key l, Key h) &#123;
+    List&lt;Key&gt; list = new ArrayList&lt;&gt;();
+    if (x == null)
+        return list;
+    int cmpL = l.compareTo(x.key);
+    int cmpH = h.compareTo(x.key);
+    if (cmpL &lt; 0)
+        list.addAll(keys(x.left, l, h));
+    if (cmpL &lt;= 0 &amp;&amp; cmpH &gt;= 0)
+        list.add(x.key);
+    if (cmpH &gt; 0)
+        list.addAll(keys(x.right, l, h));
+    return list;
+&#125;
+</code></pre>
+<h2 id="10-分析"><a href="#10-分析" class="headerlink" title="10. 分析"></a>10. 分析</h2><p>二叉查找树所有操作在最坏的情况下所需要的时间都和树的高度成正比。</p>
+<h1 id="2-3-查找树"><a href="#2-3-查找树" class="headerlink" title="2-3 查找树"></a>2-3 查找树</h1><p>2-3 查找树引入了 2- 节点和 3- 节点，目的是为了让树平衡。一颗完美平衡的 2-3 查找树的所有空链接到根节点的距离应该是相同的。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/1097658b-c0e6-4821-be9b-25304726a11c.jpg" width="160px"/> </div><br>
+
+<h2 id="1-插入操作"><a href="#1-插入操作" class="headerlink" title="1. 插入操作"></a>1. 插入操作</h2><p>插入操作和 BST 的插入操作有很大区别，BST 的插入操作是先进行一次未命中的查找，然后再将节点插入到对应的空链接上。但是 2-3 查找树如果也这么做的话，那么就会破坏了平衡性。它是将新节点插入到叶子节点上。</p>
+<p>根据叶子节点的类型不同，有不同的处理方式：</p>
+<ul>
+<li>如果插入到 2- 节点上，那么直接将新节点和原来的节点组成 3- 节点即可。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/0c6f9930-8704-4a54-af23-19f9ca3e48b0.jpg" width="350"/> </div><br>
+
+<ul>
+<li>如果是插入到 3- 节点上，就会产生一个临时 4- 节点时，需要将 4- 节点分裂成 3 个 2- 节点，并将中间的 2- 节点移到上层节点中。如果上移操作继续产生临时 4- 节点则一直进行分裂上移，直到不存在临时 4- 节点。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/7002c01b-1ed5-475a-9e5f-5fc8a4cdbcc0.jpg" width="460"/> </div><br>
+
+<h2 id="2-性质"><a href="#2-性质" class="headerlink" title="2. 性质"></a>2. 性质</h2><p>2-3 查找树插入操作的变换都是局部的，除了相关的节点和链接之外不必修改或者检查树的其它部分，而这些局部变换不会影响树的全局有序性和平衡性。</p>
+<p>2-3 查找树的查找和插入操作复杂度和插入顺序无关，在最坏的情况下查找和插入操作访问的节点必然不超过 logN 个，含有 10 亿个节点的 2-3 查找树最多只需要访问 30 个节点就能进行任意的查找和插入操作。</p>
+<h1 id="红黑树"><a href="#红黑树" class="headerlink" title="红黑树"></a>红黑树</h1><p>红黑树是 2-3 查找树，但它不需要分别定义 2- 节点和 3- 节点，而是在普通的二叉查找树之上，为节点添加颜色。指向一个节点的链接颜色如果为红色，那么这个节点和上层节点表示的是一个 3- 节点，而黑色则是普通链接。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/f1912ba6-6402-4321-9aa8-13d32fd121d1.jpg" width="240"/> </div><br>
+
+<p>红黑树具有以下性质：</p>
+<ul>
+<li>红链接都为左链接；</li>
+<li>完美黑色平衡，即任意空链接到根节点的路径上的黑链接数量相同。</li>
+</ul>
+<p>画红黑树时可以将红链接画平。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/f5cb6028-425d-4939-91eb-cca9dd6b6c6c.jpg" width="220"/> </div><br>
+
+<pre><code class="java">public class RedBlackBST&lt;Key extends Comparable&lt;Key&gt;, Value&gt; extends BST&lt;Key, Value&gt; &#123;
+
+    private static final boolean RED = true;
+    private static final boolean BLACK = false;
+
+    private boolean isRed(Node x) &#123;
+        if (x == null)
+            return false;
+        return x.color == RED;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="1-左旋转"><a href="#1-左旋转" class="headerlink" title="1. 左旋转"></a>1. 左旋转</h2><p>因为合法的红链接都为左链接，如果出现右链接为红链接，那么就需要进行左旋转操作。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/f4d534ab-0092-4a81-9e5b-ae889b9a72be.jpg" width="480"/> </div><br>
+
+<pre><code class="java">public Node rotateLeft(Node h) &#123;
+    Node x = h.right;
+    h.right = x.left;
+    x.left = h;
+    x.color = h.color;
+    h.color = RED;
+    x.N = h.N;
+    recalculateSize(h);
+    return x;
+&#125;
+</code></pre>
+<h2 id="2-右旋转"><a href="#2-右旋转" class="headerlink" title="2. 右旋转"></a>2. 右旋转</h2><p>进行右旋转是为了转换两个连续的左红链接，这会在之后的插入过程中探讨。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/63c8ffea-a9f2-4ebe-97d1-d71be71246f9.jpg" width="480"/> </div><br>
+
+<pre><code class="java">public Node rotateRight(Node h) &#123;
+    Node x = h.left;
+    h.left = x.right;
+    x.right = h;
+    x.color = h.color;
+    h.color = RED;
+    x.N = h.N;
+    recalculateSize(h);
+    return x;
+&#125;
+</code></pre>
+<h2 id="3-颜色转换"><a href="#3-颜色转换" class="headerlink" title="3. 颜色转换"></a>3. 颜色转换</h2><p>一个 4- 节点在红黑树中表现为一个节点的左右子节点都是红色的。分裂 4- 节点除了需要将子节点的颜色由红变黑之外，同时需要将父节点的颜色由黑变红，从 2-3 树的角度看就是将中间节点移到上层节点。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/094b279a-b2db-4be7-87a3-b2a039c7448e.jpg" width="270"/> </div><br>
+
+<pre><code class="java">void flipColors(Node h) &#123;
+    h.color = RED;
+    h.left.color = BLACK;
+    h.right.color = BLACK;
+&#125;
+</code></pre>
+<h2 id="4-插入"><a href="#4-插入" class="headerlink" title="4. 插入"></a>4. 插入</h2><p>先将一个节点按二叉查找树的方法插入到正确位置，然后再进行如下颜色操作：</p>
+<ul>
+<li>如果右子节点是红色的而左子节点是黑色的，进行左旋转；</li>
+<li>如果左子节点是红色的，而且左子节点的左子节点也是红色的，进行右旋转；</li>
+<li>如果左右子节点均为红色的，进行颜色转换。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/4c457532-550b-4eca-b881-037b84b4934b.jpg" width="430"/> </div><br>
+
+<pre><code class="java">@Override
+public void put(Key key, Value value) &#123;
+    root = put(root, key, value);
+    root.color = BLACK;
+&#125;
+
+private Node put(Node x, Key key, Value value) &#123;
+    if (x == null) &#123;
+        Node node = new Node(key, value, 1);
+        node.color = RED;
+        return node;
+    &#125;
+    int cmp = key.compareTo(x.key);
+    if (cmp == 0)
+        x.val = value;
+    else if (cmp &lt; 0)
+        x.left = put(x.left, key, value);
+    else
+        x.right = put(x.right, key, value);
+
+    if (isRed(x.right) &amp;&amp; !isRed(x.left))
+        x = rotateLeft(x);
+    if (isRed(x.left) &amp;&amp; isRed(x.left.left))
+        x = rotateRight(x);
+    if (isRed(x.left) &amp;&amp; isRed(x.right))
+        flipColors(x);
+
+    recalculateSize(x);
+    return x;
+&#125;
+</code></pre>
+<p>可以看到该插入操作和二叉查找树的插入操作类似，只是在最后加入了旋转和颜色变换操作即可。</p>
+<p>根节点一定为黑色，因为根节点没有上层节点，也就没有上层节点的左链接指向根节点。flipColors() 有可能会使得根节点的颜色变为红色，每当根节点由红色变成黑色时树的黑链接高度加 1.</p>
+<h2 id="5-分析"><a href="#5-分析" class="headerlink" title="5. 分析"></a>5. 分析</h2><p>一颗大小为 N 的红黑树的高度不会超过 2logN。最坏的情况下是它所对应的 2-3 树，构成最左边的路径节点全部都是 3- 节点而其余都是 2- 节点。</p>
+<p>红黑树大多数的操作所需要的时间都是对数级别的。</p>
+<h1 id="散列表"><a href="#散列表" class="headerlink" title="散列表"></a>散列表</h1><p>散列表类似于数组，可以把散列表的散列值看成数组的索引值。访问散列表和访问数组元素一样快速，它可以在常数时间内实现查找和插入操作。</p>
+<p>由于无法通过散列值知道键的大小关系，因此散列表无法实现有序性操作。</p>
+<h2 id="1-散列函数"><a href="#1-散列函数" class="headerlink" title="1. 散列函数"></a>1. 散列函数</h2><p>对于一个大小为 M 的散列表，散列函数能够把任意键转换为 [0, M-1] 内的正整数，该正整数即为 hash 值。</p>
+<p>散列表存在冲突，也就是两个不同的键可能有相同的 hash 值。</p>
+<p>散列函数应该满足以下三个条件：</p>
+<ul>
+<li>一致性：相等的键应当有相等的 hash 值，两个键相等表示调用 equals() 返回的值相等。</li>
+<li>高效性：计算应当简便，有必要的话可以把 hash 值缓存起来，在调用 hash 函数时直接返回。</li>
+<li>均匀性：所有键的 hash 值应当均匀地分布到 [0, M-1] 之间，如果不能满足这个条件，有可能产生很多冲突，从而导致散列表的性能下降。</li>
+</ul>
+<p>除留余数法可以将整数散列到 [0, M-1] 之间，例如一个正整数 k，计算 k%M 既可得到一个 [0, M-1] 之间的 hash 值。注意 M 最好是一个素数，否则无法利用键包含的所有信息。例如 M 为 10<sup>k</sup>，那么只能利用键的后 k 位。</p>
+<p>对于其它数，可以将其转换成整数的形式，然后利用除留余数法。例如对于浮点数，可以将其的二进制形式转换成整数。</p>
+<p>对于多部分组合的类型，每个部分都需要计算 hash 值，这些 hash 值都具有同等重要的地位。为了达到这个目的，可以将该类型看成 R 进制的整数，每个部分都具有不同的权值。</p>
+<p>例如，字符串的散列函数实现如下：</p>
+<pre><code class="java">int hash = 0;
+for (int i = 0; i &lt; s.length(); i++)
+    hash = (R * hash + s.charAt(i)) % M;
+</code></pre>
+<p>再比如，拥有多个成员的自定义类的哈希函数如下：</p>
+<pre><code class="java">int hash = (((day * R + month) % M) * R + year) % M;
+</code></pre>
+<p>R 通常取 31。</p>
+<p>Java 中的 hashCode() 实现了哈希函数，但是默认使用对象的内存地址值。在使用 hashCode() 时，应当结合除留余数法来使用。因为内存地址是 32 位整数，我们只需要 31 位的非负整数，因此应当屏蔽符号位之后再使用除留余数法。</p>
+<pre><code class="java">int hash = (x.hashCode() &amp; 0x7fffffff) % M;
+</code></pre>
+<p>使用 Java 的 HashMap 等自带的哈希表实现时，只需要去实现 Key 类型的 hashCode() 函数即可。Java 规定 hashCode() 能够将键均匀分布于所有的 32 位整数，Java 中的 String、Integer 等对象的 hashCode() 都能实现这一点。以下展示了自定义类型如何实现 hashCode()：</p>
+<pre><code class="java">public class Transaction &#123;
+
+    private final String who;
+    private final Date when;
+    private final double amount;
+
+    public Transaction(String who, Date when, double amount) &#123;
+        this.who = who;
+        this.when = when;
+        this.amount = amount;
+    &#125;
+
+    public int hashCode() &#123;
+        int hash = 17;
+        int R = 31;
+        hash = R * hash + who.hashCode();
+        hash = R * hash + when.hashCode();
+        hash = R * hash + ((Double) amount).hashCode();
+        return hash;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="2-拉链法"><a href="#2-拉链法" class="headerlink" title="2. 拉链法"></a>2. 拉链法</h2><p>拉链法使用链表来存储 hash 值相同的键，从而解决冲突。</p>
+<p>查找需要分两步，首先查找 Key 所在的链表，然后在链表中顺序查找。</p>
+<p>对于 N 个键，M 条链表 (N&gt;M)，如果哈希函数能够满足均匀性的条件，每条链表的大小趋向于 N/M，因此未命中的查找和插入操作所需要的比较次数为 ~N/M。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/cbbfe06c-f0cb-47c4-bf7b-2780aebd98b2.png" width="330px"> </div><br>
+
+<h2 id="3-线性探测法"><a href="#3-线性探测法" class="headerlink" title="3. 线性探测法"></a>3. 线性探测法</h2><p>线性探测法使用空位来解决冲突，当冲突发生时，向前探测一个空位来存储冲突的键。</p>
+<p>使用线性探测法，数组的大小 M 应当大于键的个数 N（M&gt;N)。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/0dbc4f7d-05c9-4aae-8065-7b7ea7e9709e.gif" width="350px"> </div><br>
+
+<pre><code class="java">public class LinearProbingHashST&lt;Key, Value&gt; implements UnorderedST&lt;Key, Value&gt; &#123;
+
+    private int N = 0;
+    private int M = 16;
+    private Key[] keys;
+    private Value[] values;
+
+    public LinearProbingHashST() &#123;
+        init();
+    &#125;
+
+    public LinearProbingHashST(int M) &#123;
+        this.M = M;
+        init();
+    &#125;
+
+    private void init() &#123;
+        keys = (Key[]) new Object[M];
+        values = (Value[]) new Object[M];
+    &#125;
+
+    private int hash(Key key) &#123;
+        return (key.hashCode() &amp; 0x7fffffff) % M;
+    &#125;
+&#125;
+</code></pre>
+<h4 id="3-1-查找"><a href="#3-1-查找" class="headerlink" title="3.1 查找"></a>3.1 查找</h4><pre><code class="java">public Value get(Key key) &#123;
+    for (int i = hash(key); keys[i] != null; i = (i + 1) % M)
+        if (keys[i].equals(key))
+            return values[i];
+
+    return null;
+&#125;
+</code></pre>
+<h4 id="3-2-插入"><a href="#3-2-插入" class="headerlink" title="3.2 插入"></a>3.2 插入</h4><pre><code class="java">public void put(Key key, Value value) &#123;
+    resize();
+    putInternal(key, value);
+&#125;
+
+private void putInternal(Key key, Value value) &#123;
+    int i;
+    for (i = hash(key); keys[i] != null; i = (i + 1) % M)
+        if (keys[i].equals(key)) &#123;
+            values[i] = value;
+            return;
+        &#125;
+
+    keys[i] = key;
+    values[i] = value;
+    N++;
+&#125;
+</code></pre>
+<h4 id="3-3-删除"><a href="#3-3-删除" class="headerlink" title="3.3 删除"></a>3.3 删除</h4><p>删除操作应当将右侧所有相邻的键值对重新插入散列表中。</p>
+<pre><code class="java">public void delete(Key key) &#123;
+    int i = hash(key);
+    while (keys[i] != null &amp;&amp; !key.equals(keys[i]))
+        i = (i + 1) % M;
+
+    // 不存在，直接返回
+    if (keys[i] == null)
+        return;
+
+    keys[i] = null;
+    values[i] = null;
+
+    // 将之后相连的键值对重新插入
+    i = (i + 1) % M;
+    while (keys[i] != null) &#123;
+        Key keyToRedo = keys[i];
+        Value valToRedo = values[i];
+        keys[i] = null;
+        values[i] = null;
+        N--;
+        putInternal(keyToRedo, valToRedo);
+        i = (i + 1) % M;
+    &#125;
+    N--;
+    resize();
+&#125;
+</code></pre>
+<h4 id="3-5-调整数组大小"><a href="#3-5-调整数组大小" class="headerlink" title="3.5 调整数组大小"></a>3.5 调整数组大小</h4><p>线性探测法的成本取决于连续条目的长度，连续条目也叫聚簇。当聚簇很长时，在查找和插入时也需要进行很多次探测。例如下图中 2~4 位置就是一个聚簇。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/ace20410-f053-4c4a-aca4-2c603ff11bbe.png" width="340px"> </div><br>
+
+<p>α = N/M，把 α 称为使用率。理论证明，当 α 小于 1/2 时探测的预计次数只在 1.5 到 2.5 之间。为了保证散列表的性能，应当调整数组的大小，使得 α 在 [1/4, 1/2] 之间。</p>
+<pre><code class="java">private void resize() &#123;
+    if (N &gt;= M / 2)
+        resize(2 * M);
+    else if (N &lt;= M / 8)
+        resize(M / 2);
+&#125;
+
+private void resize(int cap) &#123;
+    LinearProbingHashST&lt;Key, Value&gt; t = new LinearProbingHashST&lt;Key, Value&gt;(cap);
+    for (int i = 0; i &lt; M; i++)
+        if (keys[i] != null)
+            t.putInternal(keys[i], values[i]);
+
+    keys = t.keys;
+    values = t.values;
+    M = t.M;
+&#125;
+</code></pre>
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><h2 id="1-符号表算法比较"><a href="#1-符号表算法比较" class="headerlink" title="1. 符号表算法比较"></a>1. 符号表算法比较</h2><table>
+<thead>
+<tr>
+<th align="center">算法</th>
+<th align="center">插入</th>
+<th align="center">查找</th>
+<th align="center">是否有序</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">链表实现的无序符号表</td>
+<td align="center">N</td>
+<td align="center">N</td>
+<td align="center">yes</td>
+</tr>
+<tr>
+<td align="center">二分查找实现的有序符号表</td>
+<td align="center">N</td>
+<td align="center">logN</td>
+<td align="center">yes</td>
+</tr>
+<tr>
+<td align="center">二叉查找树</td>
+<td align="center">logN</td>
+<td align="center">logN</td>
+<td align="center">yes</td>
+</tr>
+<tr>
+<td align="center">2-3 查找树</td>
+<td align="center">logN</td>
+<td align="center">logN</td>
+<td align="center">yes</td>
+</tr>
+<tr>
+<td align="center">拉链法实现的散列表</td>
+<td align="center">N/M</td>
+<td align="center">N/M</td>
+<td align="center">no</td>
+</tr>
+<tr>
+<td align="center">线性探测法实现的散列表</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">no</td>
+</tr>
+</tbody></table>
+<p>应当优先考虑散列表，当需要有序性操作时使用红黑树。</p>
+<h2 id="2-Java-的符号表实现"><a href="#2-Java-的符号表实现" class="headerlink" title="2. Java 的符号表实现"></a>2. Java 的符号表实现</h2><ul>
+<li>java.util.TreeMap：红黑树</li>
+<li>java.util.HashMap：拉链法的散列表</li>
+</ul>
+<h2 id="3-稀疏向量乘法"><a href="#3-稀疏向量乘法" class="headerlink" title="3. 稀疏向量乘法"></a>3. 稀疏向量乘法</h2><p>当向量为稀疏向量时，可以使用符号表来存储向量中的非 0 索引和值，使得乘法运算只需要对那些非 0 元素进行即可。</p>
+<pre><code class="java">public class SparseVector &#123;
+    private HashMap&lt;Integer, Double&gt; hashMap;
+
+    public SparseVector(double[] vector) &#123;
+        hashMap = new HashMap&lt;&gt;();
+        for (int i = 0; i &lt; vector.length; i++)
+            if (vector[i] != 0)
+                hashMap.put(i, vector[i]);
+    &#125;
+
+    public double get(int i) &#123;
+        return hashMap.getOrDefault(i, 0.0);
+    &#125;
+
+    public double dot(SparseVector other) &#123;
+        double sum = 0;
+        for (int i : hashMap.keySet())
+            sum += this.get(i) * other.get(i);
+        return sum;
+    &#125;
+&#125;
+</code></pre>
+<div align="center"><img width="320px" src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/githubio/公众号二维码-2.png"></img></div>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

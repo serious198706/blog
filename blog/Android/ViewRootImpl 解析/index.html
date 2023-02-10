@@ -1,0 +1,350 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="之前反复提到过的DecorView不是整个View树的根吗？怎么又出来一个看起来像是『根』的东西？
+我们看看ViewRootImpl的代码，就能明白Android为什么要添加两个『根』在树上。
+
+
+我们先看看requestLayout()方法究竟在做什么：
+// ViewRoomImpl.java
+@Override
+public void requestLayout() &amp;#123;
+    if (!mHandlingLayoutInLayoutRequest) &amp;#123;
+        checkThread();  // 检查操作线程是否为创建线程
+        mLayoutRequested = true;
+        scheduleTraversals();
+    &amp;#125;
+.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">ViewRootImpl 解析</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile is-hidden"></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/Android%20Framework"><i class="tag post-item-tag">Android Framework</i></a><a href="/tags/View"><i class="tag post-item-tag">View</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">ViewRootImpl 解析</h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.691Z">2023-01-31</time><article class="mt-2 post-content"><p>之前反复提到过的DecorView不是整个View树的根吗？怎么又出来一个看起来像是『根』的东西？</p>
+<p>我们看看ViewRootImpl的代码，就能明白Android为什么要添加两个『根』在树上。</p>
+<span id="more"></span>
+
+<p>我们先看看<code>requestLayout()</code>方法究竟在做什么：</p>
+<pre><code class="java">// ViewRoomImpl.java
+@Override
+public void requestLayout() &#123;
+    if (!mHandlingLayoutInLayoutRequest) &#123;
+        checkThread();  // 检查操作线程是否为创建线程
+        mLayoutRequested = true;
+        scheduleTraversals();
+    &#125;
+&#125;
+
+void scheduleTraversals() &#123;
+
+    if (!mTraversalScheduled) &#123;
+        mTraversalScheduled = true;
+        mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();
+        mChoreographer.postCallback(
+                Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
+        if (!mUnbufferedInputDispatch) &#123;
+            scheduleConsumeBatchedInput();
+        &#125;
+        notifyRendererOfFramePending();
+        pokeDrawLockIfNeeded();
+    &#125;
+&#125;
+
+final class TraversalRunnable implements Runnable &#123;
+    @Override
+    public void run() &#123;
+        doTraversal();
+    &#125;
+&#125;
+
+void doTraversal() &#123;
+    if (mTraversalScheduled) &#123;
+        mTraversalScheduled = false;
+        mHandler.getLooper().getQueue().removeSyncBarrier(mTraversalBarrier);
+
+        if (mProfile) &#123;
+            Debug.startMethodTracing(&quot;ViewAncestor&quot;);
+        &#125;
+
+        performTraversals();
+
+        if (mProfile) &#123;
+            Debug.stopMethodTracing();
+            mProfile = false;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>好，看到一个Android中一个比较重要的方法<code>performTraversals()</code>，实现了View树的『从根到叶』的遍历。ViewRootImpl中接收的各种变化，如来自WMS的窗口属性变化、来自控件树的尺寸变化以及重绘请求等都引发<code>performTraversals()</code>的调用，并在其中完成处理。View类及其子类的<code>onMeasure()</code>、<code>onLayout()</code>、<code>onDraw()</code>等回调也都是在该方法执行的过程中直接或间接的引发。该函数可谓是是ViewRootImpl的『心跳』。我们就来看一下这个方法。</p>
+<pre><code class="java">private void performTraversals() &#123;
+    ...
+    boolean windowSizeMayChange = false;
+    boolean surfaceChanged = false;
+    WindowManager.LayoutParams lp = mWindowAttributes;
+
+    // I. pre-measure阶段
+
+    // 这两个变量就是DecorViewSPEC_SIZE的候选
+    int desiredWindowWidth;
+    int desiredWindowHeight;
+    ...
+    Rect frame = mWinFrame;
+    // 是否是『第一次遍历』
+    // 在ViewRootImpl的生命周期里，会有很多次的『遍历』，第一次的 desiredWindowWidth / desiredWindowHeight
+    // 与之后的 desiredWindowWidth / desiredWindowHeight 的测量方式是不一样的
+    if (mFirst) &#123;
+        mFullRedrawNeeded = true;
+        mLayoutRequested = true;
+
+        final Configuration config = mContext.getResources().getConfiguration();
+        if (shouldUseDisplaySize(lp)) &#123;
+            // NOTE -- system code, won&#39;t try to do compat mode.
+            Point size = new Point();
+            mDisplay.getRealSize(size);
+            desiredWindowWidth = size.x;
+            desiredWindowHeight = size.y;
+        &#125; else &#123;
+            // 第1次“遍历”的测量，采用了应用可以使用的最大尺寸作为SPEC_SIZE的候选
+            desiredWindowWidth = mWinFrame.width();
+            desiredWindowHeight = mWinFrame.height();
+        &#125;
+        ...
+    &#125; else &#123;
+        // 在非第1次遍历的情况下，会采用窗口的最新尺寸作为SPEC_SIZE的候选
+        desiredWindowWidth = frame.width();
+        desiredWindowHeight = frame.height();
+        //如果窗口的最新尺寸与ViewRootImpl中的现有尺寸不同，说明WMS单方面改变了窗口的尺寸，将导致下面三个结果
+        if (desiredWindowWidth != mWidth || desiredWindowHeight != mHeight) &#123;
+        //需要完整的重绘以适应新的窗口尺寸
+        mFullRedrawNeeded = true;
+        //需要对控件树重新布局
+        mLayoutRequested = true;
+        //控件树可能拒绝接受新的窗口尺寸，可能需要窗口在布局阶段尝试设置新的窗口尺寸。只是尝试嘛，尝试而已
+        windowSizeMayChange = true;
+        &#125;
+    &#125;
+    ...
+    boolean layoutRequested = mLayoutRequested &amp;&amp; (!mStopped || mReportNextDraw);
+    if (layoutRequested) &#123;
+
+        final Resources res = mView.getContext().getResources();
+
+        if (mFirst) &#123;
+            ...
+        &#125; else &#123;
+            // 检查WMS是否单方面改变了一些参数，标记下来，然后作为之后是否进行控件布局的条件之一
+            // 如果窗口的width或height被指定为WRAP_CONTENT时。表示该窗口为悬浮窗口
+            if (lp.width == ViewGroup.LayoutParams.WRAP_CONTENT
+                    || lp.height == ViewGroup.LayoutParams.WRAP_CONTENT) &#123;
+                // 标记一下，WMS单方面改变了一些参数
+                windowSizeMayChange = true;
+
+                if (shouldUseDisplaySize(lp)) &#123;
+                    // NOTE -- system code, won&#39;t try to do compat mode.
+                    Point size = new Point();
+                    mDisplay.getRealSize(size);
+                    desiredWindowWidth = size.x;
+                    desiredWindowHeight = size.y;
+                &#125; else &#123;
+                    Configuration config = res.getConfiguration();
+                    desiredWindowWidth = dipToPx(config.screenWidthDp);
+                    desiredWindowHeight = dipToPx(config.screenHeightDp);
+                &#125;
+            &#125;
+        &#125;
+
+        // 测量
+        windowSizeMayChange |= measureHierarchy(host, lp, res,
+                desiredWindowWidth, desiredWindowHeight);
+    &#125;
+    ...
+    if (layoutRequested) &#123;
+        // 如果后面还有layout的请求的话，用这个FLAG来标记，然后再重新来一次layout
+        // 所以现在先置为false
+        mLayoutRequested = false;
+    &#125;
+
+    boolean windowShouldResize = layoutRequested &amp;&amp; windowSizeMayChange
+        &amp;&amp; ((mWidth != host.getMeasuredWidth() || mHeight != host.getMeasuredHeight())
+            || (lp.width == ViewGroup.LayoutParams.WRAP_CONTENT &amp;&amp;
+                    frame.width() &lt; desiredWindowWidth &amp;&amp; frame.width() != mWidth)
+            || (lp.height == ViewGroup.LayoutParams.WRAP_CONTENT &amp;&amp;
+                    frame.height() &lt; desiredWindowHeight &amp;&amp; frame.height() != mHeight));
+    windowShouldResize |= mDragResizing &amp;&amp; mResizeMode == RESIZE_MODE_FREEFORM;
+    ...
+    // I. pre-measure阶段结束
+
+    // II. 窗口layout阶段
+    if (mFirst || windowShouldResize || insetsChanged ||
+            viewVisibilityChanged || params != null || mForceNextWindowRelayout) &#123;
+        ...
+        boolean hadSurface = mSurface.isValid();
+
+        try &#123;
+            ...
+            relayoutResult = relayoutWindow(params, viewVisibility, insetsPending);
+            ...
+        &#125; catch (RemoteException e) &#123;
+        &#125;
+
+        ...
+        // II. 窗口layout阶段结束
+
+        // III. measure阶段
+
+        if (!mStopped || mReportNextDraw) &#123;
+            boolean focusChangedDueToTouchMode = ensureTouchModeLocally(
+                    (relayoutResult&amp;WindowManagerGlobal.RELAYOUT_RES_IN_TOUCH_MODE) != 0);
+            if (focusChangedDueToTouchMode || mWidth != host.getMeasuredWidth()
+                    || mHeight != host.getMeasuredHeight() || contentInsetsChanged ||
+                    updatedConfiguration) &#123;
+                int childWidthMeasureSpec = getRootMeasureSpec(mWidth, lp.width);
+                int childHeightMeasureSpec = getRootMeasureSpec(mHeight, lp.height);
+
+                if (DEBUG_LAYOUT) Log.v(mTag, &quot;Ooops, something changed!  mWidth=&quot;
+                        + mWidth + &quot; measuredWidth=&quot; + host.getMeasuredWidth()
+                        + &quot; mHeight=&quot; + mHeight
+                        + &quot; measuredHeight=&quot; + host.getMeasuredHeight()
+                        + &quot; coveredInsetsChanged=&quot; + contentInsetsChanged);
+
+                // 这里其实就是调用了View.measure()方法
+                performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+
+                // Implementation of weights from WindowManager.LayoutParams
+                // We just grow the dimensions as needed and re-measure if
+                // needs be
+                int width = host.getMeasuredWidth();
+                int height = host.getMeasuredHeight();
+                boolean measureAgain = false;
+
+                if (lp.horizontalWeight &gt; 0.0f) &#123;
+                    width += (int) ((mWidth - width) * lp.horizontalWeight);
+                    childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(width,
+                            MeasureSpec.EXACTLY);
+                    measureAgain = true;
+                &#125;
+                if (lp.verticalWeight &gt; 0.0f) &#123;
+                    height += (int) ((mHeight - height) * lp.verticalWeight);
+                    childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(height,
+                            MeasureSpec.EXACTLY);
+                    measureAgain = true;
+                &#125;
+
+                if (measureAgain) &#123;
+                    if (DEBUG_LAYOUT) Log.v(mTag,
+                            &quot;And hey let&#39;s measure once more: width=&quot; + width
+                            + &quot; height=&quot; + height);
+                    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+                &#125;
+
+                layoutRequested = true;
+            &#125;
+        &#125;
+    &#125; else &#123;
+        // Not the first pass and no window/insets/visibility change but the window
+        // may have moved and we need check that and if so to update the left and right
+        // in the attach info. We translate only the window frame since on window move
+        // the window manager tells us only for the new frame but the insets are the
+        // same and we do not want to translate them more than once.
+        maybeHandleWindowMove(frame);
+    &#125;
+
+    if (surfaceSizeChanged) &#123;
+        updateBoundsSurface();
+    &#125;
+
+    // III. measure阶段结束
+
+    // IV. layout阶段开始
+
+    final boolean didLayout = layoutRequested &amp;&amp; (!mStopped || mReportNextDraw);
+    ...
+    if (didLayout) &#123;
+        // 进行layout过程
+        performLayout(lp, mWidth, mHeight);
+
+        // By this point all views have been sized and positioned
+        // We can compute the transparent area
+
+        if ((host.mPrivateFlags &amp; View.PFLAG_REQUEST_TRANSPARENT_REGIONS) != 0) &#123;
+            // start out transparent
+            // TODO: AVOID THAT CALL BY CACHING THE RESULT?
+            host.getLocationInWindow(mTmpLocation);
+            mTransparentRegion.set(mTmpLocation[0], mTmpLocation[1],
+                    mTmpLocation[0] + host.mRight - host.mLeft,
+                    mTmpLocation[1] + host.mBottom - host.mTop);
+
+            host.gatherTransparentRegion(mTransparentRegion);
+            if (mTranslator != null) &#123;
+                mTranslator.translateRegionInWindowToScreen(mTransparentRegion);
+            &#125;
+
+            if (!mTransparentRegion.equals(mPreviousTransparentRegion)) &#123;
+                mPreviousTransparentRegion.set(mTransparentRegion);
+                mFullRedrawNeeded = true;
+                // reconfigure window manager
+                try &#123;
+                    mWindowSession.setTransparentRegion(mWindow, mTransparentRegion);
+                &#125; catch (RemoteException e) &#123;
+                &#125;
+            &#125;
+        &#125;
+
+        if (DBG) &#123;
+            System.out.println(&quot;======================================&quot;);
+            System.out.println(&quot;performTraversals -- after setFrame&quot;);
+            host.debug();
+        &#125;
+    &#125;
+
+    // IV. layout阶段结束
+
+    // V. draw过程开始
+
+    boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw() || !isViewVisible;
+
+    if (!cancelDraw) &#123;
+        if (mPendingTransitions != null &amp;&amp; mPendingTransitions.size() &gt; 0) &#123;
+            for (int i = 0; i &lt; mPendingTransitions.size(); ++i) &#123;
+                mPendingTransitions.get(i).startChangingAnimations();
+            &#125;
+            mPendingTransitions.clear();
+        &#125;
+
+        performDraw();
+    &#125; else &#123;
+        if (isViewVisible) &#123;
+            // Try again
+            scheduleTraversals();
+        &#125; else if (mPendingTransitions != null &amp;&amp; mPendingTransitions.size() &gt; 0) &#123;
+            for (int i = 0; i &lt; mPendingTransitions.size(); ++i) &#123;
+                mPendingTransitions.get(i).endChangingAnimations();
+            &#125;
+            mPendingTransitions.clear();
+        &#125;
+    &#125;
+
+    mIsInTraversal = false;
+
+    // V. draw过程结束
+&#125;
+</code></pre>
+<p>好吧，我承认，这是我见过的最长的方法了。只能给它分为几个重要阶段，并提炼一下，无法进行太详细的分析了。</p>
+<p>I. pre-measure阶段</p>
+<p>这是第一个阶段，它会对控件树进行第一次测量。在此阶段中将会计算出控件树为显示其内容所需的尺寸，即期望的窗口尺寸。在这个阶段中View及其子类的<code>onMeasure()</code>方法将会沿着控件树依次得到回调。</p>
+<p>预测量也是一次完整的测量过程，它与最终测量的区别仅在于参数不同而已。实际的测量工作是在View或其子类的<code>onMeasure()</code>方法中完成，并且其测量结果需要受限于来自其父控件的指示。这个指示由<code>onMeasure()</code>方法中的两个参数进行传达：<code>widthSpec</code>和<code>heightSpec</code>。它们是被称为MeasureSpec的复合整型变量，用于指导控件对自身进行测量。它又两个分量，结构如下表：</p>
+<table class="table is-bordered is-narrow">
+    <thead>
+        <tr>
+            <th><abbr>32, 31</abbr></th>
+            <th><abbr>30 ... 1</abbr></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>SPEC_MODE</td>
+            <td>SPEC_SIZE</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>其实就是个32位的整型，高2位用于储存它的类型，后30位用于储存它的内容。</p>
+<p>I、II、III三个阶段可知预测量时的SPEC_SIZE按照如下原则进行取值：</p>
+<ul>
+<li>第一次“遍历”时，使用可用的最大尺寸作为SPEC_SIZE的候选</li>
+<li>此窗口是一个悬浮窗口时，即LayoutParams.width/height其中之一被指定为WRAP_CONTENT时，使用可用的最大尺寸作为SPEC_SIZE的候选</li>
+<li>其他情况下，使用窗口最新尺寸作为SPEC_SIZE的候选</li>
+</ul>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/Android/View%20%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/" title="View 的绘制流程"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: View 的绘制流程</span></a><a class="button is-default" href="/Android/%E5%B1%8F%E5%B9%95%E9%80%82%E9%85%8D/" title="Android 屏幕适配"><span class="has-text-weight-semibold">Next: Android 屏幕适配</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

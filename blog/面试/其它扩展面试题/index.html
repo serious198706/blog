@@ -1,0 +1,82 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="其他扩展面试题
+
+一、Kotlin （⭐⭐）1、Kotlin 特性，和 Java 相比有什么不同的地方?
+能直接与Java相互调用，能与Java工程共存
+大大减少样板代码
+可以将Kotlin代码编译为无需虚拟机就可运行的原生二进制文件
+支持协程
+支持高阶函数
+语言层面解决空指针问题
+对字符串格式化的处理（$变量名）
+更像Python的语法
+对λ表达式支持更好
+
+https://mp.weixin.qq.com/s/FqXLNz5p9M-5vcMUkxJyFQ
+2、Kotlin为什么能和Java混编?3、什么是协程？二、大前端 （⭐⭐）1、Hybrid通信原理是什么，有做研究吗？2、JS的交互理解吗？平时工作用的多吗，项目中是怎么与Web交互的？Android通过WebView调用JS代码：1、通过WebVi.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">其他扩展面试题</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B6%E4%BB%96%E6%89%A9%E5%B1%95%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="toc-text">其他扩展面试题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81Kotlin-%EF%BC%88%E2%AD%90%E2%AD%90%EF%BC%89"><span class="toc-text">一、Kotlin （⭐⭐）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81Kotlin-%E7%89%B9%E6%80%A7%EF%BC%8C%E5%92%8C-Java-%E7%9B%B8%E6%AF%94%E6%9C%89%E4%BB%80%E4%B9%88%E4%B8%8D%E5%90%8C%E7%9A%84%E5%9C%B0%E6%96%B9"><span class="toc-text">1、Kotlin 特性，和 Java 相比有什么不同的地方?</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81Kotlin%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E5%92%8CJava%E6%B7%B7%E7%BC%96"><span class="toc-text">2、Kotlin为什么能和Java混编?</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3%E3%80%81%E4%BB%80%E4%B9%88%E6%98%AF%E5%8D%8F%E7%A8%8B%EF%BC%9F"><span class="toc-text">3、什么是协程？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%A4%A7%E5%89%8D%E7%AB%AF-%EF%BC%88%E2%AD%90%E2%AD%90%EF%BC%89"><span class="toc-text">二、大前端 （⭐⭐）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81Hybrid%E9%80%9A%E4%BF%A1%E5%8E%9F%E7%90%86%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%8C%E6%9C%89%E5%81%9A%E7%A0%94%E7%A9%B6%E5%90%97%EF%BC%9F"><span class="toc-text">1、Hybrid通信原理是什么，有做研究吗？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81JS%E7%9A%84%E4%BA%A4%E4%BA%92%E7%90%86%E8%A7%A3%E5%90%97%EF%BC%9F%E5%B9%B3%E6%97%B6%E5%B7%A5%E4%BD%9C%E7%94%A8%E7%9A%84%E5%A4%9A%E5%90%97%EF%BC%8C%E9%A1%B9%E7%9B%AE%E4%B8%AD%E6%98%AF%E6%80%8E%E4%B9%88%E4%B8%8EWeb%E4%BA%A4%E4%BA%92%E7%9A%84%EF%BC%9F"><span class="toc-text">2、JS的交互理解吗？平时工作用的多吗，项目中是怎么与Web交互的？</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Android%E9%80%9A%E8%BF%87WebView%E8%B0%83%E7%94%A8JS%E4%BB%A3%E7%A0%81%EF%BC%9A"><span class="toc-text">Android通过WebView调用JS代码：</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#JS%E9%80%9A%E8%BF%87WebView%E8%B0%83%E7%94%A8-Android-%E4%BB%A3%E7%A0%81%EF%BC%9A"><span class="toc-text">JS通过WebView调用 Android 代码：</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3%E3%80%81react-native%E6%9C%89%E5%A4%9A%E5%B0%91%E4%BA%86%E8%A7%A3%EF%BC%9F%E8%AE%B2%E4%B8%80%E4%B8%8B%E5%8E%9F%E7%90%86%E3%80%82"><span class="toc-text">3、react native有多少了解？讲一下原理。</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4%E3%80%81weex%E4%BA%86%E8%A7%A3%E5%90%97%EF%BC%9F%E5%A6%82%E4%BD%95%E8%87%AA%E5%B7%B1%E5%AE%9E%E7%8E%B0%E7%B1%BB%E4%BC%BC%E6%8A%80%E6%9C%AF%EF%BC%9F"><span class="toc-text">4、weex了解吗？如何自己实现类似技术？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5%E3%80%81flutter%E4%BA%86%E8%A7%A3%E5%90%97%EF%BC%9F%E5%86%85%E9%83%A8%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E8%B7%A8%E5%B9%B3%E5%8F%B0%E7%9A%84%EF%BC%9F%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%A4%9ANative%E9%A1%B5%E9%9D%A2%E6%8E%A5%E5%85%A5%EF%BC%9F%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%AF%B9%E7%8E%B0%E6%9C%89%E5%B7%A5%E7%A8%8B%E7%9A%84flutter%E8%BF%81%E7%A7%BB%EF%BC%9F"><span class="toc-text">5、flutter了解吗？内部是如何实现跨平台的？如何实现多Native页面接入？如何实现对现有工程的flutter迁移？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6%E3%80%81Dart%E8%AF%AD%E8%A8%80%E6%9C%89%E7%A0%94%E7%A9%B6%E8%BF%87%E5%90%97%EF%BC%9F"><span class="toc-text">6、Dart语言有研究过吗？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7%E3%80%81%E5%BF%AB%E5%BA%94%E7%94%A8%E4%BA%86%E8%A7%A3%E5%90%97%EF%BC%9F%E8%B7%9F%E5%85%B6%E5%A5%B9%E6%96%B9%E5%BC%8F%E7%9B%B8%E6%AF%94%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E7%BC%BA%E7%82%B9%EF%BC%9F"><span class="toc-text">7、快应用了解吗？跟其她方式相比有什么优缺点？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#8%E3%80%81%E8%AF%B4%E8%AF%B4%E4%BD%A0%E7%94%A8%E8%BF%87%E7%9A%84%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E6%9C%89%E5%93%AA%E4%BA%9B%EF%BC%9F%E5%90%84%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E7%BC%BA%E7%82%B9%EF%BC%9F"><span class="toc-text">8、说说你用过的混合开发技术有哪些？各有什么优缺点？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80-%EF%BC%88%E2%AD%90%E2%AD%90%EF%BC%89"><span class="toc-text">三、脚本语言 （⭐⭐）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80%E4%BC%9A%E5%90%97"><span class="toc-text">1、脚本语言会吗?</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81Python%E4%BC%9A%E5%90%97%EF%BC%9F"><span class="toc-text">2、Python会吗？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3%E3%80%81Gradle%E4%BA%86%E8%A7%A3%E5%A4%9A%E5%B0%91%EF%BC%9Fgroovy%E8%AF%AD%E6%B3%95%E4%BC%9A%E5%90%97%EF%BC%9F"><span class="toc-text">3、Gradle了解多少？groovy语法会吗？</span></a></li></ol></li></ol></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/kotlin"><i class="tag post-item-tag">kotlin</i></a><a href="/tags/coroutine"><i class="tag post-item-tag">coroutine</i></a><a href="/tags/%E5%8D%8F%E7%A8%8B"><i class="tag post-item-tag">协程</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">其他扩展面试题</h1><time class="has-text-grey" datetime="2021-01-08T16:00:00.000Z">2021-01-09</time><article class="mt-2 post-content"><h2 id="其他扩展面试题"><a href="#其他扩展面试题" class="headerlink" title="其他扩展面试题"></a>其他扩展面试题</h2><span id="more"></span>
+
+<h3 id="一、Kotlin-（⭐⭐）"><a href="#一、Kotlin-（⭐⭐）" class="headerlink" title="一、Kotlin （⭐⭐）"></a>一、Kotlin （⭐⭐）</h3><h4 id="1、Kotlin-特性，和-Java-相比有什么不同的地方"><a href="#1、Kotlin-特性，和-Java-相比有什么不同的地方" class="headerlink" title="1、Kotlin 特性，和 Java 相比有什么不同的地方?"></a>1、Kotlin 特性，和 Java 相比有什么不同的地方?</h4><ul>
+<li>能直接与Java相互调用，能与Java工程共存</li>
+<li>大大减少样板代码</li>
+<li>可以将Kotlin代码编译为无需虚拟机就可运行的原生二进制文件</li>
+<li>支持协程</li>
+<li>支持高阶函数</li>
+<li>语言层面解决空指针问题</li>
+<li>对字符串格式化的处理（$变量名）</li>
+<li>更像Python的语法</li>
+<li>对λ表达式支持更好</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/FqXLNz5p9M-5vcMUkxJyFQ">https://mp.weixin.qq.com/s/FqXLNz5p9M-5vcMUkxJyFQ</a></p>
+<h4 id="2、Kotlin为什么能和Java混编"><a href="#2、Kotlin为什么能和Java混编" class="headerlink" title="2、Kotlin为什么能和Java混编?"></a>2、Kotlin为什么能和Java混编?</h4><h4 id="3、什么是协程？"><a href="#3、什么是协程？" class="headerlink" title="3、什么是协程？"></a>3、什么是协程？</h4><h3 id="二、大前端-（⭐⭐）"><a href="#二、大前端-（⭐⭐）" class="headerlink" title="二、大前端 （⭐⭐）"></a>二、大前端 （⭐⭐）</h3><h4 id="1、Hybrid通信原理是什么，有做研究吗？"><a href="#1、Hybrid通信原理是什么，有做研究吗？" class="headerlink" title="1、Hybrid通信原理是什么，有做研究吗？"></a>1、Hybrid通信原理是什么，有做研究吗？</h4><h4 id="2、JS的交互理解吗？平时工作用的多吗，项目中是怎么与Web交互的？"><a href="#2、JS的交互理解吗？平时工作用的多吗，项目中是怎么与Web交互的？" class="headerlink" title="2、JS的交互理解吗？平时工作用的多吗，项目中是怎么与Web交互的？"></a>2、JS的交互理解吗？平时工作用的多吗，项目中是怎么与Web交互的？</h4><h5 id="Android通过WebView调用JS代码："><a href="#Android通过WebView调用JS代码：" class="headerlink" title="Android通过WebView调用JS代码："></a>Android通过WebView调用JS代码：</h5><p>1、通过WebView的loadUrl()：</p>
+<ul>
+<li><p>设置与Js交互的权限：</p>
+<p>webSettings.setJavaScriptEnabled(true)</p>
+</li>
+<li><p>设置允许JS弹窗：</p>
+<p>webSettings.setJavaScriptCanOpenWindowsAutomatically(true)</p>
+</li>
+<li><p>载入JS代码：</p>
+<p>mWebView.loadUrl(“file:///android_asset/javascript.html”)</p>
+</li>
+<li><p>webview只是载体，内容的渲染需要使用webviewChromClient类去实现，通过设置WebChromeClient对象处理JavaScript的对话框。</p>
+</li>
+</ul>
+<p>特别注意：</p>
+<p>JS代码调用一定要在 onPageFinished（） 回调之后才能调用，否则不会调用。</p>
+<p>2、通过WebView的evaluateJavascript()：</p>
+<ul>
+<li>该方法比第一种方法效率更高、使用更简洁，因为该方法的执行不会使页面刷新，而第一种方法（loadUrl ）的执行则会。</li>
+<li>Android 4.4 后才可使用。</li>
+</ul>
+<p>只需要将第一种方法的loadUrl()换成evaluateJavascript()即可，通过onReceiveValue()回调接收返回值。</p>
+<p>建议：两种方法混合使用，即Android 4.4以下使用方法1，Android 4.4以上方法2。</p>
+<h5 id="JS通过WebView调用-Android-代码："><a href="#JS通过WebView调用-Android-代码：" class="headerlink" title="JS通过WebView调用 Android 代码："></a>JS通过WebView调用 Android 代码：</h5><p>1、通过 WebView的addJavascriptInterface（）进行对象映射：</p>
+<p>-定义一个与JS对象映射关系的Android类：AndroidtoJs：</p>
+<ul>
+<li>定义JS需要调用的方法，被JS调用的方法必须加入@JavascriptInterface注解。</li>
+<li>通过addJavascriptInterface()将Java对象映射到JS对象。</li>
+</ul>
+<p>优点：使用简单，仅将Android对象和JS对象映射即可。</p>
+<p>缺点：addJavascriptInterface 接口引起远程代码执行漏洞，漏洞产生原因是：</p>
+<p>当JS拿到Android这个对象后，就可以调用这个Android对象中所有的方法，包括系统类（java.lang.Runtime 类），从而进行任意代码执行。</p>
+<p>2、通过 WebViewClient 的方法shouldOverrideUrlLoading ()回调拦截 url：</p>
+<ul>
+<li><p>Android通过 WebViewClient 的回调方法shouldOverrideUrlLoading ()拦截 url。</p>
+</li>
+<li><p>解析该 url 的协议。</p>
+</li>
+<li><p>如果检测到是预先约定好的协议，就调用相应方法。</p>
+<p>根据协议的参数，判断是否是所需要的url。<br>一般根据scheme（协议格式） &amp; authority（协议名）判断（前两个参数）。</p>
+</li>
+</ul>
+<p>优点：不存在方式1的漏洞；</p>
+<p>缺点：JS获取Android方法的返回值复杂,如果JS想要得到Android方法的返回值，只能通过 WebView 的 loadUrl （）去执行 JS 方法把返回值传递回去。</p>
+<p>3、通过 WebChromeClient 的onJsAlert()、onJsConfirm()、onJsPrompt（）方法回调拦截JS对话框alert()、confirm()、prompt（） 消息：</p>
+<p>原理：</p>
+<p>Android通过 WebChromeClient 的onJsAlert()、onJsConfirm()、onJsPrompt（）方法回调分别拦截JS对话框<br>（警告框、确认框、输入框），得到他们的消息内容，然后解析即可。</p>
+<p>常用的拦截是：拦截 JS的输入框（即prompt（）方法），因为只有prompt（）可以返回任意类型的值，操作最全面方便、更加灵活；而alert（）对话框没有返回值；confirm（）对话框只能返回两种状态（确定 / 取消）两个值。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/944365-613b57c93dff2eb8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image"></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/carson_ho/article/details/64904691">Android：你要的WebView与 JS 交互方式 都在这里了</a></p>
+<h4 id="3、react-native有多少了解？讲一下原理。"><a href="#3、react-native有多少了解？讲一下原理。" class="headerlink" title="3、react native有多少了解？讲一下原理。"></a>3、react native有多少了解？讲一下原理。</h4><h4 id="4、weex了解吗？如何自己实现类似技术？"><a href="#4、weex了解吗？如何自己实现类似技术？" class="headerlink" title="4、weex了解吗？如何自己实现类似技术？"></a>4、weex了解吗？如何自己实现类似技术？</h4><h4 id="5、flutter了解吗？内部是如何实现跨平台的？如何实现多Native页面接入？如何实现对现有工程的flutter迁移？"><a href="#5、flutter了解吗？内部是如何实现跨平台的？如何实现多Native页面接入？如何实现对现有工程的flutter迁移？" class="headerlink" title="5、flutter了解吗？内部是如何实现跨平台的？如何实现多Native页面接入？如何实现对现有工程的flutter迁移？"></a>5、flutter了解吗？内部是如何实现跨平台的？如何实现多Native页面接入？如何实现对现有工程的flutter迁移？</h4><h4 id="6、Dart语言有研究过吗？"><a href="#6、Dart语言有研究过吗？" class="headerlink" title="6、Dart语言有研究过吗？"></a>6、Dart语言有研究过吗？</h4><h4 id="7、快应用了解吗？跟其她方式相比有什么优缺点？"><a href="#7、快应用了解吗？跟其她方式相比有什么优缺点？" class="headerlink" title="7、快应用了解吗？跟其她方式相比有什么优缺点？"></a>7、快应用了解吗？跟其她方式相比有什么优缺点？</h4><h4 id="8、说说你用过的混合开发技术有哪些？各有什么优缺点？"><a href="#8、说说你用过的混合开发技术有哪些？各有什么优缺点？" class="headerlink" title="8、说说你用过的混合开发技术有哪些？各有什么优缺点？"></a>8、说说你用过的混合开发技术有哪些？各有什么优缺点？</h4><h3 id="三、脚本语言-（⭐⭐）"><a href="#三、脚本语言-（⭐⭐）" class="headerlink" title="三、脚本语言 （⭐⭐）"></a>三、脚本语言 （⭐⭐）</h3><h4 id="1、脚本语言会吗"><a href="#1、脚本语言会吗" class="headerlink" title="1、脚本语言会吗?"></a>1、脚本语言会吗?</h4><h4 id="2、Python会吗？"><a href="#2、Python会吗？" class="headerlink" title="2、Python会吗？"></a>2、Python会吗？</h4><p><a target="_blank" rel="noopener" href="https://jsonchao.github.io/2018/07/26/%20Python%E5%85%A5%E9%97%A8%E7%AF%87/">Python基础</a></p>
+<p><a target="_blank" rel="noopener" href="https://jsonchao.github.io/2018/03/18/%E5%88%9D%E8%AF%86%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/">人工智能了解</a></p>
+<h4 id="3、Gradle了解多少？groovy语法会吗？"><a href="#3、Gradle了解多少？groovy语法会吗？" class="headerlink" title="3、Gradle了解多少？groovy语法会吗？"></a>3、Gradle了解多少？groovy语法会吗？</h4></article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/hello-world/" title="Hello World"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: Hello World</span></a><a class="button is-default" href="/Java/%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%8A%B6%E6%80%81/" title="Java 中线程的状态及转换"><span class="has-text-weight-semibold">Next: Java 中线程的状态及转换</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

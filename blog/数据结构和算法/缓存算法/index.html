@@ -1,0 +1,421 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="目前常见的几种缓存算法包括但不限于 FIFO、LRU、LFU、MRU。下面我们一一介绍并深入一下。
+
+
+FIFO 算法FIFO（First In First Out）是比较常见的算法了，队列（Queue）就是实现了这种算法的最好例子。这是最简单、最公平的一种算法思想，它认为如果一个数据是最先进入的，那么在将来它被访问的可能性是最小的。空间满的时候，最先进入的数据会被淘汰掉。
+下图展示 FIFO 算法在访问顺序是 A、B、C、D、E、D、F 的情况下，缓存列表的更新情况（链表大小假定为4）：
+
+
+
+白色代表无数据，灰色代表未更新数据，绿色代表被更新数据
+
+
+FIFO 的实现比较简单，可以维护一个FIFO队列，按照时间顺序将各数据链接起来组成队列，并将置换指针指向队列的队首。再进行置换时，只需把置换指针所指的数.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">关于几种常见的缓存算法</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#FIFO-%E7%AE%97%E6%B3%95"><span class="toc-text">FIFO 算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LRU-%E7%AE%97%E6%B3%95"><span class="toc-text">LRU 算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#LRU"><span class="toc-text">LRU</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#LRU-K"><span class="toc-text">LRU-K</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Android-%E4%B8%AD%E7%9A%84-LruCache"><span class="toc-text">Android 中的 LruCache</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LFU-%E7%AE%97%E6%B3%95"><span class="toc-text">LFU 算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MRU-%E7%AE%97%E6%B3%95"><span class="toc-text">MRU 算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E6%B3%A8"><span class="toc-text">附注</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%A81"><span class="toc-text">注1</span></a></li></ol></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/%E7%AE%97%E6%B3%95"><i class="tag post-item-tag">算法</i></a><a href="/tags/%E7%94%9F%E6%B4%BB%E6%8A%80%E8%83%BD"><i class="tag post-item-tag">生活技能</i></a><a href="/tags/%E7%BC%93%E5%AD%98%E7%AE%97%E6%B3%95"><i class="tag post-item-tag">缓存算法</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">关于几种常见的缓存算法</h1><time class="has-text-grey" datetime="2020-01-06T16:00:00.000Z">2020-01-07</time><article class="mt-2 post-content"><p>目前常见的几种缓存算法包括但不限于 <a href="#fifo-%E7%AE%97%E6%B3%95">FIFO</a>、<a href="#lru-%E7%AE%97%E6%B3%95">LRU</a>、<a href="#lfu-%E7%AE%97%E6%B3%95">LFU</a>、<a href="#mru-%E7%AE%97%E6%B3%95">MRU</a>。下面我们一一介绍并深入一下。</p>
+<span id="more"></span>
+
+<h2 id="FIFO-算法"><a href="#FIFO-算法" class="headerlink" title="FIFO 算法"></a>FIFO 算法</h2><p>FIFO（First In First Out）是比较常见的算法了，队列（Queue）就是实现了这种算法的最好例子。这是最简单、最公平的一种算法思想，它认为<strong>如果一个数据是最先进入的，那么在将来它被访问的可能性是最小的。空间满的时候，最先进入的数据会被淘汰掉</strong>。</p>
+<p>下图展示 FIFO 算法在访问顺序是 A、B、C、D、E、D、F 的情况下，缓存列表的更新情况（链表大小假定为4）：</p>
+<div class="center-img">
+
+<p><img src="/img/cache-1588212789.png"></p>
+<p><em>白色代表无数据，灰色代表未更新数据，绿色代表被更新数据</em></p>
+</div>
+
+<p>FIFO 的实现比较简单，可以维护一个FIFO队列，按照时间顺序将各数据链接起来组成队列，并将置换指针指向队列的队首。再进行置换时，只需把置换指针所指的数据（页面）顺次换出，并把新加入的数据插到队尾即可。</p>
+<p><strong>优点</strong>：实现简单</p>
+<p><strong>缺点</strong>：判断一个缓存算法优劣的指标就是命中率，而 FIFO 算法的一个显著的缺点是，在某些特定的时刻，命中率反而会随着缓存量的增加而减少，这称为 <strong>Belady 现象</strong>。产生 Belady 现象的原因是，FIFO 置换算法<strong>与进程访问内存的动态特征是不相容的</strong>，被置换的数据往往是被频繁访问的，或者没有给进程分配足够的缓存空间，因此 FIFO 算法会使一些数据<strong>频繁地被替换和重新申请内存</strong>，从而导致命中率降低。因此，现在几乎不再使用 FIFO 算法。</p>
+<h2 id="LRU-算法"><a href="#LRU-算法" class="headerlink" title="LRU 算法"></a>LRU 算法</h2><h3 id="LRU"><a href="#LRU" class="headerlink" title="LRU"></a>LRU</h3><p>LRU（Least recently used）算法会根据数据的<strong>历史访问记录</strong>来进行淘汰数据，其核心思想是『<strong>如果数据最近被访问过，那么将来被访问的几率也更高</strong>』。</p>
+<p>下图展示了访问顺序是 A、B、C、D、E、D、F 情况下，缓存列表的更新情况：</p>
+<div class="center-img">
+
+<p><img src="/img/cache-1588220432.png"></p>
+<p><em>白色代表无数据，灰色代表未更新数据，绿色代表被更新数据</em></p>
+</div>
+
+<p>由上图可以总结一下 LRU 算法的几个特点：</p>
+<ol>
+<li>新来的数据会插入链表的头部</li>
+<li>如果链表已满（达到最大长度），则会丢弃掉链表尾部的数据</li>
+<li>如果访问时命中，则要移动数据的位置<sup><a href="#%E6%B3%A81">注1</a></sup></li>
+</ol>
+<p>LRU 的实现一般是使用 LinkedHashMap，即包含了用来表示『位置』的双向链表，也包含用来『存储和获取』的 HashMap。</p>
+<p><strong>优点</strong>：实现起来相对简单。</p>
+<p><strong>缺点</strong>：当存在热点数据时，LRU 的效率很好；但偶发性的、周期性的批量操作会导致 LRU 命中率急剧下降，缓存污染情况比较严重。</p>
+<p>我们来写个代码简单实现一下 LRU 算法：</p>
+<pre><code class="java">import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class LruCache&lt;K, V&gt; extends LinkedHashMap&lt;K, V&gt; &#123;
+
+    private int cacheSize;
+
+    public LruCache(int cacheSize) &#123;
+        // 三个参数分别是：初始大小、负载因子、是否开启访问顺序（accessOrder）
+        // 开启访问顺序后，被命中的数据会移动到链表的头部
+        super(16, (float) 0.75, true);
+        this.cacheSize = cacheSize;
+    &#125;
+
+    // 复写该方法，来决定是否要移除最旧的数据，该方法在 LinkedHashMap 中默认返回 false
+    protected boolean removeEldestEntry(Map.Entry&lt;K, V&gt; eldest) &#123;
+        return size() &gt; cacheSize;
+    &#125;
+
+    public void print()
+    &#123;
+        Iterator&lt;K&gt; itr = this.keySet().iterator();
+        while (itr.hasNext()) &#123;
+            System.out.print(itr.next() + &quot; &quot;);
+        &#125;
+
+        System.out.println();
+    &#125;
+
+    public static void main(String[] args) &#123;
+        LruCache&lt;String, Integer&gt; lruCache = new LruCache&lt;String, Integer&gt;(4);
+
+        for(int i = 0; i &lt; 10; i++) &#123;
+            lruCache.put(&quot;K&quot; + i, i);
+        &#125;
+
+        lruCache.print();
+
+        lruCache.put(&quot;K10&quot;, 10);
+
+        lruCache.print();
+
+        lruCache.get(&quot;K7&quot;);
+
+        lruCache.print();
+    &#125;
+&#125;
+</code></pre>
+<p>输出结果如下：</p>
+<pre><code>K6 K7 K8 K9
+K7 K8 K9 K10
+K8 K9 K10 K7
+</code></pre>
+<p>很明显这个实现类是<span style="color: red; font-weight: bold;">线程不安全</span>的，因为 LinkedHashMap 本身就是<span style="color: red; font-weight: bold;">线程不安全</span>的。</p>
+<h3 id="LRU-K"><a href="#LRU-K" class="headerlink" title="LRU-K"></a>LRU-K</h3><p>LRU-K 中的 K 代表<strong>最近使用的次数</strong>，所以，LRU 可以被认为是 LRU-1。LRU-K 的主要目的是为了解决 LRU 算法『缓存污染』的问题，其核心思想是将『<strong>最近使用过1次</strong>』的判断标准扩展为『<strong>最近使用过K次</strong>』。</p>
+<p>于是，相比 LRU，LRU-K 需要多维护一个队列，用于记录所有缓存数据被访问的历史。只有当数据的访问次数达到 K 次的时候，才将数据放入缓存。当需要淘汰数据时，LRU-K 会淘汰<strong>第 K 次访问时间距当前时间最大的数据</strong>。</p>
+<h3 id="Android-中的-LruCache"><a href="#Android-中的-LruCache" class="headerlink" title="Android 中的 LruCache"></a>Android 中的 LruCache</h3><p>Android 中的 LruCache 实现与上面直接使用 LinkedHashMap 的特性不一样，它自定义了数据插入的位置、获取的策略和丢弃的策略。</p>
+<p>话不多说，直接上代码，在注释中进行详解：</p>
+<pre><code class="java">// android.util.LruCache.java
+package android.util;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * 这是一个缓存，里面的数据都是强引用，包含有限数量的数据。
+ * 每次当某个数据被访问，它会被移动到队列的头部。当缓存已满，新数据来临时，队列尾部的数据会被丢弃，GC 就可以回收它了。
+ * 
+ * 如果你缓存的数据需要被显式地释放掉，那就重写 entryRemoved 方法。
+ *
+ * 如果缓存未命中时，需要计算并获取对应的key，重写 create 方法。
+ * 
+ * 默认情况下，缓存的大小以 Entry 的个数界决的，你可以重写 sizeOf 方法用不同的单位来决定缓存空间的大小。
+ * 比如，下面这个缓存的上限是 4MB 的 bitmap：
+ *
+ * int cacheSize = 4 * 1024 * 1024; // 4MiB
+ * LruCache&lt;String, Bitmap&gt; bitmapCache = new LruCache&lt;String, Bitmap&gt;(cacheSize) &#123;
+ *     protected int sizeOf(String key, Bitmap value) &#123;
+ *         return value.getByteCount();
+ *     &#125;
+ * &#125;
+ *
+ * 这个 LruCache 类是线程安全的。可以用下面的方法来安全地插入和获取数据：
+ *
+ * synchronized (cache) &#123;
+ *   if (cache.get(key) == null) &#123;
+ *       cache.put(key, value);
+ *   &#125;
+ * &#125;
+ *
+ * 该类不允许 null key 或者 null value。当 get、put、remove 方法返回 null 时，它的意思很明确：key 不在缓存中
+ */
+public class LruCache&lt;K, V&gt; &#123;
+    private final LinkedHashMap&lt;K, V&gt; map;
+
+    private int size;
+    private int maxSize;
+
+    // 插入次数
+    private int putCount;
+    // 新建次数
+    private int createCount;
+    // 丢弃次数
+    private int evictionCount;
+    // 命中次数
+    private int hitCount;
+    // 未命中次数
+    private int missCount;
+
+    // maxSize 就是没有重写 sizeOf 方法的缓存大小，也即 Entry 的条目数量
+    public LruCache(int maxSize) &#123;
+        if (maxSize &lt;= 0) &#123;
+            throw new IllegalArgumentException(&quot;maxSize &lt;= 0&quot;);
+        &#125;
+        this.maxSize = maxSize;
+        this.map = new LinkedHashMap&lt;K, V&gt;(0, 0.75f, true);
+    &#125;
+
+    public void resize(int maxSize) &#123;
+        if (maxSize &lt;= 0) &#123;
+            throw new IllegalArgumentException(&quot;maxSize &lt;= 0&quot;);
+        &#125;
+
+        synchronized (this) &#123;
+            this.maxSize = maxSize;
+        &#125;
+        trimToSize(maxSize);
+    &#125;
+
+    public final V get(K key) &#123;
+        if (key == null) &#123;
+            throw new NullPointerException(&quot;key == null&quot;);
+        &#125;
+
+        V mapValue;
+        synchronized (this) &#123;
+            mapValue = map.get(key);
+            if (mapValue != null) &#123;
+                hitCount++;
+                return mapValue;
+            &#125;
+            missCount++;
+        &#125;
+
+        // 尝试根据 key 创建一个 value。
+        // 因为这段代码不是同步的，所以在 create 方法结束的时候，map 的内容可能已经变化了。
+        // 如果 create 方法返回的值与 map 中的值冲突，我们就释放 create 的值，并保留 map 中的值。
+        // 目前 create 总是返回 null。
+        V createdValue = create(key);
+        if (createdValue == null) &#123;
+            return null;
+        &#125;
+
+        synchronized (this) &#123;
+            createCount++;
+            mapValue = map.put(key, createdValue);
+
+            if (mapValue != null) &#123;
+                // There was a conflict so undo that last put
+                map.put(key, mapValue);
+            &#125; else &#123;
+                size += safeSizeOf(key, createdValue);
+            &#125;
+        &#125;
+
+        if (mapValue != null) &#123;
+            entryRemoved(false, key, createdValue, mapValue);
+            return mapValue;
+        &#125; else &#123;
+            trimToSize(maxSize);
+            return createdValue;
+        &#125;
+    &#125;
+
+    // value 会被放到队列的头部
+    public final V put(K key, V value) &#123;
+        if (key == null || value == null) &#123;
+            throw new NullPointerException(&quot;key == null || value == null&quot;);
+        &#125;
+
+        V previous;
+        synchronized (this) &#123;
+            putCount++;
+            size += safeSizeOf(key, value);
+            previous = map.put(key, value);
+            if (previous != null) &#123;
+                size -= safeSizeOf(key, previous);
+            &#125;
+        &#125;
+
+        if (previous != null) &#123;
+            entryRemoved(false, key, previous, value);
+        &#125;
+
+        trimToSize(maxSize);
+        return previous;
+    &#125;
+
+    private void trimToSize(int maxSize) &#123;
+        while (true) &#123;
+            K key;
+            V value;
+            synchronized (this) &#123;
+                if (size &lt; 0 || (map.isEmpty() &amp;&amp; size != 0)) &#123;
+                    throw new IllegalStateException(getClass().getName()
+                            + &quot;.sizeOf() is reporting inconsistent results!&quot;);
+                &#125;
+
+                if (size &lt;= maxSize) &#123;
+                    break;
+                &#125;
+
+                // BEGIN LAYOUTLIB CHANGE
+                // get the last item in the linked list.
+                // This is not efficient, the goal here is to minimize the changes
+                // compared to the platform version.
+                Map.Entry&lt;K, V&gt; toEvict = null;
+                for (Map.Entry&lt;K, V&gt; entry : map.entrySet()) &#123;
+                    toEvict = entry;
+                &#125;
+                // END LAYOUTLIB CHANGE
+
+                if (toEvict == null) &#123;
+                    break;
+                &#125;
+
+                key = toEvict.getKey();
+                value = toEvict.getValue();
+                map.remove(key);
+                size -= safeSizeOf(key, value);
+                evictionCount++;
+            &#125;
+
+            entryRemoved(true, key, value, null);
+        &#125;
+    &#125;
+
+    public final V remove(K key) &#123;
+        if (key == null) &#123;
+            throw new NullPointerException(&quot;key == null&quot;);
+        &#125;
+
+        V previous;
+        synchronized (this) &#123;
+            previous = map.remove(key);
+            if (previous != null) &#123;
+                size -= safeSizeOf(key, previous);
+            &#125;
+        &#125;
+
+        if (previous != null) &#123;
+            entryRemoved(false, key, previous, null);
+        &#125;
+
+        return previous;
+    &#125;
+
+    // 这个方法在调用时，是线程不安全的
+    // 当有 Entry 被丢弃或删除时调用。
+    protected void entryRemoved(boolean evicted, K key, V oldValue, V newValue) &#123;&#125;
+
+    // 这个方法在调用时，是线程不安全的
+    protected V create(K key) &#123;
+        return null;
+    &#125;
+
+    ...
+    private int safeSizeOf(K key, V value) &#123;
+        int result = sizeOf(key, value);
+        if (result &lt; 0) &#123;
+            throw new IllegalStateException(&quot;Negative size: &quot; + key + &quot;=&quot; + value);
+        &#125;
+        return result;
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p>可见，Android 对 LruCache 有了自己的实现，最重要的是，它是<strong>线程安全</strong>的，但是效率会相对低一些，不过缓存的使用概率本身相对较低，所以稍低的效率也是可以忍受的。</p>
+<h2 id="LFU-算法"><a href="#LFU-算法" class="headerlink" title="LFU 算法"></a>LFU 算法</h2><p>LFU（Least Frequently Used，最近最少使用）也是一种常见的缓存算法。它认为<strong>如果一个数据在最近一段时间很少被访问到，那么可以认为在将来它被访问的可能性也很小。因此，当空间满时，最小频率访问的数据最先被淘汰</strong>。</p>
+<p>在实现时，考虑到 LFU 会淘汰访问频率最小的数据，我们需要一种合适的方法<strong>按大小顺序</strong>维护数据访问的频率。LFU 算法本质上可以看做是一个 top K 问题(K = 1)，即选出频率最小的元素，因此我们很容易想到可以用<strong>二项堆</strong>来选择频率最小的元素，这样的实现比较高效。最终实现策略为小顶堆+哈希表。</p>
+<p><strong>缺点</strong>：最新加入的数据常常会被踢除，因为其起始方法次数少。</p>
+<h2 id="MRU-算法"><a href="#MRU-算法" class="headerlink" title="MRU 算法"></a>MRU 算法</h2><p>MRU（Most Recently Used，最近最常使用）算法的思想与 LRU 算法正好相反，它认为<strong>如果一个数据最近被访问过，那么它接下来被访问的概率就会更低</strong>。</p>
+<h2 id="附注"><a href="#附注" class="headerlink" title="附注"></a>附注</h2><h3 id="注1"><a href="#注1" class="headerlink" title="注1"></a>注1</h3><p>在移动数据的位置时，在 java1.7（含）之前采用的是<strong>头插法</strong>，数据会被移动到<strong>链表的头部</strong>。而在 java1.8 之后，采用了<strong>尾插法</strong>，所以移动数据的话，就会被移动到<strong>链表的尾部</strong>。</p>
+<p>我们看看代码是如何写的：</p>
+<pre><code class="java">// LinkedHashMap java1.7
+public class LinkedHashMap&lt;K,V&gt;
+    extends HashMap&lt;K,V&gt;
+    implements Map&lt;K,V&gt; &#123;
+    
+    private transient Entry&lt;K,V&gt; header;
+
+    ...
+    public V get(Object key) &#123;
+        Entry&lt;K,V&gt; e = (Entry&lt;K,V&gt;)getEntry(key);
+        if (e == null)
+            return null;
+        e.recordAccess(this);
+        return e.value;
+    &#125;
+    ...
+    private static class Entry&lt;K,V&gt; extends HashMap.Entry&lt;K,V&gt; &#123;
+        Entry&lt;K,V&gt; before, after;
+        ...
+        private void addBefore(Entry&lt;K,V&gt; existingEntry) &#123;
+            after  = existingEntry;
+            before = existingEntry.before;
+            before.after = this;
+            after.before = this;
+        &#125;
+
+        void recordAccess(HashMap&lt;K,V&gt; m) &#123;
+            LinkedHashMap&lt;K,V&gt; lm = (LinkedHashMap&lt;K,V&gt;)m;
+            if (lm.accessOrder) &#123;
+                lm.modCount++;
+                remove();
+                // 这里可以看出，将被访问的 Entry 重新放置在了 header 的前面，也即成为了新的链表头
+                addBefore(lm.header);
+            &#125;
+        &#125;
+    &#125;
+    ...
+&#125;
+</code></pre>
+<pre><code class="java">// LinkedHashMap java1.8
+
+public class LinkedHashMap&lt;K,V&gt;
+    extends HashMap&lt;K,V&gt;
+    implements Map&lt;K,V&gt; &#123;
+
+    ...
+    /**
+     * The head (eldest) of the doubly linked list.
+     */
+    transient LinkedHashMap.Entry&lt;K,V&gt; head;    // 表头，最老的数据
+
+    /**
+     * The tail (youngest) of the doubly linked list.
+     */
+    transient LinkedHashMap.Entry&lt;K,V&gt; tail;    // 表尾，最新的数据
+    ...
+    public V get(Object key) &#123;
+        Node&lt;K,V&gt; e;
+        if ((e = getNode(hash(key), key)) == null)
+            return null;
+        if (accessOrder)
+            afterNodeAccess(e);
+        return e.value;
+    &#125;
+
+    void afterNodeAccess(Node&lt;K,V&gt; e) &#123; // move node to last
+        LinkedHashMap.Entry&lt;K,V&gt; last;
+        if (accessOrder &amp;&amp; (last = tail) != e) &#123;
+            LinkedHashMap.Entry&lt;K,V&gt; p =
+                (LinkedHashMap.Entry&lt;K,V&gt;)e, b = p.before, a = p.after;
+            p.after = null;
+            if (b == null)
+                head = a;
+            else
+                b.after = a;
+            if (a != null)
+                a.before = b;
+            else
+                last = b;
+            if (last == null)
+                head = p;
+            else &#123;
+                p.before = last;
+                last.after = p;
+            &#125;
+            tail = p;
+            ++modCount;
+        &#125;
+    &#125;
+</code></pre>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/Java/%E5%85%B3%E4%BA%8E%E6%B3%A8%E8%A7%A3/" title="关于注解"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: 关于注解</span></a><a class="button is-default" href="/Java/HashMap/" title="HashMap 解析"><span class="has-text-weight-semibold">Next: HashMap 解析</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="
+title: Leetcode 题解 - 位运算link: leetcode-weiyunsuan
+
+
+0. 原理
+1. 统计两个数的二进制表示有多少位不同
+2. 数组中唯一一个不重复的元素
+3. 找出数组中缺失的那个数
+4. 数组中不重复的两个元素
+5. 翻转一个数的比特位
+6. 不用额外变量交换两个整数
+7. 判断一个数是不是 2 的 n 次方
+8.  判断一个数是不是 4 的 n 次方
+9. 判断一个数的位级表示是否不会出现连续的 0 和 1
+10. 求一个数的补码
+11. 实现整数的加法
+12. 字符串数组最大乘积
+13. 统计从 0 ~ n 每个数的二进制表示中 1 的个数
+
+0. 原理基本原理 
+0s 表示一串 0，1s 表示一串 1。
+x ^ 0s = x      x &amp;amp; 0s =.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center"></p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E5%8E%9F%E7%90%86"><span class="toc-text">0. 原理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BB%9F%E8%AE%A1%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%9A%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E8%A1%A8%E7%A4%BA%E6%9C%89%E5%A4%9A%E5%B0%91%E4%BD%8D%E4%B8%8D%E5%90%8C"><span class="toc-text">1. 统计两个数的二进制表示有多少位不同</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%95%B0%E7%BB%84%E4%B8%AD%E5%94%AF%E4%B8%80%E4%B8%80%E4%B8%AA%E4%B8%8D%E9%87%8D%E5%A4%8D%E7%9A%84%E5%85%83%E7%B4%A0"><span class="toc-text">2. 数组中唯一一个不重复的元素</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%89%BE%E5%87%BA%E6%95%B0%E7%BB%84%E4%B8%AD%E7%BC%BA%E5%A4%B1%E7%9A%84%E9%82%A3%E4%B8%AA%E6%95%B0"><span class="toc-text">3. 找出数组中缺失的那个数</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%95%B0%E7%BB%84%E4%B8%AD%E4%B8%8D%E9%87%8D%E5%A4%8D%E7%9A%84%E4%B8%A4%E4%B8%AA%E5%85%83%E7%B4%A0"><span class="toc-text">4. 数组中不重复的两个元素</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%BF%BB%E8%BD%AC%E4%B8%80%E4%B8%AA%E6%95%B0%E7%9A%84%E6%AF%94%E7%89%B9%E4%BD%8D"><span class="toc-text">5. 翻转一个数的比特位</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E4%B8%8D%E7%94%A8%E9%A2%9D%E5%A4%96%E5%8F%98%E9%87%8F%E4%BA%A4%E6%8D%A2%E4%B8%A4%E4%B8%AA%E6%95%B4%E6%95%B0"><span class="toc-text">6. 不用额外变量交换两个整数</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E5%88%A4%E6%96%AD%E4%B8%80%E4%B8%AA%E6%95%B0%E6%98%AF%E4%B8%8D%E6%98%AF-2-%E7%9A%84-n-%E6%AC%A1%E6%96%B9"><span class="toc-text">7. 判断一个数是不是 2 的 n 次方</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E5%88%A4%E6%96%AD%E4%B8%80%E4%B8%AA%E6%95%B0%E6%98%AF%E4%B8%8D%E6%98%AF-4-%E7%9A%84-n-%E6%AC%A1%E6%96%B9"><span class="toc-text">8.  判断一个数是不是 4 的 n 次方</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E5%88%A4%E6%96%AD%E4%B8%80%E4%B8%AA%E6%95%B0%E7%9A%84%E4%BD%8D%E7%BA%A7%E8%A1%A8%E7%A4%BA%E6%98%AF%E5%90%A6%E4%B8%8D%E4%BC%9A%E5%87%BA%E7%8E%B0%E8%BF%9E%E7%BB%AD%E7%9A%84-0-%E5%92%8C-1"><span class="toc-text">9. 判断一个数的位级表示是否不会出现连续的 0 和 1</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#10-%E6%B1%82%E4%B8%80%E4%B8%AA%E6%95%B0%E7%9A%84%E8%A1%A5%E7%A0%81"><span class="toc-text">10. 求一个数的补码</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#11-%E5%AE%9E%E7%8E%B0%E6%95%B4%E6%95%B0%E7%9A%84%E5%8A%A0%E6%B3%95"><span class="toc-text">11. 实现整数的加法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#12-%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%95%B0%E7%BB%84%E6%9C%80%E5%A4%A7%E4%B9%98%E7%A7%AF"><span class="toc-text">12. 字符串数组最大乘积</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#13-%E7%BB%9F%E8%AE%A1%E4%BB%8E-0-n-%E6%AF%8F%E4%B8%AA%E6%95%B0%E7%9A%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E8%A1%A8%E7%A4%BA%E4%B8%AD-1-%E7%9A%84%E4%B8%AA%E6%95%B0"><span class="toc-text">13. 统计从 0 ~ n 每个数的二进制表示中 1 的个数</span></a></li></ol></div><div class="column is-9"><header class="my-4"></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle"></h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.701Z">2023-01-31</time><article class="mt-2 post-content"><hr>
+<p>title: Leetcode 题解 - 位运算<br>link: leetcode-weiyunsuan</p>
+<hr>
+<ul>
+<li><a href="#0-%E5%8E%9F%E7%90%86">0. 原理</a></li>
+<li><a href="#1-%E7%BB%9F%E8%AE%A1%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%9A%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E8%A1%A8%E7%A4%BA%E6%9C%89%E5%A4%9A%E5%B0%91%E4%BD%8D%E4%B8%8D%E5%90%8C">1. 统计两个数的二进制表示有多少位不同</a></li>
+<li><a href="#2-%E6%95%B0%E7%BB%84%E4%B8%AD%E5%94%AF%E4%B8%80%E4%B8%80%E4%B8%AA%E4%B8%8D%E9%87%8D%E5%A4%8D%E7%9A%84%E5%85%83%E7%B4%A0">2. 数组中唯一一个不重复的元素</a></li>
+<li><a href="#3-%E6%89%BE%E5%87%BA%E6%95%B0%E7%BB%84%E4%B8%AD%E7%BC%BA%E5%A4%B1%E7%9A%84%E9%82%A3%E4%B8%AA%E6%95%B0">3. 找出数组中缺失的那个数</a></li>
+<li><a href="#4-%E6%95%B0%E7%BB%84%E4%B8%AD%E4%B8%8D%E9%87%8D%E5%A4%8D%E7%9A%84%E4%B8%A4%E4%B8%AA%E5%85%83%E7%B4%A0">4. 数组中不重复的两个元素</a></li>
+<li><a href="#5-%E7%BF%BB%E8%BD%AC%E4%B8%80%E4%B8%AA%E6%95%B0%E7%9A%84%E6%AF%94%E7%89%B9%E4%BD%8D">5. 翻转一个数的比特位</a></li>
+<li><a href="#6-%E4%B8%8D%E7%94%A8%E9%A2%9D%E5%A4%96%E5%8F%98%E9%87%8F%E4%BA%A4%E6%8D%A2%E4%B8%A4%E4%B8%AA%E6%95%B4%E6%95%B0">6. 不用额外变量交换两个整数</a></li>
+<li><a href="#7-%E5%88%A4%E6%96%AD%E4%B8%80%E4%B8%AA%E6%95%B0%E6%98%AF%E4%B8%8D%E6%98%AF-2-%E7%9A%84-n-%E6%AC%A1%E6%96%B9">7. 判断一个数是不是 2 的 n 次方</a></li>
+<li><a href="#8--%E5%88%A4%E6%96%AD%E4%B8%80%E4%B8%AA%E6%95%B0%E6%98%AF%E4%B8%8D%E6%98%AF-4-%E7%9A%84-n-%E6%AC%A1%E6%96%B9">8.  判断一个数是不是 4 的 n 次方</a></li>
+<li><a href="#9-%E5%88%A4%E6%96%AD%E4%B8%80%E4%B8%AA%E6%95%B0%E7%9A%84%E4%BD%8D%E7%BA%A7%E8%A1%A8%E7%A4%BA%E6%98%AF%E5%90%A6%E4%B8%8D%E4%BC%9A%E5%87%BA%E7%8E%B0%E8%BF%9E%E7%BB%AD%E7%9A%84-0-%E5%92%8C-1">9. 判断一个数的位级表示是否不会出现连续的 0 和 1</a></li>
+<li><a href="#10-%E6%B1%82%E4%B8%80%E4%B8%AA%E6%95%B0%E7%9A%84%E8%A1%A5%E7%A0%81">10. 求一个数的补码</a></li>
+<li><a href="#11-%E5%AE%9E%E7%8E%B0%E6%95%B4%E6%95%B0%E7%9A%84%E5%8A%A0%E6%B3%95">11. 实现整数的加法</a></li>
+<li><a href="#12-%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%95%B0%E7%BB%84%E6%9C%80%E5%A4%A7%E4%B9%98%E7%A7%AF">12. 字符串数组最大乘积</a></li>
+<li><a href="#13-%E7%BB%9F%E8%AE%A1%E4%BB%8E-0-~-n-%E6%AF%8F%E4%B8%AA%E6%95%B0%E7%9A%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E8%A1%A8%E7%A4%BA%E4%B8%AD-1-%E7%9A%84%E4%B8%AA%E6%95%B0">13. 统计从 0 ~ n 每个数的二进制表示中 1 的个数</a></li>
+</ul>
+<h1 id="0-原理"><a href="#0-原理" class="headerlink" title="0. 原理"></a>0. 原理</h1><p><strong>基本原理</strong> </p>
+<p>0s 表示一串 0，1s 表示一串 1。</p>
+<pre><code>x ^ 0s = x      x &amp; 0s = 0      x | 0s = x
+x ^ 1s = ~x     x &amp; 1s = x      x | 1s = 1s
+x ^ x = 0       x &amp; x = x       x | x = x
+</code></pre>
+<p>利用 x ^ 1s = ~x 的特点，可以将一个数的位级表示翻转；利用 x ^ x = 0 的特点，可以将三个数中重复的两个数去除，只留下另一个数。</p>
+<pre><code>1^1^2 = 2
+</code></pre>
+<p>利用 x &amp; 0s = 0 和 x &amp; 1s = x 的特点，可以实现掩码操作。一个数 num 与 mask：00111100 进行位与操作，只保留 num 中与 mask 的 1 部分相对应的位。</p>
+<pre><code>01011011 &amp;
+00111100
+--------
+00011000
+</code></pre>
+<p>利用 x | 0s = x 和 x | 1s = 1s 的特点，可以实现设值操作。一个数 num 与 mask：00111100 进行位或操作，将 num 中与 mask 的 1 部分相对应的位都设置为 1。</p>
+<pre><code>01011011 |
+00111100
+--------
+01111111
+</code></pre>
+<p><strong>位与运算技巧</strong> </p>
+<p>n&amp;(n-1) 去除 n 的位级表示中最低的那一位 1。例如对于二进制表示 01011011，减去 1 得到 01011010，这两个数相与得到 01011010。</p>
+<pre><code>01011011 &amp;
+01011010
+--------
+01011010
+</code></pre>
+<p>n&amp;(-n) 得到 n 的位级表示中最低的那一位 1。-n 得到 n 的反码加 1，也就是 -n=~n+1。例如对于二进制表示 10110100，-n 得到 01001100，相与得到 00000100。</p>
+<pre><code>10110100 &amp;
+01001100
+--------
+00000100
+</code></pre>
+<p>n-(n&amp;(-n)) 则可以去除 n 的位级表示中最低的那一位 1，和 n&amp;(n-1) 效果一样。</p>
+<p><strong>移位运算</strong> </p>
+<p>&gt;&gt; n 为算术右移，相当于除以 2n，例如 -7 &gt;&gt; 2 = -2。</p>
+<pre><code>11111111111111111111111111111001  &gt;&gt; 2
+--------
+11111111111111111111111111111110
+</code></pre>
+<p>&gt;&gt;&gt; n 为无符号右移，左边会补上 0。例如 -7 &gt;&gt;&gt; 2 = 1073741822。</p>
+<pre><code>11111111111111111111111111111001  &gt;&gt;&gt; 2
+--------
+00111111111111111111111111111111
+</code></pre>
+<p>&lt;&lt; n 为算术左移，相当于乘以 2n。-7 &lt;&lt; 2 = -28。</p>
+<pre><code>11111111111111111111111111111001  &lt;&lt; 2
+--------
+11111111111111111111111111100100
+</code></pre>
+<p><strong>mask 计算</strong> </p>
+<p>要获取 111111111，将 0 取反即可，~0。</p>
+<p>要得到只有第 i 位为 1 的 mask，将 1 向左移动 i-1 位即可，1&lt;&lt;(i-1) 。例如 1&lt;&lt;4 得到只有第 5 位为 1 的 mask ：00010000。</p>
+<p>要得到 1 到 i 位为 1 的 mask，(1&lt;&lt;i)-1 即可，例如将 (1&lt;&lt;4)-1 = 00010000-1 = 00001111。</p>
+<p>要得到 1 到 i 位为 0 的 mask，只需将 1 到 i 位为 1 的 mask 取反，即 ~((1&lt;&lt;i)-1)。</p>
+<p><strong>Java 中的位操作</strong>  </p>
+<pre><code class="html">static int Integer.bitCount();           // 统计 1 的数量
+static int Integer.highestOneBit();      // 获得最高位
+static String toBinaryString(int i);     // 转换为二进制表示的字符串
+</code></pre>
+<h1 id="1-统计两个数的二进制表示有多少位不同"><a href="#1-统计两个数的二进制表示有多少位不同" class="headerlink" title="1. 统计两个数的二进制表示有多少位不同"></a>1. 统计两个数的二进制表示有多少位不同</h1><ol start="461">
+<li>Hamming Distance (Easy)</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/hamming-distance/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/hamming-distance/">力扣</a></p>
+<pre><code class="html">Input: x = 1, y = 4
+
+Output: 2
+
+Explanation:
+1   (0 0 0 1)
+4   (0 1 0 0)
+       ↑   ↑
+
+The above arrows point to positions where the corresponding bits are different.
+</code></pre>
+<p>对两个数进行异或操作，位级表示不同的那一位为 1，统计有多少个 1 即可。</p>
+<pre><code class="java">public int hammingDistance(int x, int y) &#123;
+    int z = x ^ y;
+    int cnt = 0;
+    while(z != 0) &#123;
+        if ((z &amp; 1) == 1) cnt++;
+        z = z &gt;&gt; 1;
+    &#125;
+    return cnt;
+&#125;
+</code></pre>
+<p>使用 z&amp;(z-1) 去除 z 位级表示最低的那一位。</p>
+<pre><code class="java">public int hammingDistance(int x, int y) &#123;
+    int z = x ^ y;
+    int cnt = 0;
+    while (z != 0) &#123;
+        z &amp;= (z - 1);
+        cnt++;
+    &#125;
+    return cnt;
+&#125;
+</code></pre>
+<p>可以使用 Integer.bitcount() 来统计 1 个的个数。</p>
+<pre><code class="java">public int hammingDistance(int x, int y) &#123;
+    return Integer.bitCount(x ^ y);
+&#125;
+</code></pre>
+<h1 id="2-数组中唯一一个不重复的元素"><a href="#2-数组中唯一一个不重复的元素" class="headerlink" title="2. 数组中唯一一个不重复的元素"></a>2. 数组中唯一一个不重复的元素</h1><p>136. Single Number (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/single-number/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/single-number/description/">力扣</a></p>
+<pre><code class="html">Input: [4,1,2,1,2]
+Output: 4
+</code></pre>
+<p>两个相同的数异或的结果为 0，对所有数进行异或操作，最后的结果就是单独出现的那个数。</p>
+<pre><code class="java">public int singleNumber(int[] nums) &#123;
+    int ret = 0;
+    for (int n : nums) ret = ret ^ n;
+    return ret;
+&#125;
+</code></pre>
+<h1 id="3-找出数组中缺失的那个数"><a href="#3-找出数组中缺失的那个数" class="headerlink" title="3. 找出数组中缺失的那个数"></a>3. 找出数组中缺失的那个数</h1><p>268. Missing Number (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/missing-number/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/missing-number/description/">力扣</a></p>
+<pre><code class="html">Input: [3,0,1]
+Output: 2
+</code></pre>
+<p>题目描述：数组元素在 0-n 之间，但是有一个数是缺失的，要求找到这个缺失的数。</p>
+<pre><code class="java">public int missingNumber(int[] nums) &#123;
+    int ret = 0;
+    for (int i = 0; i &lt; nums.length; i++) &#123;
+        ret = ret ^ i ^ nums[i];
+    &#125;
+    return ret ^ nums.length;
+&#125;
+</code></pre>
+<h1 id="4-数组中不重复的两个元素"><a href="#4-数组中不重复的两个元素" class="headerlink" title="4. 数组中不重复的两个元素"></a>4. 数组中不重复的两个元素</h1><p>260. Single Number III (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/single-number-iii/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/single-number-iii/description/">力扣</a></p>
+<p>两个不相等的元素在位级表示上必定会有一位存在不同。</p>
+<p>将数组的所有元素异或得到的结果为不存在重复的两个元素异或的结果。</p>
+<p>diff &amp;= -diff 得到出 diff 最右侧不为 0 的位，也就是不存在重复的两个元素在位级表示上最右侧不同的那一位，利用这一位就可以将两个元素区分开来。</p>
+<pre><code class="java">public int[] singleNumber(int[] nums) &#123;
+    int diff = 0;
+    for (int num : nums) diff ^= num;
+    diff &amp;= -diff;  // 得到最右一位
+    int[] ret = new int[2];
+    for (int num : nums) &#123;
+        if ((num &amp; diff) == 0) ret[0] ^= num;
+        else ret[1] ^= num;
+    &#125;
+    return ret;
+&#125;
+</code></pre>
+<h1 id="5-翻转一个数的比特位"><a href="#5-翻转一个数的比特位" class="headerlink" title="5. 翻转一个数的比特位"></a>5. 翻转一个数的比特位</h1><p>190. Reverse Bits (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/reverse-bits/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/reverse-bits/description/">力扣</a></p>
+<pre><code class="java">public int reverseBits(int n) &#123;
+    int ret = 0;
+    for (int i = 0; i &lt; 32; i++) &#123;
+        ret &lt;&lt;= 1;
+        ret |= (n &amp; 1);
+        n &gt;&gt;&gt;= 1;
+    &#125;
+    return ret;
+&#125;
+</code></pre>
+<p>如果该函数需要被调用很多次，可以将 int 拆成 4 个 byte，然后缓存 byte 对应的比特位翻转，最后再拼接起来。</p>
+<pre><code class="java">private static Map&lt;Byte, Integer&gt; cache = new HashMap&lt;&gt;();
+
+public int reverseBits(int n) &#123;
+    int ret = 0;
+    for (int i = 0; i &lt; 4; i++) &#123;
+        ret &lt;&lt;= 8;
+        ret |= reverseByte((byte) (n &amp; 0b11111111));
+        n &gt;&gt;= 8;
+    &#125;
+    return ret;
+&#125;
+
+private int reverseByte(byte b) &#123;
+    if (cache.containsKey(b)) return cache.get(b);
+    int ret = 0;
+    byte t = b;
+    for (int i = 0; i &lt; 8; i++) &#123;
+        ret &lt;&lt;= 1;
+        ret |= t &amp; 1;
+        t &gt;&gt;= 1;
+    &#125;
+    cache.put(b, ret);
+    return ret;
+&#125;
+</code></pre>
+<h1 id="6-不用额外变量交换两个整数"><a href="#6-不用额外变量交换两个整数" class="headerlink" title="6. 不用额外变量交换两个整数"></a>6. 不用额外变量交换两个整数</h1><p><a href="#">程序员代码面试指南 ：P317</a></p>
+<pre><code class="java">a = a ^ b;
+b = a ^ b;
+a = a ^ b;
+</code></pre>
+<h1 id="7-判断一个数是不是-2-的-n-次方"><a href="#7-判断一个数是不是-2-的-n-次方" class="headerlink" title="7. 判断一个数是不是 2 的 n 次方"></a>7. 判断一个数是不是 2 的 n 次方</h1><p>231. Power of Two (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/power-of-two/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/power-of-two/description/">力扣</a></p>
+<p>二进制表示只有一个 1 存在。</p>
+<pre><code class="java">public boolean isPowerOfTwo(int n) &#123;
+    return n &gt; 0 &amp;&amp; Integer.bitCount(n) == 1;
+&#125;
+</code></pre>
+<p>利用 1000 &amp; 0111 == 0 这种性质，得到以下解法：</p>
+<pre><code class="java">public boolean isPowerOfTwo(int n) &#123;
+    return n &gt; 0 &amp;&amp; (n &amp; (n - 1)) == 0;
+&#125;
+</code></pre>
+<h1 id="8-判断一个数是不是-4-的-n-次方"><a href="#8-判断一个数是不是-4-的-n-次方" class="headerlink" title="8.  判断一个数是不是 4 的 n 次方"></a>8.  判断一个数是不是 4 的 n 次方</h1><p>342. Power of Four (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/power-of-four/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/power-of-four/">力扣</a></p>
+<p>这种数在二进制表示中有且只有一个奇数位为 1，例如 16（10000）。</p>
+<pre><code class="java">public boolean isPowerOfFour(int num) &#123;
+    return num &gt; 0 &amp;&amp; (num &amp; (num - 1)) == 0 &amp;&amp; (num &amp; 0b01010101010101010101010101010101) != 0;
+&#125;
+</code></pre>
+<p>也可以使用正则表达式进行匹配。</p>
+<pre><code class="java">public boolean isPowerOfFour(int num) &#123;
+    return Integer.toString(num, 4).matches(&quot;10*&quot;);
+&#125;
+</code></pre>
+<h1 id="9-判断一个数的位级表示是否不会出现连续的-0-和-1"><a href="#9-判断一个数的位级表示是否不会出现连续的-0-和-1" class="headerlink" title="9. 判断一个数的位级表示是否不会出现连续的 0 和 1"></a>9. 判断一个数的位级表示是否不会出现连续的 0 和 1</h1><p>693. Binary Number with Alternating Bits (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/binary-number-with-alternating-bits/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/binary-number-with-alternating-bits/description/">力扣</a></p>
+<pre><code class="html">Input: 10
+Output: True
+Explanation:
+The binary representation of 10 is: 1010.
+
+Input: 11
+Output: False
+Explanation:
+The binary representation of 11 is: 1011.
+</code></pre>
+<p>对于 1010 这种位级表示的数，把它向右移动 1 位得到 101，这两个数每个位都不同，因此异或得到的结果为 1111。</p>
+<pre><code class="java">public boolean hasAlternatingBits(int n) &#123;
+    int a = (n ^ (n &gt;&gt; 1));
+    return (a &amp; (a + 1)) == 0;
+&#125;
+</code></pre>
+<h1 id="10-求一个数的补码"><a href="#10-求一个数的补码" class="headerlink" title="10. 求一个数的补码"></a>10. 求一个数的补码</h1><p>476. Number Complement (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/number-complement/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/number-complement/description/">力扣</a></p>
+<pre><code class="html">Input: 5
+Output: 2
+Explanation: The binary representation of 5 is 101 (no leading zero bits), and its complement is 010. So you need to output 2.
+</code></pre>
+<p>题目描述：不考虑二进制表示中的首 0 部分。</p>
+<p>对于 00000101，要求补码可以将它与 00000111 进行异或操作。那么问题就转换为求掩码 00000111。</p>
+<pre><code class="java">public int findComplement(int num) &#123;
+    if (num == 0) return 1;
+    int mask = 1 &lt;&lt; 30;
+    while ((num &amp; mask) == 0) mask &gt;&gt;= 1;
+    mask = (mask &lt;&lt; 1) - 1;
+    return num ^ mask;
+&#125;
+</code></pre>
+<p>可以利用 Java 的 Integer.highestOneBit() 方法来获得含有首 1 的数。</p>
+<pre><code class="java">public int findComplement(int num) &#123;
+    if (num == 0) return 1;
+    int mask = Integer.highestOneBit(num);
+    mask = (mask &lt;&lt; 1) - 1;
+    return num ^ mask;
+&#125;
+</code></pre>
+<p>对于 10000000 这样的数要扩展成 11111111，可以利用以下方法：</p>
+<pre><code class="html">mask |= mask &gt;&gt; 1    11000000
+mask |= mask &gt;&gt; 2    11110000
+mask |= mask &gt;&gt; 4    11111111
+</code></pre>
+<pre><code class="java">public int findComplement(int num) &#123;
+    int mask = num;
+    mask |= mask &gt;&gt; 1;
+    mask |= mask &gt;&gt; 2;
+    mask |= mask &gt;&gt; 4;
+    mask |= mask &gt;&gt; 8;
+    mask |= mask &gt;&gt; 16;
+    return (mask ^ num);
+&#125;
+</code></pre>
+<h1 id="11-实现整数的加法"><a href="#11-实现整数的加法" class="headerlink" title="11. 实现整数的加法"></a>11. 实现整数的加法</h1><p>371. Sum of Two Integers (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/sum-of-two-integers/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/sum-of-two-integers/description/">力扣</a></p>
+<p>a ^ b 表示没有考虑进位的情况下两数的和，(a &amp; b) &lt;&lt; 1 就是进位。</p>
+<p>递归会终止的原因是 (a &amp; b) &lt;&lt; 1 最右边会多一个 0，那么继续递归，进位最右边的 0 会慢慢增多，最后进位会变为 0，递归终止。</p>
+<pre><code class="java">public int getSum(int a, int b) &#123;
+    return b == 0 ? a : getSum((a ^ b), (a &amp; b) &lt;&lt; 1);
+&#125;
+</code></pre>
+<h1 id="12-字符串数组最大乘积"><a href="#12-字符串数组最大乘积" class="headerlink" title="12. 字符串数组最大乘积"></a>12. 字符串数组最大乘积</h1><p>318. Maximum Product of Word Lengths (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/maximum-product-of-word-lengths/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/maximum-product-of-word-lengths/description/">力扣</a></p>
+<pre><code class="html">Given [&quot;abcw&quot;, &quot;baz&quot;, &quot;foo&quot;, &quot;bar&quot;, &quot;xtfn&quot;, &quot;abcdef&quot;]
+Return 16
+The two words can be &quot;abcw&quot;, &quot;xtfn&quot;.
+</code></pre>
+<p>题目描述：字符串数组的字符串只含有小写字符。求解字符串数组中两个字符串长度的最大乘积，要求这两个字符串不能含有相同字符。</p>
+<p>本题主要问题是判断两个字符串是否含相同字符，由于字符串只含有小写字符，总共 26 位，因此可以用一个 32 位的整数来存储每个字符是否出现过。</p>
+<pre><code class="java">public int maxProduct(String[] words) &#123;
+    int n = words.length;
+    int[] val = new int[n];
+    for (int i = 0; i &lt; n; i++) &#123;
+        for (char c : words[i].toCharArray()) &#123;
+            val[i] |= 1 &lt;&lt; (c - &#39;a&#39;);
+        &#125;
+    &#125;
+    int ret = 0;
+    for (int i = 0; i &lt; n; i++) &#123;
+        for (int j = i + 1; j &lt; n; j++) &#123;
+            if ((val[i] &amp; val[j]) == 0) &#123;
+                ret = Math.max(ret, words[i].length() * words[j].length());
+            &#125;
+        &#125;
+    &#125;
+    return ret;
+&#125;
+</code></pre>
+<h1 id="13-统计从-0-n-每个数的二进制表示中-1-的个数"><a href="#13-统计从-0-n-每个数的二进制表示中-1-的个数" class="headerlink" title="13. 统计从 0 ~ n 每个数的二进制表示中 1 的个数"></a>13. 统计从 0 ~ n 每个数的二进制表示中 1 的个数</h1><p>338. Counting Bits (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/counting-bits/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/counting-bits/description/">力扣</a></p>
+<p>对于数字 6(110)，它可以看成是 4(100) 再加一个 2(10)，因此 dp[i] = dp[i&amp;(i-1)] + 1;</p>
+<pre><code class="java">public int[] countBits(int num) &#123;
+    int[] ret = new int[num + 1];
+    for(int i = 1; i &lt;= num; i++)&#123;
+        ret[i] = ret[i&amp;(i-1)] + 1;
+    &#125;
+    return ret;
+&#125;
+</code></pre>
+<div align="center"><img width="320px" src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/githubio/公众号二维码-2.png"></img></div>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

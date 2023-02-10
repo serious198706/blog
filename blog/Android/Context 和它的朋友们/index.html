@@ -1,0 +1,423 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="在 Android 开发中，最常打交道的就是 Context 了，我们创建 View/ViewGroup 要使用 Context；启动 Activity 需要 Context；新建 Service 需要 Context；哪怕是插件化、组件化开发中，最麻烦的部分也是使用 Context。
+那么，既然这个东西这么重要，我们这篇文章就来说说 Context 与它的朋友们。
+
+
+Context 介绍Context 在英文中的意思是『上下文』，但在 Android 系统中，我更愿意将其称之为『执行环境』。比如创建 View/ViewGroup，我传入 Context，意在告诉 View/ViewGroup，你当前是在什么环境下被创建的，包括你在哪个进程里，包名是啥，pid 是啥，线程 tid 是啥，等等等等。如果没有.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Context 和它的朋友们</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Context-%E4%BB%8B%E7%BB%8D"><span class="toc-text">Context 介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Context-%E7%B1%BB%E4%B8%8E%E7%9B%B8%E5%85%B3%E7%B1%BB"><span class="toc-text">Context 类与相关类</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Context"><span class="toc-text">Context</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ContextWrapper"><span class="toc-text">ContextWrapper</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Application"><span class="toc-text">Application</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ContextThemeWrapper"><span class="toc-text">ContextThemeWrapper</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Activity"><span class="toc-text">Activity</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ContextImpl"><span class="toc-text">ContextImpl</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#getContext-%E5%92%8C-getApplicationContext"><span class="toc-text">getContext() 和 getApplicationContext()</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Application-%E4%B8%AD-ContextImpl-%E7%9A%84%E5%88%9B%E5%BB%BA%E8%BF%87%E7%A8%8B"><span class="toc-text">Application 中 ContextImpl 的创建过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Activity-%E4%B8%AD-ContextImpl-%E7%9A%84%E5%88%9B%E5%BB%BA%E8%BF%87%E7%A8%8B"><span class="toc-text">Activity 中 ContextImpl 的创建过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FAQ"><span class="toc-text">FAQ</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/Context"><i class="tag post-item-tag">Context</i></a><a href="/tags/Android%20Framework%5D"><i class="tag post-item-tag">Android Framework]</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">Context 和它的朋友们</h1><time class="has-text-grey" datetime="2020-03-23T16:00:00.000Z">2020-03-24</time><article class="mt-2 post-content"><p>在 Android 开发中，最常打交道的就是 Context 了，我们创建 View/ViewGroup 要使用 Context；启动 Activity 需要 Context；新建 Service 需要 Context；哪怕是插件化、组件化开发中，最麻烦的部分也是使用 Context。</p>
+<p>那么，既然这个东西这么重要，我们这篇文章就来说说 Context 与它的朋友们。</p>
+<span id="more"></span>
+
+<h2 id="Context-介绍"><a href="#Context-介绍" class="headerlink" title="Context 介绍"></a>Context 介绍</h2><p>Context 在英文中的意思是『上下文』，但在 Android 系统中，我更愿意将其称之为『执行环境』。比如创建 View/ViewGroup，我传入 Context，意在告诉 View/ViewGroup，你当前是在什么环境下被创建的，包括你在哪个进程里，包名是啥，pid 是啥，线程 tid 是啥，等等等等。如果没有这个 Context，被创建的 View/ViewGroup 也会发出灵魂三问：我是谁？我在哪儿？我要干什么？<img src="http://img.doutula.com/production/uploads/image/2016/05/22/20160522875204_LXZYPF.jpg" style="width: 120px"></img></p>
+<p>大名鼎鼎的 Activity、Service 都是 Context 的派生类。如果有人有一天问你：Activity 为啥不是直接继承自 Context 的？ContextWrapper 是个啥？ContextImpl 又是个啥？Activity 的 Context 和 Application 的 Context 有啥区别？又有啥相同的地方？我希望你能自信地用这篇文章砸到他脸上，然后说：自己看！！！</p>
+<h2 id="Context-类与相关类"><a href="#Context-类与相关类" class="headerlink" title="Context 类与相关类"></a>Context 类与相关类</h2><p>本人倾情手绘，展示了 Context 相关的类图，请上眼：</p>
+<p><img src="/img/context-1589184230.png"></p>
+<p>？？？不好意思，放错图了，是这个：</p>
+<p><img src="/img/context-1589184470.png"></p>
+<p>我们由上自下来讲讲这些类。</p>
+<h3 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h3><p>我们先来看看 Android 源码中对于 Context 的定义：</p>
+<blockquote>
+<p>Interface to global information about an application environment.  This is an abstract class whose implementation is provided by the Android system.  It allows access to application-specific resources and classes, as well as up-calls for application-level operations such as launching activities, broadcasting and receiving intents, etc.</p>
+</blockquote>
+<p>大意是 Context 是一个为 App 运行<strong>提供全局信息的接口</strong>（是广义上的接口，不是 interface）。这是一个抽象类，其具体实例由 Android 系统提供。它允许你访问一些 App 指定的资源和类，还有执行一些应用级别的操作比如启动 Activity 啦，广播啦，获取 intent 啦，等等。</p>
+<p>它提供了很多方法，比较常用的有<code>getApplicationContext()</code>，<code>getAssets()</code>，<code>getString(int)</code>，<code>startActivity()</code>，<code>startService()</code>，<code>sendBroadcast()</code>等等等等。</p>
+<p>那么由上面的定义我们知道，Context 是个抽象类，这些方法具体是由谁来实现的？又是何时初始化的？这里我们需要介绍下一个类—— ContextWrapper。</p>
+<h3 id="ContextWrapper"><a href="#ContextWrapper" class="headerlink" title="ContextWrapper"></a>ContextWrapper</h3><p>如果没听过『装饰器模式』的话，可以看一下这一小段，如果你已经熟知『装饰器模式』，则可以温故而知新。</p>
+<p>所谓『装饰器模式』，即给现有的对象提供新的功能，同时又不改变其结构。这种设计模式属性结构型设计，相当于对现有类的一个包装。</p>
+<p>听起来是不是有点像代理？对！与代理十分类似，都是在原有类的基础上对其进行拓展，以达到我们的目的。</p>
+<p>也有人问了，我继承不就完了，干嘛还要使用什么装饰器模式？我们要知道，Java 是单继承，如果你多级包装，子类会越来越多，层级越来越深，而利用装饰器模式则可以优雅解决这个问题。它<strong>动态地给一个对象添加一些额外的职责</strong>。就增加功能来说，装饰器模式相比继承<strong>更为灵活</strong>。</p>
+<p>ContexWrapper 是在何处使用的装饰器模式呢？我们来看看源码：</p>
+<pre><code class="java">public class ContextWrapper extends Context &#123;
+    Context mBase;
+
+    public ContextWrapper(Context base) &#123;
+        mBase = base;
+    &#125;
+</code></pre>
+<p>看到没有，ContextWrapper 中包含了一个 Context 的实例，在后续的方法调用中，全部都会调用<code>mBase.xxx()</code>方法来完成任务：</p>
+<pre><code class="java">@Override
+public String getPackageName() &#123;
+    return mBase.getPackageName();
+&#125;
+
+@Override
+public SharedPreferences getSharedPreferences(String name, int mode) &#123;
+    return mBase.getSharedPreferences(name, mode);
+&#125;
+
+@Override
+public Resources getResources() &#123;
+    return mBase.getResources();
+    &#125;
+</code></pre>
+<p>而 Activity、Application、Service 等，则是 ContexWrapper 的具体装饰者，每个人都有每个人的特点。</p>
+<p>在上面的代码中，我们看到，ContextWrapper 中有 Context 类型的对象<code>mBase</code>，这个对象是在何时被传进来的呢？</p>
+<h3 id="Application"><a href="#Application" class="headerlink" title="Application"></a>Application</h3><p>我们以 Application 为例，查看它调用<code>attachBaseContext()</code>的位置：</p>
+<pre><code class="java">// android.app.Application.java
+
+@UnsupportedAppUsage
+final void attach(Context context) &#123;
+    attachBaseContext(context);
+    mLoadedApk = ContextImpl.getImpl(context).mPackageInfo;
+&#125;
+</code></pre>
+<p>我们继续向上找，看谁调用了<code>Application.attach()</code>：</p>
+<pre><code class="java">// android.app.Instrumentation.java
+
+static public Application newApplication(Class&lt;?&gt; clazz, Context context)
+        throws InstantiationException, IllegalAccessException, 
+        ClassNotFoundException &#123;
+    Application app = (Application)clazz.newInstance();
+    app.attach(context);
+    return app;
+&#125;
+</code></pre>
+<p>这里是使用反射机制获取了 Application 的 class，并新建了实例。那么，继续向上走：</p>
+<pre><code class="java">// android.app.LoadedApk.java
+
+public Application makeApplication(boolean forceDefaultAppClass,
+        Instrumentation instrumentation) &#123;
+    if (mApplication != null) &#123;
+        return mApplication;
+    &#125;
+
+    Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, &quot;makeApplication&quot;);
+
+    Application app = null;
+
+    String appClass = mApplicationInfo.className;
+    if (forceDefaultAppClass || (appClass == null)) &#123;
+        appClass = &quot;android.app.Application&quot;;
+    &#125;
+
+    try &#123;
+        java.lang.ClassLoader cl = getClassLoader();
+        if (!mPackageName.equals(&quot;android&quot;)) &#123;
+            Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER,
+                    &quot;initializeJavaContextClassLoader&quot;);
+            initializeJavaContextClassLoader();
+            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+        &#125;
+        ContextImpl appContext = ContextImpl.createAppContext(mActivityThread, this); // 1
+        app = mActivityThread.mInstrumentation.newApplication( 
+                cl, appClass, appContext);   // 2
+        appContext.setOuterContext(app);
+    &#125; catch (Exception e) &#123;
+        if (!mActivityThread.mInstrumentation.onException(app, e)) &#123;
+            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+            throw new RuntimeException(
+                &quot;Unable to instantiate application &quot; + appClass
+                + &quot;: &quot; + e.toString(), e);
+        &#125;
+    &#125;
+    mActivityThread.mAllApplications.add(app);
+    mApplication = app;
+
+    if (instrumentation != null) &#123;
+        try &#123;
+            instrumentation.callApplicationOnCreate(app);  // 3
+        &#125; catch (Exception e) &#123;
+            if (!instrumentation.onException(app, e)) &#123;
+                Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+                throw new RuntimeException(
+                    &quot;Unable to create application &quot; + app.getClass().getName()
+                    + &quot;: &quot; + e.toString(), e);
+            &#125;
+        &#125;
+    &#125;
+
+    // Rewrite the R &#39;constants&#39; for all library apks.
+    SparseArray&lt;String&gt; packageIdentifiers = getAssets().getAssignedPackageIdentifiers();
+    final int N = packageIdentifiers.size();
+    for (int i = 0; i &lt; N; i++) &#123;
+        final int id = packageIdentifiers.keyAt(i);
+        if (id == 0x01 || id == 0x7f) &#123;
+            continue;
+        &#125;
+
+        rewriteRValues(getClassLoader(), packageIdentifiers.valueAt(i), id);
+    &#125;
+
+    Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+
+    return app;
+&#125;
+</code></pre>
+<p>可以看到，在这段代码中，主要做了三件事：</p>
+<ol>
+<li>使用<code>ContextImpl.createAppContext()</code>创建了 ContextImpl 的实例</li>
+<li>将 ContextImpl 的实例塞给了 Application </li>
+<li>调用了<code>Application.onCreate()</code>生命周期方法</li>
+</ol>
+<p>那么至此，我们知道了，Application 中的<code>mBase</code>，实际上是 ContextImpl 的实例。这与上面的装饰器模式是不冲突的。</p>
+<h3 id="ContextThemeWrapper"><a href="#ContextThemeWrapper" class="headerlink" title="ContextThemeWrapper"></a>ContextThemeWrapper</h3><p>Activity 直接继承自 ContextThemeWrapper，它是 ContextWrapper 的一个拓展类，里面包含了<strong>主题相关的变量</strong>：</p>
+<pre><code class="java">public class ContextThemeWrapper extends ContextWrapper &#123;
+    private int mThemeResource;
+    private Resources.Theme mTheme;
+    private LayoutInflater mInflater;
+    private Configuration mOverrideConfiguration;
+    private Resources mResources;
+&#125;
+</code></pre>
+<p>Application 和 Service 都是继承自 ContextWrapper，里面没有包含主题相关的变量，所以，<strong>只有 Activity 能够使用主题资源</strong>。</p>
+<h3 id="Activity"><a href="#Activity" class="headerlink" title="Activity"></a>Activity</h3><p>对于 Activity，我们也必须分析一下：</p>
+<p>Activity 中的<code>attachBaseContext()</code>如下：</p>
+<pre><code class="java">@Override
+protected void attachBaseContext(Context newBase) &#123;
+    super.attachBaseContext(newBase);
+    if (newBase != null) &#123;
+        newBase.setAutofillClient(this);
+        newBase.setContentCaptureOptions(getContentCaptureOptions());
+    &#125;
+&#125;
+</code></pre>
+<p>而这个方法是在 Activity 创建过程中的重要方法<code>attach()</code>中调用的：</p>
+<pre><code class="java">final void attach(Context context, ActivityThread aThread,
+            Instrumentation instr, IBinder token, int ident,
+            Application application, Intent intent, ActivityInfo info,
+            CharSequence title, Activity parent, String id,
+            NonConfigurationInstances lastNonConfigurationInstances,
+            Configuration config, String referrer, IVoiceInteractor voiceInteractor,
+            Window window, ActivityConfigCallback activityConfigCallback, IBinder assistToken) &#123;
+        attachBaseContext(context);
+        ...
+&#125;
+</code></pre>
+<p>这个方法又是在 ActivityThread 中被调用：</p>
+<pre><code class="java">private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) &#123;
+    ...
+    ContextImpl appContext = createBaseContextForActivity(r);  // 1
+    Activity activity = null;
+    try &#123;
+        java.lang.ClassLoader cl = appContext.getClassLoader();
+        activity = mInstrumentation.newActivity(
+                cl, component.getClassName(), r.intent);  // 2
+        StrictMode.incrementExpectedActivityCount(activity.getClass());
+        r.intent.setExtrasClassLoader(cl);
+        r.intent.prepareToEnterProcess();
+        if (r.state != null) &#123;
+            r.state.setClassLoader(cl);
+        &#125;
+    &#125; catch (Exception e) &#123;
+        if (!mInstrumentation.onException(activity, e)) &#123;
+            throw new RuntimeException(
+                &quot;Unable to instantiate activity &quot; + component
+                + &quot;: &quot; + e.toString(), e);
+        &#125;
+    &#125;
+    ...
+    activity.attach(appContext, this, getInstrumentation(), r.token,
+                    r.ident, app, r.intent, r.activityInfo, title, r.parent,
+                    r.embeddedID, r.lastNonConfigurationInstances, config,
+                    r.referrer, r.voiceInteractor, window, r.configCallback,
+                    r.assistToken);  // 3
+    ...
+    if (r.isPersistable()) &#123;
+        mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState); // 4
+    &#125; else &#123;
+        mInstrumentation.callActivityOnCreate(activity, r.state); // 4
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p>这段代码大体分为4步：</p>
+<ol>
+<li>使用<code>createBaseContextForActivity()</code>方法创建 ContextImpl 实例</li>
+<li>创建 Activity 实例</li>
+<li>调用<code>Activity.attach()</code>将 ContextImpl 实例赋值到 Activity 的<code>mBase</code>成员变量中</li>
+<li>调用<code>Activity.onCreate()</code>生命周期方法</li>
+</ol>
+<h3 id="ContextImpl"><a href="#ContextImpl" class="headerlink" title="ContextImpl"></a>ContextImpl</h3><p>我们在上面知道了 ContextWrapper 中包装的这个 Context 对象，都是 ContextImpl 的实例，那这个类到底为什么如此手眼通天？我们来看看这个类。</p>
+<p>这个类其实就是 Context 抽象类的<strong>具体实现</strong>，与资源、系统服务的通信，全部靠这个类。说这个类对于开发者来说是最重要的类，也不并不过分。它将我们上面提到的诸如<code>startActivity()</code>、<code>getAssets()</code>、<code>getResources()</code>之类的方法都实现了，我们来看看它的部分代码：</p>
+<pre><code class="java">// android.app.ContextImpl.java
+
+class ContextImpl extends Context &#123;
+    ...
+    // 我们获取的 SharedPreference，来自于这儿，具体实现看来是 SharedPreferencesImpl 类，这里不多分析
+    private static ArrayMap&lt;String, ArrayMap&lt;File, SharedPreferencesImpl&gt;&gt; sSharedPrefsCache;
+    ...
+    final @NonNull ActivityThread mMainThread;  // 主线程
+    final @NonNull LoadedApk mPackageInfo;  // Apk 信息，包含包名、版本号等信息
+    private @Nullable ClassLoader mClassLoader;  // 加载 ContextImpl 类时使用的 ClassLoader
+    ...
+    private @NonNull Resources mResources;  // getResources() 拿到的对象
+    ...
+    private Context mOuterContext;   // 持有着外部 Context 的引用，也即 ContextWrapper 的实例
+    ...
+    private PackageManager mPackageManager;
+    ...
+    private final Object mSync = new Object();
+    ...
+    // 几个常用的路径
+    @GuardedBy(&quot;mSync&quot;)
+    private File mDatabasesDir;
+    @GuardedBy(&quot;mSync&quot;)
+    @UnsupportedAppUsage
+    private File mPreferencesDir;
+    @GuardedBy(&quot;mSync&quot;)
+    private File mFilesDir;
+    @GuardedBy(&quot;mSync&quot;)
+    private File mNoBackupFilesDir;
+    @GuardedBy(&quot;mSync&quot;)
+    private File mCacheDir;
+    @GuardedBy(&quot;mSync&quot;)
+    private File mCodeCacheDir;
+
+    ...
+    @Override
+    public Context getApplicationContext() &#123;
+        return (mPackageInfo != null) ?
+                mPackageInfo.getApplication() : mMainThread.getApplication();
+    &#125;
+    ...
+    @Override
+    public String getPackageName() &#123;
+        if (mPackageInfo != null) &#123;
+            return mPackageInfo.getPackageName();
+        &#125;
+        // No mPackageInfo means this is a Context for the system itself,
+        // and this here is its name.
+        return &quot;android&quot;;
+    &#125;
+    ...
+    @Override
+    public void startActivity(Intent intent, Bundle options) &#123;
+        warnIfCallingFromSystemProcess();
+
+        // Calling start activity from outside an activity without FLAG_ACTIVITY_NEW_TASK is
+        // generally not allowed, except if the caller specifies the task id the activity should
+        // be launched in. A bug was existed between N and O-MR1 which allowed this to work. We
+        // maintain this for backwards compatibility.
+        final int targetSdkVersion = getApplicationInfo().targetSdkVersion;
+
+        if ((intent.getFlags() &amp; Intent.FLAG_ACTIVITY_NEW_TASK) == 0
+                &amp;&amp; (targetSdkVersion &lt; Build.VERSION_CODES.N
+                        || targetSdkVersion &gt;= Build.VERSION_CODES.P)
+                &amp;&amp; (options == null
+                        || ActivityOptions.fromBundle(options).getLaunchTaskId() == -1)) &#123;
+            throw new AndroidRuntimeException(
+                    &quot;Calling startActivity() from outside of an Activity &quot;
+                            + &quot; context requires the FLAG_ACTIVITY_NEW_TASK flag.&quot;
+                            + &quot; Is this really what you want?&quot;);
+        &#125;
+        mMainThread.getInstrumentation().execStartActivity(
+                getOuterContext(), mMainThread.getApplicationThread(), null,
+                (Activity) null, intent, -1, options);
+    &#125;
+    ...
+    @Override
+    public void sendBroadcast(Intent intent) &#123;
+        warnIfCallingFromSystemProcess();
+        String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
+        try &#123;
+            intent.prepareToLeaveProcess(this);
+            ActivityManager.getService().broadcastIntent(
+                    mMainThread.getApplicationThread(), intent, resolvedType, null,
+                    Activity.RESULT_OK, null, null, null, AppOpsManager.OP_NONE, null, false, false,
+                    getUserId());
+        &#125; catch (RemoteException e) &#123;
+            throw e.rethrowFromSystemServer();
+        &#125;
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p>还有很多，就不一一贴出了。</p>
+<p>由这些代码我们现在能知道，我们知道，当我们使用 Context 中的方法时，真正的实现全部都在这里。当然，再具体的工作比如创建新的 Activity 实例，还得交由 ActivityThread 去做，暂且不表。</p>
+<h2 id="getContext-和-getApplicationContext"><a href="#getContext-和-getApplicationContext" class="headerlink" title="getContext() 和 getApplicationContext()"></a>getContext() 和 getApplicationContext()</h2><p>这两个方法似乎在 Activity 和 Application 中都能调用。那他们是同一个对象吗？有什么不同呢？</p>
+<p>由上面 <a href="#application">Application</a> 和 <a href="#activity">Activity</a> 部分我们知道，塞给 Application 和 Activity 的，是<code>new</code>了两次的 ContextImpl 实例，它们显然<strong>不是同一个对象</strong>。</p>
+<p>那他们的区别在哪？先从高一点的层面来说，Application Context 显然无论你在哪儿调用，<strong>获取的都是同一个 ContextImpl 实例</strong>；但 Activity Context 获取的只能是<strong>当前 Activity 的 ContextImpl 实例</strong>，这样一来，一下子就能区分两种 Context 的使用场景。</p>
+<p>如果从底层的角度呢，我们就要分别看看这两个 ContextImpl 创建的过程。在此之前，我先上一段 ContextImpl 的构造函数，方便下面进行对比：</p>
+<pre><code class="java">private ContextImpl(@Nullable ContextImpl container, @NonNull ActivityThread mainThread,
+        @NonNull LoadedApk packageInfo, @Nullable String splitName,
+        @Nullable IBinder activityToken, @Nullable UserHandle user, int flags,
+        @Nullable ClassLoader classLoader, @Nullable String overrideOpPackageName) &#123;
+    ...
+&#125;
+</code></pre>
+<h3 id="Application-中-ContextImpl-的创建过程"><a href="#Application-中-ContextImpl-的创建过程" class="headerlink" title="Application 中 ContextImpl 的创建过程"></a>Application 中 ContextImpl 的创建过程</h3><pre><code class="java">static ContextImpl createAppContext(ActivityThread mainThread, LoadedApk packageInfo,
+        String opPackageName) &#123;
+    if (packageInfo == null) throw new IllegalArgumentException(&quot;packageInfo&quot;);
+    ContextImpl context = new ContextImpl(null, mainThread, packageInfo, null, null, null, 0,
+            null, opPackageName);
+    context.setResources(packageInfo.getResources());
+    return context;
+&#125;
+</code></pre>
+<p>可以看到，平淡无奇地调用了 ContextImpl 的构造函数，平淡无奇地给它塞了个 resource，就平淡无奇地返回了。这也就意味着，使用 Application Context 可以获取上下文中所有的基本信息，包括 PackageName、Resources 等。</p>
+<h3 id="Activity-中-ContextImpl-的创建过程"><a href="#Activity-中-ContextImpl-的创建过程" class="headerlink" title="Activity 中 ContextImpl 的创建过程"></a>Activity 中 ContextImpl 的创建过程</h3><pre><code class="java">    static ContextImpl createActivityContext(ActivityThread mainThread,
+            LoadedApk packageInfo, ActivityInfo activityInfo, IBinder activityToken, int displayId,
+            Configuration overrideConfiguration) &#123;
+        if (packageInfo == null) throw new IllegalArgumentException(&quot;packageInfo&quot;);
+
+        String[] splitDirs = packageInfo.getSplitResDirs();
+        ClassLoader classLoader = packageInfo.getClassLoader();
+
+        if (packageInfo.getApplicationInfo().requestsIsolatedSplitLoading()) &#123;
+            Trace.traceBegin(Trace.TRACE_TAG_RESOURCES, &quot;SplitDependencies&quot;);
+            try &#123;
+                classLoader = packageInfo.getSplitClassLoader(activityInfo.splitName);
+                splitDirs = packageInfo.getSplitPaths(activityInfo.splitName);
+            &#125; catch (NameNotFoundException e) &#123;
+                // Nothing above us can handle a NameNotFoundException, better crash.
+                throw new RuntimeException(e);
+            &#125; finally &#123;
+                Trace.traceEnd(Trace.TRACE_TAG_RESOURCES);
+            &#125;
+        &#125;
+
+        ContextImpl context = new ContextImpl(null, mainThread, packageInfo, activityInfo.splitName,
+                activityToken, null, 0, classLoader, null);
+
+        // Clamp display ID to DEFAULT_DISPLAY if it is INVALID_DISPLAY.
+        displayId = (displayId != Display.INVALID_DISPLAY) ? displayId : Display.DEFAULT_DISPLAY;
+
+        final CompatibilityInfo compatInfo = (displayId == Display.DEFAULT_DISPLAY)
+                ? packageInfo.getCompatibilityInfo()
+                : CompatibilityInfo.DEFAULT_COMPATIBILITY_INFO;
+
+        final ResourcesManager resourcesManager = ResourcesManager.getInstance();
+
+        // Create the base resources for which all configuration contexts for this Activity
+        // will be rebased upon.
+        context.setResources(resourcesManager.createBaseActivityResources(activityToken,
+                packageInfo.getResDir(),
+                splitDirs,
+                packageInfo.getOverlayDirs(),
+                packageInfo.getApplicationInfo().sharedLibraryFiles,
+                displayId,
+                overrideConfiguration,
+                compatInfo,
+                classLoader));
+        context.mDisplay = resourcesManager.getAdjustedDisplay(displayId,
+                context.getResources());
+        return context;
+    &#125;
+</code></pre>
+<p>嗯。。明显不一样。一眼就能看出，Activity 的 Context 明显是用心的了好吗！！它里面会有一些与 Display 相关的信息，而 Application 的 Context 则没有。</p>
+<h2 id="FAQ"><a href="#FAQ" class="headerlink" title="FAQ"></a>FAQ</h2><ol>
+<li><p>似乎还有个<code>getApplication()</code>方法啊？这是个什么鬼？它跟<code>getApplicationContext()</code>有什么区别？</p>
+<p>我们先看一下这两个方法获取的是不是同一个对象：</p>
+<pre><code class="java">Context a = getApplication();
+Context b = getApplicationContext();
+
+System.out.println(a);
+System.out.println(b);
+</code></pre>
+<p> 输出如下：</p>
+<pre><code>I/System.out: android.app.Application@206b17e
+I/System.out: android.app.Application@206b17e
+</code></pre>
+<p> 看来他们是同一个对象。那么 Android 为何要设计这两种方法，来获取同一个对象呢？我反正是没想明白。我觉得这很有可能是有什么历史原因造成的。虽然目前看来他们返回的是同一个对象，我们也不敢保证将来也会是这样。</p>
+<p> 如果你想要获取在 Mainfest 中注册的那个 Application，你绝对不要调用 getApplicationContext() 然后强转成你的 Application，它俩并不是同一个实例。这也就意味着一件事，如果你在使用 BroadcastReceiver 时，虽然它不是一个 Context 对象，但在它的<code>onReceive()</code>方法中你能拿到 Context，你也只能调用<code>getApplicationContext()</code>方法。</p>
+<p> 若想知道为什么两个是同一个实例，看<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/5328b73bb5e1">这篇文章</a>。</p>
+</li>
+<li><p>我们知道，四大组件中也会有 Context 出现（虽然 BroadcastReceiver、Service、ContentProvider 的 Context 是手动塞进去的），那么它们都能做些什么？</p>
+<p> 来张表你就知道了（做成了图片，表会溢出，比较难看）：</p>
+<p> <img src="/img/context-1589205829.png"></p>
+<p> <strong>标注1</strong>：这几种情况下其实也能启动 Activity，但是必须要加上<code>FLAG_ACTIVITY_NEW_TASK</code>标识位，否则会抛出异常。但这种情况下启动 Activity 会让应用看起来『不那么正常』，所以尽量还是避免使用。<br> <strong>标注2</strong>：这几种情况下能正常渲染 Layout，但是使用的是 Android 的默认主题，与系统定义的主题无关了。<br> <strong>标注3</strong>：如果 receiver 是 null 时，可以使用，用于在 Android 4.2 及以上时获取 Sticky Broadcast 的 value。</p>
+</li>
+<li><p><code>getBaseContext()</code>有什么用？</p>
+<p>如果你想在一个 Context 中访问另一个 Context 时使用。</p>
+</li>
+</ol>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/Android/Glide%20%E8%AF%A6%E8%A7%A3/" title="关于 Glide 的一切"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: 关于 Glide 的一切</span></a><a class="button is-default" href="/Android/Binder/" title="关于Binder的一切"><span class="has-text-weight-semibold">Next: 关于Binder的一切</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

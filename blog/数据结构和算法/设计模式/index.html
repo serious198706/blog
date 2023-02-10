@@ -1,0 +1,2465 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="
+title: 设计模式link: design-pattern
+
+
+一、概述
+二、创建型
+1. 单例（Singleton）
+2. 简单工厂（Simple Factory）
+3. 工厂方法（Factory Method）
+4. 抽象工厂（Abstract Factory）
+5. 生成器（Builder）
+6. 原型模式（Prototype）
+
+
+三、行为型
+1. 责任链（Chain Of Responsibility）
+2. 命令（Command）
+3. 解释器（Interpreter）
+4. 迭代器（Iterator）
+5. 中介者（Mediator）
+6. 备忘录（Memento）
+7. 观察者（Observer）
+8. 状态（State）
+9. 策略（Strategy）
+10. 模板方法（Templa.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center"></p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%A6%82%E8%BF%B0"><span class="toc-text">一、概述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%88%9B%E5%BB%BA%E5%9E%8B"><span class="toc-text">二、创建型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%8D%95%E4%BE%8B%EF%BC%88Singleton%EF%BC%89"><span class="toc-text">1. 单例（Singleton）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation"><span class="toc-text">Implementation</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%85%A0-%E6%87%92%E6%B1%89%E5%BC%8F-%E7%BA%BF%E7%A8%8B%E4%B8%8D%E5%AE%89%E5%85%A8"><span class="toc-text">Ⅰ 懒汉式-线程不安全</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%85%A1-%E9%A5%BF%E6%B1%89%E5%BC%8F-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8"><span class="toc-text">Ⅱ 饿汉式-线程安全</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%85%A2-%E6%87%92%E6%B1%89%E5%BC%8F-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8"><span class="toc-text">Ⅲ 懒汉式-线程安全</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%85%A3-%E5%8F%8C%E9%87%8D%E6%A0%A1%E9%AA%8C%E9%94%81-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8"><span class="toc-text">Ⅳ 双重校验锁-线程安全</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%85%A4-%E9%9D%99%E6%80%81%E5%86%85%E9%83%A8%E7%B1%BB%E5%AE%9E%E7%8E%B0"><span class="toc-text">Ⅴ 静态内部类实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%85%A5-%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0"><span class="toc-text">Ⅵ 枚举实现</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Examples"><span class="toc-text">Examples</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%AE%80%E5%8D%95%E5%B7%A5%E5%8E%82%EF%BC%88Simple-Factory%EF%BC%89"><span class="toc-text">2. 简单工厂（Simple Factory）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-1"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-1"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-1"><span class="toc-text">Implementation</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%B7%A5%E5%8E%82%E6%96%B9%E6%B3%95%EF%BC%88Factory-Method%EF%BC%89"><span class="toc-text">3. 工厂方法（Factory Method）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-2"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-2"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-2"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-1"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%8A%BD%E8%B1%A1%E5%B7%A5%E5%8E%82%EF%BC%88Abstract-Factory%EF%BC%89"><span class="toc-text">4. 抽象工厂（Abstract Factory）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-3"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-3"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-3"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-2"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E7%94%9F%E6%88%90%E5%99%A8%EF%BC%88Builder%EF%BC%89"><span class="toc-text">5. 生成器（Builder）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-4"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-4"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-4"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-3"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%8E%9F%E5%9E%8B%E6%A8%A1%E5%BC%8F%EF%BC%88Prototype%EF%BC%89"><span class="toc-text">6. 原型模式（Prototype）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-5"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-5"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-5"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-4"><span class="toc-text">JDK</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%A1%8C%E4%B8%BA%E5%9E%8B"><span class="toc-text">三、行为型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%B4%A3%E4%BB%BB%E9%93%BE%EF%BC%88Chain-Of-Responsibility%EF%BC%89"><span class="toc-text">1. 责任链（Chain Of Responsibility）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-6"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-6"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-6"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-5"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%91%BD%E4%BB%A4%EF%BC%88Command%EF%BC%89"><span class="toc-text">2. 命令（Command）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-7"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-7"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-7"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-6"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%A7%A3%E9%87%8A%E5%99%A8%EF%BC%88Interpreter%EF%BC%89"><span class="toc-text">3. 解释器（Interpreter）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-8"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-8"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-8"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-7"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E8%BF%AD%E4%BB%A3%E5%99%A8%EF%BC%88Iterator%EF%BC%89"><span class="toc-text">4. 迭代器（Iterator）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-9"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-9"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-9"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-8"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%B8%AD%E4%BB%8B%E8%80%85%EF%BC%88Mediator%EF%BC%89"><span class="toc-text">5. 中介者（Mediator）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-10"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-10"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-10"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-9"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%A4%87%E5%BF%98%E5%BD%95%EF%BC%88Memento%EF%BC%89"><span class="toc-text">6. 备忘录（Memento）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-11"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-11"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-11"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-10"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E8%A7%82%E5%AF%9F%E8%80%85%EF%BC%88Observer%EF%BC%89"><span class="toc-text">7. 观察者（Observer）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-12"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-12"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-12"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-11"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E7%8A%B6%E6%80%81%EF%BC%88State%EF%BC%89"><span class="toc-text">8. 状态（State）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-13"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-13"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-13"><span class="toc-text">Implementation</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E7%AD%96%E7%95%A5%EF%BC%88Strategy%EF%BC%89"><span class="toc-text">9. 策略（Strategy）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-14"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-14"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8E%E7%8A%B6%E6%80%81%E6%A8%A1%E5%BC%8F%E7%9A%84%E6%AF%94%E8%BE%83"><span class="toc-text">与状态模式的比较</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-14"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-12"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E6%A8%A1%E6%9D%BF%E6%96%B9%E6%B3%95%EF%BC%88Template-Method%EF%BC%89"><span class="toc-text">10. 模板方法（Template Method）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-15"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-15"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-15"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-13"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E8%AE%BF%E9%97%AE%E8%80%85%EF%BC%88Visitor%EF%BC%89"><span class="toc-text">11. 访问者（Visitor）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-16"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-16"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-16"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-14"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-%E7%A9%BA%E5%AF%B9%E8%B1%A1%EF%BC%88Null%EF%BC%89"><span class="toc-text">12. 空对象（Null）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-17"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-17"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-17"><span class="toc-text">Implementation</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E7%BB%93%E6%9E%84%E5%9E%8B"><span class="toc-text">四、结构型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E9%80%82%E9%85%8D%E5%99%A8%EF%BC%88Adapter%EF%BC%89"><span class="toc-text">1. 适配器（Adapter）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-18"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-18"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-18"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-15"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%A1%A5%E6%8E%A5%EF%BC%88Bridge%EF%BC%89"><span class="toc-text">2. 桥接（Bridge）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-19"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-19"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-19"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-16"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%BB%84%E5%90%88%EF%BC%88Composite%EF%BC%89"><span class="toc-text">3. 组合（Composite）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-20"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-20"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-20"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-17"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E8%A3%85%E9%A5%B0%EF%BC%88Decorator%EF%BC%89"><span class="toc-text">4. 装饰（Decorator）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-21"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-21"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-21"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99"><span class="toc-text">设计原则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-18"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%A4%96%E8%A7%82%EF%BC%88Facade%EF%BC%89"><span class="toc-text">5. 外观（Facade）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-22"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-22"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-22"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99-1"><span class="toc-text">设计原则</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%BA%AB%E5%85%83%EF%BC%88Flyweight%EF%BC%89"><span class="toc-text">6. 享元（Flyweight）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-23"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-23"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-23"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-19"><span class="toc-text">JDK</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E4%BB%A3%E7%90%86%EF%BC%88Proxy%EF%BC%89"><span class="toc-text">7. 代理（Proxy）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Intent-24"><span class="toc-text">Intent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Class-Diagram-24"><span class="toc-text">Class Diagram</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation-24"><span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JDK-20"><span class="toc-text">JDK</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-text">参考资料</span></a></li></ol></div><div class="column is-9"><header class="my-4"></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle"></h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.695Z">2023-01-31</time><article class="mt-2 post-content"><hr>
+<p>title: 设计模式<br>link: design-pattern</p>
+<hr>
+<ul>
+<li><a href="#%E4%B8%80%E6%A6%82%E8%BF%B0">一、概述</a></li>
+<li><a href="#%E4%BA%8C%E5%88%9B%E5%BB%BA%E5%9E%8B">二、创建型</a><ul>
+<li><a href="#1-%E5%8D%95%E4%BE%8Bsingleton">1. 单例（Singleton）</a></li>
+<li><a href="#2-%E7%AE%80%E5%8D%95%E5%B7%A5%E5%8E%82simple-factory">2. 简单工厂（Simple Factory）</a></li>
+<li><a href="#3-%E5%B7%A5%E5%8E%82%E6%96%B9%E6%B3%95factory-method">3. 工厂方法（Factory Method）</a></li>
+<li><a href="#4-%E6%8A%BD%E8%B1%A1%E5%B7%A5%E5%8E%82abstract-factory">4. 抽象工厂（Abstract Factory）</a></li>
+<li><a href="#5-%E7%94%9F%E6%88%90%E5%99%A8builder">5. 生成器（Builder）</a></li>
+<li><a href="#6-%E5%8E%9F%E5%9E%8B%E6%A8%A1%E5%BC%8Fprototype">6. 原型模式（Prototype）</a></li>
+</ul>
+</li>
+<li><a href="#%E4%B8%89%E8%A1%8C%E4%B8%BA%E5%9E%8B">三、行为型</a><ul>
+<li><a href="#1-%E8%B4%A3%E4%BB%BB%E9%93%BEchain-of-responsibility">1. 责任链（Chain Of Responsibility）</a></li>
+<li><a href="#2-%E5%91%BD%E4%BB%A4command">2. 命令（Command）</a></li>
+<li><a href="#3-%E8%A7%A3%E9%87%8A%E5%99%A8interpreter">3. 解释器（Interpreter）</a></li>
+<li><a href="#4-%E8%BF%AD%E4%BB%A3%E5%99%A8iterator">4. 迭代器（Iterator）</a></li>
+<li><a href="#5-%E4%B8%AD%E4%BB%8B%E8%80%85mediator">5. 中介者（Mediator）</a></li>
+<li><a href="#6-%E5%A4%87%E5%BF%98%E5%BD%95memento">6. 备忘录（Memento）</a></li>
+<li><a href="#7-%E8%A7%82%E5%AF%9F%E8%80%85observer">7. 观察者（Observer）</a></li>
+<li><a href="#8-%E7%8A%B6%E6%80%81state">8. 状态（State）</a></li>
+<li><a href="#9-%E7%AD%96%E7%95%A5strategy">9. 策略（Strategy）</a></li>
+<li><a href="#10-%E6%A8%A1%E6%9D%BF%E6%96%B9%E6%B3%95template-method">10. 模板方法（Template Method）</a></li>
+<li><a href="#11-%E8%AE%BF%E9%97%AE%E8%80%85visitor">11. 访问者（Visitor）</a></li>
+<li><a href="#12-%E7%A9%BA%E5%AF%B9%E8%B1%A1null">12. 空对象（Null）</a></li>
+</ul>
+</li>
+<li><a href="#%E5%9B%9B%E7%BB%93%E6%9E%84%E5%9E%8B">四、结构型</a><ul>
+<li><a href="#1-%E9%80%82%E9%85%8D%E5%99%A8adapter">1. 适配器（Adapter）</a></li>
+<li><a href="#2-%E6%A1%A5%E6%8E%A5bridge">2. 桥接（Bridge）</a></li>
+<li><a href="#3-%E7%BB%84%E5%90%88composite">3. 组合（Composite）</a></li>
+<li><a href="#4-%E8%A3%85%E9%A5%B0decorator">4. 装饰（Decorator）</a></li>
+<li><a href="#5-%E5%A4%96%E8%A7%82facade">5. 外观（Facade）</a></li>
+<li><a href="#6-%E4%BA%AB%E5%85%83flyweight">6. 享元（Flyweight）</a></li>
+<li><a href="#7-%E4%BB%A3%E7%90%86proxy">7. 代理（Proxy）</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99">参考资料</a></li>
+</ul>
+<h1 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h1><p>设计模式是解决问题的方案，学习现有的设计模式可以做到经验复用。</p>
+<p>拥有设计模式词汇，在沟通时就能用更少的词汇来讨论，并且不需要了解底层细节。</p>
+<h1 id="二、创建型"><a href="#二、创建型" class="headerlink" title="二、创建型"></a>二、创建型</h1><h2 id="1-单例（Singleton）"><a href="#1-单例（Singleton）" class="headerlink" title="1. 单例（Singleton）"></a>1. 单例（Singleton）</h2><h3 id="Intent"><a href="#Intent" class="headerlink" title="Intent"></a>Intent</h3><p>确保一个类只有一个实例，并提供该实例的全局访问点。</p>
+<h3 id="Class-Diagram"><a href="#Class-Diagram" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><p>使用一个私有构造函数、一个私有静态变量以及一个公有静态函数来实现。</p>
+<p>私有构造函数保证了不能通过构造函数来创建对象实例，只能通过公有静态函数返回唯一的私有静态变量。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/eca1f422-8381-409b-ad04-98ef39ae38ba.png"/> </div><br>
+
+<h3 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h3><h4 id="Ⅰ-懒汉式-线程不安全"><a href="#Ⅰ-懒汉式-线程不安全" class="headerlink" title="Ⅰ 懒汉式-线程不安全"></a>Ⅰ 懒汉式-线程不安全</h4><p>以下实现中，私有静态变量 uniqueInstance 被延迟实例化，这样做的好处是，如果没有用到该类，那么就不会实例化 uniqueInstance，从而节约资源。</p>
+<p>这个实现在多线程环境下是不安全的，如果多个线程能够同时进入 <code>if (uniqueInstance == null)</code> ，并且此时 uniqueInstance 为 null，那么会有多个线程执行 <code>uniqueInstance = new Singleton();</code> 语句，这将导致实例化多次 uniqueInstance。</p>
+<pre><code class="java">public class Singleton &#123;
+
+    private static Singleton uniqueInstance;
+
+    private Singleton() &#123;
+    &#125;
+
+    public static Singleton getUniqueInstance() &#123;
+        if (uniqueInstance == null) &#123;
+            uniqueInstance = new Singleton();
+        &#125;
+        return uniqueInstance;
+    &#125;
+&#125;
+</code></pre>
+<h4 id="Ⅱ-饿汉式-线程安全"><a href="#Ⅱ-饿汉式-线程安全" class="headerlink" title="Ⅱ 饿汉式-线程安全"></a>Ⅱ 饿汉式-线程安全</h4><p>线程不安全问题主要是由于 uniqueInstance 被实例化多次，采取直接实例化 uniqueInstance 的方式就不会产生线程不安全问题。</p>
+<p>但是直接实例化的方式也丢失了延迟实例化带来的节约资源的好处。</p>
+<pre><code class="java">private static Singleton uniqueInstance = new Singleton();
+</code></pre>
+<h4 id="Ⅲ-懒汉式-线程安全"><a href="#Ⅲ-懒汉式-线程安全" class="headerlink" title="Ⅲ 懒汉式-线程安全"></a>Ⅲ 懒汉式-线程安全</h4><p>只需要对 getUniqueInstance() 方法加锁，那么在一个时间点只能有一个线程能够进入该方法，从而避免了实例化多次 uniqueInstance。</p>
+<p>但是当一个线程进入该方法之后，其它试图进入该方法的线程都必须等待，即使 uniqueInstance 已经被实例化了。这会让线程阻塞时间过长，因此该方法有性能问题，不推荐使用。</p>
+<pre><code class="java">public static synchronized Singleton getUniqueInstance() &#123;
+    if (uniqueInstance == null) &#123;
+        uniqueInstance = new Singleton();
+    &#125;
+    return uniqueInstance;
+&#125;
+</code></pre>
+<h4 id="Ⅳ-双重校验锁-线程安全"><a href="#Ⅳ-双重校验锁-线程安全" class="headerlink" title="Ⅳ 双重校验锁-线程安全"></a>Ⅳ 双重校验锁-线程安全</h4><p>uniqueInstance 只需要被实例化一次，之后就可以直接使用了。加锁操作只需要对实例化那部分的代码进行，只有当 uniqueInstance 没有被实例化时，才需要进行加锁。</p>
+<p>双重校验锁先判断 uniqueInstance 是否已经被实例化，如果没有被实例化，那么才对实例化语句进行加锁。</p>
+<pre><code class="java">public class Singleton &#123;
+
+    private volatile static Singleton uniqueInstance;
+
+    private Singleton() &#123;
+    &#125;
+
+    public static Singleton getUniqueInstance() &#123;
+        if (uniqueInstance == null) &#123;
+            synchronized (Singleton.class) &#123;
+                if (uniqueInstance == null) &#123;
+                    uniqueInstance = new Singleton();
+                &#125;
+            &#125;
+        &#125;
+        return uniqueInstance;
+    &#125;
+&#125;
+</code></pre>
+<p>考虑下面的实现，也就是只使用了一个 if 语句。在 uniqueInstance == null 的情况下，如果两个线程都执行了 if 语句，那么两个线程都会进入 if 语句块内。虽然在 if 语句块内有加锁操作，但是两个线程都会执行 <code>uniqueInstance = new Singleton();</code> 这条语句，只是先后的问题，那么就会进行两次实例化。因此必须使用双重校验锁，也就是需要使用两个 if 语句：第一个 if 语句用来避免 uniqueInstance 已经被实例化之后的加锁操作，而第二个 if 语句进行了加锁，所以只能有一个线程进入，就不会出现 uniqueInstance == null 时两个线程同时进行实例化操作。</p>
+<pre><code class="java">if (uniqueInstance == null) &#123;
+    synchronized (Singleton.class) &#123;
+        uniqueInstance = new Singleton();
+    &#125;
+&#125;
+</code></pre>
+<p>uniqueInstance 采用 volatile 关键字修饰也是很有必要的， <code>uniqueInstance = new Singleton();</code> 这段代码其实是分为三步执行：</p>
+<ol>
+<li>为 uniqueInstance 分配内存空间</li>
+<li>初始化 uniqueInstance</li>
+<li>将 uniqueInstance 指向分配的内存地址</li>
+</ol>
+<p>但是由于 JVM 具有指令重排的特性，执行顺序有可能变成 1&gt;3&gt;2。指令重排在单线程环境下不会出现问题，但是在多线程环境下会导致一个线程获得还没有初始化的实例。例如，线程 T<sub>1</sub> 执行了 1 和 3，此时 T<sub>2</sub> 调用 getUniqueInstance() 后发现 uniqueInstance 不为空，因此返回 uniqueInstance，但此时 uniqueInstance 还未被初始化。</p>
+<p>使用 volatile 可以禁止 JVM 的指令重排，保证在多线程环境下也能正常运行。</p>
+<h4 id="Ⅴ-静态内部类实现"><a href="#Ⅴ-静态内部类实现" class="headerlink" title="Ⅴ 静态内部类实现"></a>Ⅴ 静态内部类实现</h4><p>当 Singleton 类被加载时，静态内部类 SingletonHolder 没有被加载进内存。只有当调用 <code>getUniqueInstance()</code> 方法从而触发 <code>SingletonHolder.INSTANCE</code> 时 SingletonHolder 才会被加载，此时初始化 INSTANCE 实例，并且 JVM 能确保 INSTANCE 只被实例化一次。</p>
+<p>这种方式不仅具有延迟初始化的好处，而且由 JVM 提供了对线程安全的支持。</p>
+<pre><code class="java">public class Singleton &#123;
+
+    private Singleton() &#123;
+    &#125;
+
+    private static class SingletonHolder &#123;
+        private static final Singleton INSTANCE = new Singleton();
+    &#125;
+
+    public static Singleton getUniqueInstance() &#123;
+        return SingletonHolder.INSTANCE;
+    &#125;
+&#125;
+</code></pre>
+<h4 id="Ⅵ-枚举实现"><a href="#Ⅵ-枚举实现" class="headerlink" title="Ⅵ 枚举实现"></a>Ⅵ 枚举实现</h4><pre><code class="java">public enum Singleton &#123;
+
+    INSTANCE;
+
+    private String objName;
+
+
+    public String getObjName() &#123;
+        return objName;
+    &#125;
+
+
+    public void setObjName(String objName) &#123;
+        this.objName = objName;
+    &#125;
+
+
+    public static void main(String[] args) &#123;
+
+        // 单例测试
+        Singleton firstSingleton = Singleton.INSTANCE;
+        firstSingleton.setObjName(&quot;firstName&quot;);
+        System.out.println(firstSingleton.getObjName());
+        Singleton secondSingleton = Singleton.INSTANCE;
+        secondSingleton.setObjName(&quot;secondName&quot;);
+        System.out.println(firstSingleton.getObjName());
+        System.out.println(secondSingleton.getObjName());
+
+        // 反射获取实例测试
+        try &#123;
+            Singleton[] enumConstants = Singleton.class.getEnumConstants();
+            for (Singleton enumConstant : enumConstants) &#123;
+                System.out.println(enumConstant.getObjName());
+            &#125;
+        &#125; catch (Exception e) &#123;
+            e.printStackTrace();
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">firstName
+secondName
+secondName
+secondName
+</code></pre>
+<p>该实现可以防止反射攻击。在其它实现中，通过 setAccessible() 方法可以将私有构造函数的访问级别设置为 public，然后调用构造函数从而实例化对象，如果要防止这种攻击，需要在构造函数中添加防止多次实例化的代码。该实现是由 JVM 保证只会实例化一次，因此不会出现上述的反射攻击。</p>
+<p>该实现在多次序列化和序列化之后，不会得到多个实例。而其它实现需要使用 transient 修饰所有字段，并且实现序列化和反序列化的方法。</p>
+<h3 id="Examples"><a href="#Examples" class="headerlink" title="Examples"></a>Examples</h3><ul>
+<li>Logger Classes</li>
+<li>Configuration Classes</li>
+<li>Accesing resources in shared mode</li>
+<li>Factories implemented as Singletons</li>
+</ul>
+<h3 id="JDK"><a href="#JDK" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/Runtime.html#getRuntime%28%29">java.lang.Runtime#getRuntime()</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/awt/Desktop.html#getDesktop--">java.awt.Desktop#getDesktop()</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/System.html#getSecurityManager--">java.lang.System#getSecurityManager()</a></li>
+</ul>
+<h2 id="2-简单工厂（Simple-Factory）"><a href="#2-简单工厂（Simple-Factory）" class="headerlink" title="2. 简单工厂（Simple Factory）"></a>2. 简单工厂（Simple Factory）</h2><h3 id="Intent-1"><a href="#Intent-1" class="headerlink" title="Intent"></a>Intent</h3><p>在创建一个对象时不向客户暴露内部细节，并提供一个创建对象的通用接口。</p>
+<h3 id="Class-Diagram-1"><a href="#Class-Diagram-1" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><p>简单工厂把实例化的操作单独放到一个类中，这个类就成为简单工厂类，让简单工厂类来决定应该用哪个具体子类来实例化。</p>
+<p>这样做能把客户类和具体子类的实现解耦，客户类不再需要知道有哪些子类以及应当实例化哪个子类。客户类往往有多个，如果不使用简单工厂，那么所有的客户类都要知道所有子类的细节。而且一旦子类发生改变，例如增加子类，那么所有的客户类都要进行修改。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/40c0c17e-bba6-4493-9857-147c0044a018.png"/> </div><br>
+
+<h3 id="Implementation-1"><a href="#Implementation-1" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public interface Product &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteProduct implements Product &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteProduct1 implements Product &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteProduct2 implements Product &#123;
+&#125;
+</code></pre>
+<p>以下的 Client 类包含了实例化的代码，这是一种错误的实现。如果在客户类中存在这种实例化代码，就需要考虑将代码放到简单工厂中。</p>
+<pre><code class="java">public class Client &#123;
+
+    public static void main(String[] args) &#123;
+        int type = 1;
+        Product product;
+        if (type == 1) &#123;
+            product = new ConcreteProduct1();
+        &#125; else if (type == 2) &#123;
+            product = new ConcreteProduct2();
+        &#125; else &#123;
+            product = new ConcreteProduct();
+        &#125;
+        // do something with the product
+    &#125;
+&#125;
+</code></pre>
+<p>以下的 SimpleFactory 是简单工厂实现，它被所有需要进行实例化的客户类调用。</p>
+<pre><code class="java">public class SimpleFactory &#123;
+
+    public Product createProduct(int type) &#123;
+        if (type == 1) &#123;
+            return new ConcreteProduct1();
+        &#125; else if (type == 2) &#123;
+            return new ConcreteProduct2();
+        &#125;
+        return new ConcreteProduct();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+
+    public static void main(String[] args) &#123;
+        SimpleFactory simpleFactory = new SimpleFactory();
+        Product product = simpleFactory.createProduct(1);
+        // do something with the product
+    &#125;
+&#125;
+</code></pre>
+<h2 id="3-工厂方法（Factory-Method）"><a href="#3-工厂方法（Factory-Method）" class="headerlink" title="3. 工厂方法（Factory Method）"></a>3. 工厂方法（Factory Method）</h2><h3 id="Intent-2"><a href="#Intent-2" class="headerlink" title="Intent"></a>Intent</h3><p>定义了一个创建对象的接口，但由子类决定要实例化哪个类。工厂方法把实例化操作推迟到子类。</p>
+<h3 id="Class-Diagram-2"><a href="#Class-Diagram-2" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><p>在简单工厂中，创建对象的是另一个类，而在工厂方法中，是由子类来创建对象。</p>
+<p>下图中，Factory 有一个 doSomething() 方法，这个方法需要用到一个产品对象，这个产品对象由 factoryMethod() 方法创建。该方法是抽象的，需要由子类去实现。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/f4d0afd0-8e78-4914-9e60-4366eaf065b5.png"/> </div><br>
+
+<h3 id="Implementation-2"><a href="#Implementation-2" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public abstract class Factory &#123;
+    abstract public Product factoryMethod();
+    public void doSomething() &#123;
+        Product product = factoryMethod();
+        // do something with the product
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteFactory extends Factory &#123;
+    public Product factoryMethod() &#123;
+        return new ConcreteProduct();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteFactory1 extends Factory &#123;
+    public Product factoryMethod() &#123;
+        return new ConcreteProduct1();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteFactory2 extends Factory &#123;
+    public Product factoryMethod() &#123;
+        return new ConcreteProduct2();
+    &#125;
+&#125;
+</code></pre>
+<h3 id="JDK-1"><a href="#JDK-1" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/Calendar.html#getInstance--">java.util.Calendar</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/ResourceBundle.html#getBundle-java.lang.String-">java.util.ResourceBundle</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/text/NumberFormat.html#getInstance--">java.text.NumberFormat</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html#forName-java.lang.String-">java.nio.charset.Charset</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/net/URLStreamHandlerFactory.html#createURLStreamHandler-java.lang.String-">java.net.URLStreamHandlerFactory</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html#of-E-">java.util.EnumSet</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/api/javax/xml/bind/JAXBContext.html#createMarshaller--">javax.xml.bind.JAXBContext</a></li>
+</ul>
+<h2 id="4-抽象工厂（Abstract-Factory）"><a href="#4-抽象工厂（Abstract-Factory）" class="headerlink" title="4. 抽象工厂（Abstract Factory）"></a>4. 抽象工厂（Abstract Factory）</h2><h3 id="Intent-3"><a href="#Intent-3" class="headerlink" title="Intent"></a>Intent</h3><p>提供一个接口，用于创建   <strong>相关的对象家族</strong>  。</p>
+<h3 id="Class-Diagram-3"><a href="#Class-Diagram-3" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><p>抽象工厂模式创建的是对象家族，也就是很多对象而不是一个对象，并且这些对象是相关的，也就是说必须一起创建出来。而工厂方法模式只是用于创建一个对象，这和抽象工厂模式有很大不同。</p>
+<p>抽象工厂模式用到了工厂方法模式来创建单一对象，AbstractFactory 中的 createProductA() 和 createProductB() 方法都是让子类来实现，这两个方法单独来看就是在创建一个对象，这符合工厂方法模式的定义。</p>
+<p>至于创建对象的家族这一概念是在 Client 体现，Client 要通过 AbstractFactory 同时调用两个方法来创建出两个对象，在这里这两个对象就有很大的相关性，Client 需要同时创建出这两个对象。</p>
+<p>从高层次来看，抽象工厂使用了组合，即 Cilent 组合了 AbstractFactory，而工厂方法模式使用了继承。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/e2190c36-8b27-4690-bde5-9911020a1294.png"/> </div><br>
+
+<h3 id="Implementation-3"><a href="#Implementation-3" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public class AbstractProductA &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public class AbstractProductB &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public class ProductA1 extends AbstractProductA &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public class ProductA2 extends AbstractProductA &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public class ProductB1 extends AbstractProductB &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public class ProductB2 extends AbstractProductB &#123;
+&#125;
+</code></pre>
+<pre><code class="java">public abstract class AbstractFactory &#123;
+    abstract AbstractProductA createProductA();
+    abstract AbstractProductB createProductB();
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteFactory1 extends AbstractFactory &#123;
+    AbstractProductA createProductA() &#123;
+        return new ProductA1();
+    &#125;
+
+    AbstractProductB createProductB() &#123;
+        return new ProductB1();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteFactory2 extends AbstractFactory &#123;
+    AbstractProductA createProductA() &#123;
+        return new ProductA2();
+    &#125;
+
+    AbstractProductB createProductB() &#123;
+        return new ProductB2();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        AbstractFactory abstractFactory = new ConcreteFactory1();
+        AbstractProductA productA = abstractFactory.createProductA();
+        AbstractProductB productB = abstractFactory.createProductB();
+        // do something with productA and productB
+    &#125;
+&#125;
+</code></pre>
+<h3 id="JDK-2"><a href="#JDK-2" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/javax/xml/parsers/DocumentBuilderFactory.html">javax.xml.parsers.DocumentBuilderFactory</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/javax/xml/transform/TransformerFactory.html#newInstance--">javax.xml.transform.TransformerFactory</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/javax/xml/xpath/XPathFactory.html#newInstance--">javax.xml.xpath.XPathFactory</a></li>
+</ul>
+<h2 id="5-生成器（Builder）"><a href="#5-生成器（Builder）" class="headerlink" title="5. 生成器（Builder）"></a>5. 生成器（Builder）</h2><h3 id="Intent-4"><a href="#Intent-4" class="headerlink" title="Intent"></a>Intent</h3><p>封装一个对象的构造过程，并允许按步骤构造。</p>
+<h3 id="Class-Diagram-4"><a href="#Class-Diagram-4" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/db5e376d-0b3e-490e-a43a-3231914b6668.png"/> </div><br>
+
+<h3 id="Implementation-4"><a href="#Implementation-4" class="headerlink" title="Implementation"></a>Implementation</h3><p>以下是一个简易的 StringBuilder 实现，参考了 JDK 1.8 源码。</p>
+<pre><code class="java">public class AbstractStringBuilder &#123;
+    protected char[] value;
+
+    protected int count;
+
+    public AbstractStringBuilder(int capacity) &#123;
+        count = 0;
+        value = new char[capacity];
+    &#125;
+
+    public AbstractStringBuilder append(char c) &#123;
+        ensureCapacityInternal(count + 1);
+        value[count++] = c;
+        return this;
+    &#125;
+
+    private void ensureCapacityInternal(int minimumCapacity) &#123;
+        // overflow-conscious code
+        if (minimumCapacity - value.length &gt; 0)
+            expandCapacity(minimumCapacity);
+    &#125;
+
+    void expandCapacity(int minimumCapacity) &#123;
+        int newCapacity = value.length * 2 + 2;
+        if (newCapacity - minimumCapacity &lt; 0)
+            newCapacity = minimumCapacity;
+        if (newCapacity &lt; 0) &#123;
+            if (minimumCapacity &lt; 0) // overflow
+                throw new OutOfMemoryError();
+            newCapacity = Integer.MAX_VALUE;
+        &#125;
+        value = Arrays.copyOf(value, newCapacity);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class StringBuilder extends AbstractStringBuilder &#123;
+    public StringBuilder() &#123;
+        super(16);
+    &#125;
+
+    @Override
+    public String toString() &#123;
+        // Create a copy, don&#39;t share the array
+        return new String(value, 0, count);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        StringBuilder sb = new StringBuilder();
+        final int count = 26;
+        for (int i = 0; i &lt; count; i++) &#123;
+            sb.append((char) (&#39;a&#39; + i));
+        &#125;
+        System.out.println(sb.toString());
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">abcdefghijklmnopqrstuvwxyz
+</code></pre>
+<h3 id="JDK-3"><a href="#JDK-3" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/StringBuilder.html">java.lang.StringBuilder</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html#put-byte-">java.nio.ByteBuffer</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/StringBuffer.html#append-boolean-">java.lang.StringBuffer</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/Appendable.html">java.lang.Appendable</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/apache/camel/tree/0e195428ee04531be27a0b659005e3aa8d159d23/camel-core/src/main/java/org/apache/camel/builder">Apache Camel builders</a></li>
+</ul>
+<h2 id="6-原型模式（Prototype）"><a href="#6-原型模式（Prototype）" class="headerlink" title="6. 原型模式（Prototype）"></a>6. 原型模式（Prototype）</h2><h3 id="Intent-5"><a href="#Intent-5" class="headerlink" title="Intent"></a>Intent</h3><p>使用原型实例指定要创建对象的类型，通过复制这个原型来创建新对象。</p>
+<h3 id="Class-Diagram-5"><a href="#Class-Diagram-5" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/b8922f8c-95e6-4187-be85-572a509afb71.png"/> </div><br>
+
+<h3 id="Implementation-5"><a href="#Implementation-5" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public abstract class Prototype &#123;
+    abstract Prototype myClone();
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcretePrototype extends Prototype &#123;
+
+    private String filed;
+
+    public ConcretePrototype(String filed) &#123;
+        this.filed = filed;
+    &#125;
+
+    @Override
+    Prototype myClone() &#123;
+        return new ConcretePrototype(filed);
+    &#125;
+
+    @Override
+    public String toString() &#123;
+        return filed;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        Prototype prototype = new ConcretePrototype(&quot;abc&quot;);
+        Prototype clone = prototype.myClone();
+        System.out.println(clone.toString());
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">abc
+</code></pre>
+<h3 id="JDK-4"><a href="#JDK-4" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html#clone%28%29">java.lang.Object#clone()</a></li>
+</ul>
+<h1 id="三、行为型"><a href="#三、行为型" class="headerlink" title="三、行为型"></a>三、行为型</h1><h2 id="1-责任链（Chain-Of-Responsibility）"><a href="#1-责任链（Chain-Of-Responsibility）" class="headerlink" title="1. 责任链（Chain Of Responsibility）"></a>1. 责任链（Chain Of Responsibility）</h2><h3 id="Intent-6"><a href="#Intent-6" class="headerlink" title="Intent"></a>Intent</h3><p>使多个对象都有机会处理请求，从而避免请求的发送者和接收者之间的耦合关系。将这些对象连成一条链，并沿着这条链发送该请求，直到有一个对象处理它为止。</p>
+<h3 id="Class-Diagram-6"><a href="#Class-Diagram-6" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Handler：定义处理请求的接口，并且实现后继链（successor）</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/ca9f23bf-55a4-47b2-9534-a28e35397988.png"/> </div><br>
+
+<h3 id="Implementation-6"><a href="#Implementation-6" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public abstract class Handler &#123;
+
+    protected Handler successor;
+
+
+    public Handler(Handler successor) &#123;
+        this.successor = successor;
+    &#125;
+
+
+    protected abstract void handleRequest(Request request);
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteHandler1 extends Handler &#123;
+
+    public ConcreteHandler1(Handler successor) &#123;
+        super(successor);
+    &#125;
+
+
+    @Override
+    protected void handleRequest(Request request) &#123;
+        if (request.getType() == RequestType.TYPE1) &#123;
+            System.out.println(request.getName() + &quot; is handle by ConcreteHandler1&quot;);
+            return;
+        &#125;
+        if (successor != null) &#123;
+            successor.handleRequest(request);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteHandler2 extends Handler &#123;
+
+    public ConcreteHandler2(Handler successor) &#123;
+        super(successor);
+    &#125;
+
+
+    @Override
+    protected void handleRequest(Request request) &#123;
+        if (request.getType() == RequestType.TYPE2) &#123;
+            System.out.println(request.getName() + &quot; is handle by ConcreteHandler2&quot;);
+            return;
+        &#125;
+        if (successor != null) &#123;
+            successor.handleRequest(request);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Request &#123;
+
+    private RequestType type;
+    private String name;
+
+
+    public Request(RequestType type, String name) &#123;
+        this.type = type;
+        this.name = name;
+    &#125;
+
+
+    public RequestType getType() &#123;
+        return type;
+    &#125;
+
+
+    public String getName() &#123;
+        return name;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public enum RequestType &#123;
+    TYPE1, TYPE2
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+
+    public static void main(String[] args) &#123;
+
+        Handler handler1 = new ConcreteHandler1(null);
+        Handler handler2 = new ConcreteHandler2(handler1);
+
+        Request request1 = new Request(RequestType.TYPE1, &quot;request1&quot;);
+        handler2.handleRequest(request1);
+
+        Request request2 = new Request(RequestType.TYPE2, &quot;request2&quot;);
+        handler2.handleRequest(request2);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">request1 is handle by ConcreteHandler1
+request2 is handle by ConcreteHandler2
+</code></pre>
+<h3 id="JDK-5"><a href="#JDK-5" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/logging/Logger.html#log%28java.util.logging.Level,%20java.lang.String%29">java.util.logging.Logger#log()</a></li>
+<li><a target="_blank" rel="noopener" href="https://commons.apache.org/proper/commons-chain/index.html">Apache Commons Chain</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javaee/7/api/javax/servlet/Filter.html#doFilter-javax.servlet.ServletRequest-javax.servlet.ServletResponse-javax.servlet.FilterChain-">javax.servlet.Filter#doFilter()</a></li>
+</ul>
+<h2 id="2-命令（Command）"><a href="#2-命令（Command）" class="headerlink" title="2. 命令（Command）"></a>2. 命令（Command）</h2><h3 id="Intent-7"><a href="#Intent-7" class="headerlink" title="Intent"></a>Intent</h3><p>将命令封装成对象中，具有以下作用：</p>
+<ul>
+<li>使用命令来参数化其它对象</li>
+<li>将命令放入队列中进行排队</li>
+<li>将命令的操作记录到日志中</li>
+<li>支持可撤销的操作</li>
+</ul>
+<h3 id="Class-Diagram-7"><a href="#Class-Diagram-7" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Command：命令</li>
+<li>Receiver：命令接收者，也就是命令真正的执行者</li>
+<li>Invoker：通过它来调用命令</li>
+<li>Client：可以设置命令与命令的接收者</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/c44a0342-f405-4f17-b750-e27cf4aadde2.png"/> </div><br>
+
+<h3 id="Implementation-7"><a href="#Implementation-7" class="headerlink" title="Implementation"></a>Implementation</h3><p>设计一个遥控器，可以控制电灯开关。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/e6bded8e-41a0-489a-88a6-638e88ab7666.jpg"/> </div><br>
+
+<pre><code class="java">public interface Command &#123;
+    void execute();
+&#125;
+</code></pre>
+<pre><code class="java">public class LightOnCommand implements Command &#123;
+    Light light;
+
+    public LightOnCommand(Light light) &#123;
+        this.light = light;
+    &#125;
+
+    @Override
+    public void execute() &#123;
+        light.on();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class LightOffCommand implements Command &#123;
+    Light light;
+
+    public LightOffCommand(Light light) &#123;
+        this.light = light;
+    &#125;
+
+    @Override
+    public void execute() &#123;
+        light.off();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Light &#123;
+
+    public void on() &#123;
+        System.out.println(&quot;Light is on!&quot;);
+    &#125;
+
+    public void off() &#123;
+        System.out.println(&quot;Light is off!&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">/**
+ * 遥控器
+ */
+public class Invoker &#123;
+    private Command[] onCommands;
+    private Command[] offCommands;
+    private final int slotNum = 7;
+
+    public Invoker() &#123;
+        this.onCommands = new Command[slotNum];
+        this.offCommands = new Command[slotNum];
+    &#125;
+
+    public void setOnCommand(Command command, int slot) &#123;
+        onCommands[slot] = command;
+    &#125;
+
+    public void setOffCommand(Command command, int slot) &#123;
+        offCommands[slot] = command;
+    &#125;
+
+    public void onButtonWasPushed(int slot) &#123;
+        onCommands[slot].execute();
+    &#125;
+
+    public void offButtonWasPushed(int slot) &#123;
+        offCommands[slot].execute();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        Invoker invoker = new Invoker();
+        Light light = new Light();
+        Command lightOnCommand = new LightOnCommand(light);
+        Command lightOffCommand = new LightOffCommand(light);
+        invoker.setOnCommand(lightOnCommand, 0);
+        invoker.setOffCommand(lightOffCommand, 0);
+        invoker.onButtonWasPushed(0);
+        invoker.offButtonWasPushed(0);
+    &#125;
+&#125;
+</code></pre>
+<h3 id="JDK-6"><a href="#JDK-6" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html">java.lang.Runnable</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/Netflix/Hystrix/wiki">Netflix Hystrix</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/javax/swing/Action.html">javax.swing.Action</a></li>
+</ul>
+<h2 id="3-解释器（Interpreter）"><a href="#3-解释器（Interpreter）" class="headerlink" title="3. 解释器（Interpreter）"></a>3. 解释器（Interpreter）</h2><h3 id="Intent-8"><a href="#Intent-8" class="headerlink" title="Intent"></a>Intent</h3><p>为语言创建解释器，通常由语言的语法和语法分析来定义。</p>
+<h3 id="Class-Diagram-8"><a href="#Class-Diagram-8" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>TerminalExpression：终结符表达式，每个终结符都需要一个 TerminalExpression。</li>
+<li>Context：上下文，包含解释器之外的一些全局信息。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/2b125bcd-1b36-43be-9b78-d90b076be549.png"/> </div><br>
+
+<h3 id="Implementation-8"><a href="#Implementation-8" class="headerlink" title="Implementation"></a>Implementation</h3><p>以下是一个规则检验器实现，具有 and 和 or 规则，通过规则可以构建一颗解析树，用来检验一个文本是否满足解析树定义的规则。</p>
+<p>例如一颗解析树为 D And (A Or (B C))，文本 “D A” 满足该解析树定义的规则。</p>
+<p>这里的 Context 指的是 String。</p>
+<pre><code class="java">public abstract class Expression &#123;
+    public abstract boolean interpret(String str);
+&#125;
+</code></pre>
+<pre><code class="java">public class TerminalExpression extends Expression &#123;
+
+    private String literal = null;
+
+    public TerminalExpression(String str) &#123;
+        literal = str;
+    &#125;
+
+    public boolean interpret(String str) &#123;
+        StringTokenizer st = new StringTokenizer(str);
+        while (st.hasMoreTokens()) &#123;
+            String test = st.nextToken();
+            if (test.equals(literal)) &#123;
+                return true;
+            &#125;
+        &#125;
+        return false;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class AndExpression extends Expression &#123;
+
+    private Expression expression1 = null;
+    private Expression expression2 = null;
+
+    public AndExpression(Expression expression1, Expression expression2) &#123;
+        this.expression1 = expression1;
+        this.expression2 = expression2;
+    &#125;
+
+    public boolean interpret(String str) &#123;
+        return expression1.interpret(str) &amp;&amp; expression2.interpret(str);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class OrExpression extends Expression &#123;
+    private Expression expression1 = null;
+    private Expression expression2 = null;
+
+    public OrExpression(Expression expression1, Expression expression2) &#123;
+        this.expression1 = expression1;
+        this.expression2 = expression2;
+    &#125;
+
+    public boolean interpret(String str) &#123;
+        return expression1.interpret(str) || expression2.interpret(str);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+
+    /**
+     * 构建解析树
+     */
+    public static Expression buildInterpreterTree() &#123;
+        // Literal
+        Expression terminal1 = new TerminalExpression(&quot;A&quot;);
+        Expression terminal2 = new TerminalExpression(&quot;B&quot;);
+        Expression terminal3 = new TerminalExpression(&quot;C&quot;);
+        Expression terminal4 = new TerminalExpression(&quot;D&quot;);
+        // B C
+        Expression alternation1 = new OrExpression(terminal2, terminal3);
+        // A Or (B C)
+        Expression alternation2 = new OrExpression(terminal1, alternation1);
+        // D And (A Or (B C))
+        return new AndExpression(terminal4, alternation2);
+    &#125;
+
+    public static void main(String[] args) &#123;
+        Expression define = buildInterpreterTree();
+        String context1 = &quot;D A&quot;;
+        String context2 = &quot;A B&quot;;
+        System.out.println(define.interpret(context1));
+        System.out.println(define.interpret(context2));
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">true
+false
+</code></pre>
+<h3 id="JDK-7"><a href="#JDK-7" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html">java.util.Pattern</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/text/Normalizer.html">java.text.Normalizer</a></li>
+<li>All subclasses of <a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/text/Format.html">java.text.Format</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javaee/7/api/javax/el/ELResolver.html">javax.el.ELResolver</a></li>
+</ul>
+<h2 id="4-迭代器（Iterator）"><a href="#4-迭代器（Iterator）" class="headerlink" title="4. 迭代器（Iterator）"></a>4. 迭代器（Iterator）</h2><h3 id="Intent-9"><a href="#Intent-9" class="headerlink" title="Intent"></a>Intent</h3><p>提供一种顺序访问聚合对象元素的方法，并且不暴露聚合对象的内部表示。</p>
+<h3 id="Class-Diagram-9"><a href="#Class-Diagram-9" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Aggregate 是聚合类，其中 createIterator() 方法可以产生一个 Iterator；</li>
+<li>Iterator 主要定义了 hasNext() 和 next() 方法。</li>
+<li>Client 组合了 Aggregate，为了迭代遍历 Aggregate，也需要组合 Iterator。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/89292ae1-5f13-44dc-b508-3f035e80bf89.png"/> </div><br>
+
+<h3 id="Implementation-9"><a href="#Implementation-9" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public interface Aggregate &#123;
+    Iterator createIterator();
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteAggregate implements Aggregate &#123;
+
+    private Integer[] items;
+
+    public ConcreteAggregate() &#123;
+        items = new Integer[10];
+        for (int i = 0; i &lt; items.length; i++) &#123;
+            items[i] = i;
+        &#125;
+    &#125;
+
+    @Override
+    public Iterator createIterator() &#123;
+        return new ConcreteIterator&lt;Integer&gt;(items);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public interface Iterator&lt;Item&gt; &#123;
+
+    Item next();
+
+    boolean hasNext();
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteIterator&lt;Item&gt; implements Iterator &#123;
+
+    private Item[] items;
+    private int position = 0;
+
+    public ConcreteIterator(Item[] items) &#123;
+        this.items = items;
+    &#125;
+
+    @Override
+    public Object next() &#123;
+        return items[position++];
+    &#125;
+
+    @Override
+    public boolean hasNext() &#123;
+        return position &lt; items.length;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+
+    public static void main(String[] args) &#123;
+        Aggregate aggregate = new ConcreteAggregate();
+        Iterator&lt;Integer&gt; iterator = aggregate.createIterator();
+        while (iterator.hasNext()) &#123;
+            System.out.println(iterator.next());
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<h3 id="JDK-8"><a href="#JDK-8" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html">java.util.Iterator</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html">java.util.Enumeration</a></li>
+</ul>
+<h2 id="5-中介者（Mediator）"><a href="#5-中介者（Mediator）" class="headerlink" title="5. 中介者（Mediator）"></a>5. 中介者（Mediator）</h2><h3 id="Intent-10"><a href="#Intent-10" class="headerlink" title="Intent"></a>Intent</h3><p>集中相关对象之间复杂的沟通和控制方式。</p>
+<h3 id="Class-Diagram-10"><a href="#Class-Diagram-10" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Mediator：中介者，定义一个接口用于与各同事（Colleague）对象通信。</li>
+<li>Colleague：同事，相关对象</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/30d6e95c-2e3c-4d32-bf4f-68128a70bc05.png"/> </div><br>
+
+<h3 id="Implementation-10"><a href="#Implementation-10" class="headerlink" title="Implementation"></a>Implementation</h3><p>Alarm（闹钟）、CoffeePot（咖啡壶）、Calendar（日历）、Sprinkler（喷头）是一组相关的对象，在某个对象的事件产生时需要去操作其它对象，形成了下面这种依赖结构：</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/82cfda3b-b53b-4c89-9fdb-26dd2db0cd02.jpg"/> </div><br>
+
+<p>使用中介者模式可以将复杂的依赖结构变成星形结构：</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/5359cbf5-5a79-4874-9b17-f23c53c2cb80.jpg"/> </div><br>
+
+<pre><code class="java">public abstract class Colleague &#123;
+    public abstract void onEvent(Mediator mediator);
+&#125;
+</code></pre>
+<pre><code class="java">public class Alarm extends Colleague &#123;
+
+    @Override
+    public void onEvent(Mediator mediator) &#123;
+        mediator.doEvent(&quot;alarm&quot;);
+    &#125;
+
+    public void doAlarm() &#123;
+        System.out.println(&quot;doAlarm()&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class CoffeePot extends Colleague &#123;
+    @Override
+    public void onEvent(Mediator mediator) &#123;
+        mediator.doEvent(&quot;coffeePot&quot;);
+    &#125;
+
+    public void doCoffeePot() &#123;
+        System.out.println(&quot;doCoffeePot()&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Calender extends Colleague &#123;
+    @Override
+    public void onEvent(Mediator mediator) &#123;
+        mediator.doEvent(&quot;calender&quot;);
+    &#125;
+
+    public void doCalender() &#123;
+        System.out.println(&quot;doCalender()&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Sprinkler extends Colleague &#123;
+    @Override
+    public void onEvent(Mediator mediator) &#123;
+        mediator.doEvent(&quot;sprinkler&quot;);
+    &#125;
+
+    public void doSprinkler() &#123;
+        System.out.println(&quot;doSprinkler()&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public abstract class Mediator &#123;
+    public abstract void doEvent(String eventType);
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteMediator extends Mediator &#123;
+    private Alarm alarm;
+    private CoffeePot coffeePot;
+    private Calender calender;
+    private Sprinkler sprinkler;
+
+    public ConcreteMediator(Alarm alarm, CoffeePot coffeePot, Calender calender, Sprinkler sprinkler) &#123;
+        this.alarm = alarm;
+        this.coffeePot = coffeePot;
+        this.calender = calender;
+        this.sprinkler = sprinkler;
+    &#125;
+
+    @Override
+    public void doEvent(String eventType) &#123;
+        switch (eventType) &#123;
+            case &quot;alarm&quot;:
+                doAlarmEvent();
+                break;
+            case &quot;coffeePot&quot;:
+                doCoffeePotEvent();
+                break;
+            case &quot;calender&quot;:
+                doCalenderEvent();
+                break;
+            default:
+                doSprinklerEvent();
+        &#125;
+    &#125;
+
+    public void doAlarmEvent() &#123;
+        alarm.doAlarm();
+        coffeePot.doCoffeePot();
+        calender.doCalender();
+        sprinkler.doSprinkler();
+    &#125;
+
+    public void doCoffeePotEvent() &#123;
+        // ...
+    &#125;
+
+    public void doCalenderEvent() &#123;
+        // ...
+    &#125;
+
+    public void doSprinklerEvent() &#123;
+        // ...
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        Alarm alarm = new Alarm();
+        CoffeePot coffeePot = new CoffeePot();
+        Calender calender = new Calender();
+        Sprinkler sprinkler = new Sprinkler();
+        Mediator mediator = new ConcreteMediator(alarm, coffeePot, calender, sprinkler);
+        // 闹钟事件到达，调用中介者就可以操作相关对象
+        alarm.onEvent(mediator);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">doAlarm()
+doCoffeePot()
+doCalender()
+doSprinkler()
+</code></pre>
+<h3 id="JDK-9"><a href="#JDK-9" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>All scheduleXXX() methods of <a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/Timer.html">java.util.Timer</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html#execute-java.lang.Runnable-">java.util.concurrent.Executor#execute()</a></li>
+<li>submit() and invokeXXX() methods of <a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ExecutorService.html">java.util.concurrent.ExecutorService</a></li>
+<li>scheduleXXX() methods of <a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html">java.util.concurrent.ScheduledExecutorService</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/Method.html#invoke-java.lang.Object-java.lang.Object...-">java.lang.reflect.Method#invoke()</a></li>
+</ul>
+<h2 id="6-备忘录（Memento）"><a href="#6-备忘录（Memento）" class="headerlink" title="6. 备忘录（Memento）"></a>6. 备忘录（Memento）</h2><h3 id="Intent-11"><a href="#Intent-11" class="headerlink" title="Intent"></a>Intent</h3><p>在不违反封装的情况下获得对象的内部状态，从而在需要时可以将对象恢复到最初状态。</p>
+<h3 id="Class-Diagram-11"><a href="#Class-Diagram-11" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Originator：原始对象</li>
+<li>Caretaker：负责保存好备忘录</li>
+<li>Menento：备忘录，存储原始对象的的状态。备忘录实际上有两个接口，一个是提供给 Caretaker 的窄接口：它只能将备忘录传递给其它对象；一个是提供给 Originator 的宽接口，允许它访问到先前状态所需的所有数据。理想情况是只允许 Originator 访问本备忘录的内部状态。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/50678f34-694f-45a4-91c6-34d985c83fee.png"/> </div><br>
+
+<h3 id="Implementation-11"><a href="#Implementation-11" class="headerlink" title="Implementation"></a>Implementation</h3><p>以下实现了一个简单计算器程序，可以输入两个值，然后计算这两个值的和。备忘录模式允许将这两个值存储起来，然后在某个时刻用存储的状态进行恢复。</p>
+<p>实现参考：<a target="_blank" rel="noopener" href="https://www.oodesign.com/memento-pattern-calculator-example-java-sourcecode.html">Memento Pattern - Calculator Example - Java Sourcecode</a></p>
+<pre><code class="java">/**
+ * Originator Interface
+ */
+public interface Calculator &#123;
+
+    // Create Memento
+    PreviousCalculationToCareTaker backupLastCalculation();
+
+    // setMemento
+    void restorePreviousCalculation(PreviousCalculationToCareTaker memento);
+
+    int getCalculationResult();
+
+    void setFirstNumber(int firstNumber);
+
+    void setSecondNumber(int secondNumber);
+&#125;
+</code></pre>
+<pre><code class="java">/**
+ * Originator Implementation
+ */
+public class CalculatorImp implements Calculator &#123;
+
+    private int firstNumber;
+    private int secondNumber;
+
+    @Override
+    public PreviousCalculationToCareTaker backupLastCalculation() &#123;
+        // create a memento object used for restoring two numbers
+        return new PreviousCalculationImp(firstNumber, secondNumber);
+    &#125;
+
+    @Override
+    public void restorePreviousCalculation(PreviousCalculationToCareTaker memento) &#123;
+        this.firstNumber = ((PreviousCalculationToOriginator) memento).getFirstNumber();
+        this.secondNumber = ((PreviousCalculationToOriginator) memento).getSecondNumber();
+    &#125;
+
+    @Override
+    public int getCalculationResult() &#123;
+        // result is adding two numbers
+        return firstNumber + secondNumber;
+    &#125;
+
+    @Override
+    public void setFirstNumber(int firstNumber) &#123;
+        this.firstNumber = firstNumber;
+    &#125;
+
+    @Override
+    public void setSecondNumber(int secondNumber) &#123;
+        this.secondNumber = secondNumber;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">/**
+ * Memento Interface to Originator
+ *
+ * This interface allows the originator to restore its state
+ */
+public interface PreviousCalculationToOriginator &#123;
+    int getFirstNumber();
+    int getSecondNumber();
+&#125;
+</code></pre>
+<pre><code class="java">/**
+ *  Memento interface to CalculatorOperator (Caretaker)
+ */
+public interface PreviousCalculationToCareTaker &#123;
+    // no operations permitted for the caretaker
+&#125;
+</code></pre>
+<pre><code class="java">/**
+ * Memento Object Implementation
+ * &lt;p&gt;
+ * Note that this object implements both interfaces to Originator and CareTaker
+ */
+public class PreviousCalculationImp implements PreviousCalculationToCareTaker,
+        PreviousCalculationToOriginator &#123;
+
+    private int firstNumber;
+    private int secondNumber;
+
+    public PreviousCalculationImp(int firstNumber, int secondNumber) &#123;
+        this.firstNumber = firstNumber;
+        this.secondNumber = secondNumber;
+    &#125;
+
+    @Override
+    public int getFirstNumber() &#123;
+        return firstNumber;
+    &#125;
+
+    @Override
+    public int getSecondNumber() &#123;
+        return secondNumber;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">/**
+ * CareTaker object
+ */
+public class Client &#123;
+
+    public static void main(String[] args) &#123;
+        // program starts
+        Calculator calculator = new CalculatorImp();
+
+        // assume user enters two numbers
+        calculator.setFirstNumber(10);
+        calculator.setSecondNumber(100);
+
+        // find result
+        System.out.println(calculator.getCalculationResult());
+
+        // Store result of this calculation in case of error
+        PreviousCalculationToCareTaker memento = calculator.backupLastCalculation();
+
+        // user enters a number
+        calculator.setFirstNumber(17);
+
+        // user enters a wrong second number and calculates result
+        calculator.setSecondNumber(-290);
+
+        // calculate result
+        System.out.println(calculator.getCalculationResult());
+
+        // user hits CTRL + Z to undo last operation and see last result
+        calculator.restorePreviousCalculation(memento);
+
+        // result restored
+        System.out.println(calculator.getCalculationResult());
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">110
+-273
+110
+</code></pre>
+<h3 id="JDK-10"><a href="#JDK-10" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>java.io.Serializable</li>
+</ul>
+<h2 id="7-观察者（Observer）"><a href="#7-观察者（Observer）" class="headerlink" title="7. 观察者（Observer）"></a>7. 观察者（Observer）</h2><h3 id="Intent-12"><a href="#Intent-12" class="headerlink" title="Intent"></a>Intent</h3><p>定义对象之间的一对多依赖，当一个对象状态改变时，它的所有依赖都会收到通知并且自动更新状态。</p>
+<p>主题（Subject）是被观察的对象，而其所有依赖者（Observer）称为观察者。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/7a3c6a30-c735-4edb-8115-337288a4f0f2.jpg" width="600"/> </div><br>
+
+<h3 id="Class-Diagram-12"><a href="#Class-Diagram-12" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><p>主题（Subject）具有注册和移除观察者、并通知所有观察者的功能，主题是通过维护一张观察者列表来实现这些操作的。</p>
+<p>观察者（Observer）的注册功能需要调用主题的 registerObserver() 方法。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/a8c8f894-a712-447c-9906-5caef6a016e3.png"/> </div><br>
+
+<h3 id="Implementation-12"><a href="#Implementation-12" class="headerlink" title="Implementation"></a>Implementation</h3><p>天气数据布告板会在天气信息发生改变时更新其内容，布告板有多个，并且在将来会继续增加。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/b1df9732-86ce-4d69-9f06-fba1db7b3b5a.jpg"/> </div><br>
+
+<pre><code class="java">public interface Subject &#123;
+    void registerObserver(Observer o);
+
+    void removeObserver(Observer o);
+
+    void notifyObserver();
+&#125;
+</code></pre>
+<pre><code class="java">public class WeatherData implements Subject &#123;
+    private List&lt;Observer&gt; observers;
+    private float temperature;
+    private float humidity;
+    private float pressure;
+
+    public WeatherData() &#123;
+        observers = new ArrayList&lt;&gt;();
+    &#125;
+
+    public void setMeasurements(float temperature, float humidity, float pressure) &#123;
+        this.temperature = temperature;
+        this.humidity = humidity;
+        this.pressure = pressure;
+        notifyObserver();
+    &#125;
+
+    @Override
+    public void registerObserver(Observer o) &#123;
+        observers.add(o);
+    &#125;
+
+    @Override
+    public void removeObserver(Observer o) &#123;
+        int i = observers.indexOf(o);
+        if (i &gt;= 0) &#123;
+            observers.remove(i);
+        &#125;
+    &#125;
+
+    @Override
+    public void notifyObserver() &#123;
+        for (Observer o : observers) &#123;
+            o.update(temperature, humidity, pressure);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public interface Observer &#123;
+    void update(float temp, float humidity, float pressure);
+&#125;
+</code></pre>
+<pre><code class="java">public class StatisticsDisplay implements Observer &#123;
+
+    public StatisticsDisplay(Subject weatherData) &#123;
+        weatherData.reisterObserver(this);
+    &#125;
+
+    @Override
+    public void update(float temp, float humidity, float pressure) &#123;
+        System.out.println(&quot;StatisticsDisplay.update: &quot; + temp + &quot; &quot; + humidity + &quot; &quot; + pressure);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class CurrentConditionsDisplay implements Observer &#123;
+
+    public CurrentConditionsDisplay(Subject weatherData) &#123;
+        weatherData.registerObserver(this);
+    &#125;
+
+    @Override
+    public void update(float temp, float humidity, float pressure) &#123;
+        System.out.println(&quot;CurrentConditionsDisplay.update: &quot; + temp + &quot; &quot; + humidity + &quot; &quot; + pressure);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class WeatherStation &#123;
+    public static void main(String[] args) &#123;
+        WeatherData weatherData = new WeatherData();
+        CurrentConditionsDisplay currentConditionsDisplay = new CurrentConditionsDisplay(weatherData);
+        StatisticsDisplay statisticsDisplay = new StatisticsDisplay(weatherData);
+
+        weatherData.setMeasurements(0, 0, 0);
+        weatherData.setMeasurements(1, 1, 1);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">CurrentConditionsDisplay.update: 0.0 0.0 0.0
+StatisticsDisplay.update: 0.0 0.0 0.0
+CurrentConditionsDisplay.update: 1.0 1.0 1.0
+StatisticsDisplay.update: 1.0 1.0 1.0
+</code></pre>
+<h3 id="JDK-11"><a href="#JDK-11" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/Observer.html">java.util.Observer</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/EventListener.html">java.util.EventListener</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javaee/7/api/javax/servlet/http/HttpSessionBindingListener.html">javax.servlet.http.HttpSessionBindingListener</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/ReactiveX/RxJava">RxJava</a></li>
+</ul>
+<h2 id="8-状态（State）"><a href="#8-状态（State）" class="headerlink" title="8. 状态（State）"></a>8. 状态（State）</h2><h3 id="Intent-13"><a href="#Intent-13" class="headerlink" title="Intent"></a>Intent</h3><p>允许对象在内部状态改变时改变它的行为，对象看起来好像修改了它所属的类。</p>
+<h3 id="Class-Diagram-13"><a href="#Class-Diagram-13" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/79df886f-fdc3-4020-a07f-c991bb58e0d8.png"/> </div><br>
+
+<h3 id="Implementation-13"><a href="#Implementation-13" class="headerlink" title="Implementation"></a>Implementation</h3><p>糖果销售机有多种状态，每种状态下销售机有不同的行为，状态可以发生转移，使得销售机的行为也发生改变。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/396be981-3f2c-4fd9-8101-dbf9c841504b.jpg" width="600"/> </div><br>
+
+<pre><code class="java">public interface State &#123;
+    /**
+     * 投入 25 分钱
+     */
+    void insertQuarter();
+
+    /**
+     * 退回 25 分钱
+     */
+    void ejectQuarter();
+
+    /**
+     * 转动曲柄
+     */
+    void turnCrank();
+
+    /**
+     * 发放糖果
+     */
+    void dispense();
+&#125;
+</code></pre>
+<pre><code class="java">public class HasQuarterState implements State &#123;
+
+    private GumballMachine gumballMachine;
+
+    public HasQuarterState(GumballMachine gumballMachine) &#123;
+        this.gumballMachine = gumballMachine;
+    &#125;
+
+    @Override
+    public void insertQuarter() &#123;
+        System.out.println(&quot;You can&#39;t insert another quarter&quot;);
+    &#125;
+
+    @Override
+    public void ejectQuarter() &#123;
+        System.out.println(&quot;Quarter returned&quot;);
+        gumballMachine.setState(gumballMachine.getNoQuarterState());
+    &#125;
+
+    @Override
+    public void turnCrank() &#123;
+        System.out.println(&quot;You turned...&quot;);
+        gumballMachine.setState(gumballMachine.getSoldState());
+    &#125;
+
+    @Override
+    public void dispense() &#123;
+        System.out.println(&quot;No gumball dispensed&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class NoQuarterState implements State &#123;
+
+    GumballMachine gumballMachine;
+
+    public NoQuarterState(GumballMachine gumballMachine) &#123;
+        this.gumballMachine = gumballMachine;
+    &#125;
+
+    @Override
+    public void insertQuarter() &#123;
+        System.out.println(&quot;You insert a quarter&quot;);
+        gumballMachine.setState(gumballMachine.getHasQuarterState());
+    &#125;
+
+    @Override
+    public void ejectQuarter() &#123;
+        System.out.println(&quot;You haven&#39;t insert a quarter&quot;);
+    &#125;
+
+    @Override
+    public void turnCrank() &#123;
+        System.out.println(&quot;You turned, but there&#39;s no quarter&quot;);
+    &#125;
+
+    @Override
+    public void dispense() &#123;
+        System.out.println(&quot;You need to pay first&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class SoldOutState implements State &#123;
+
+    GumballMachine gumballMachine;
+
+    public SoldOutState(GumballMachine gumballMachine) &#123;
+        this.gumballMachine = gumballMachine;
+    &#125;
+
+    @Override
+    public void insertQuarter() &#123;
+        System.out.println(&quot;You can&#39;t insert a quarter, the machine is sold out&quot;);
+    &#125;
+
+    @Override
+    public void ejectQuarter() &#123;
+        System.out.println(&quot;You can&#39;t eject, you haven&#39;t inserted a quarter yet&quot;);
+    &#125;
+
+    @Override
+    public void turnCrank() &#123;
+        System.out.println(&quot;You turned, but there are no gumballs&quot;);
+    &#125;
+
+    @Override
+    public void dispense() &#123;
+        System.out.println(&quot;No gumball dispensed&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class SoldState implements State &#123;
+
+    GumballMachine gumballMachine;
+
+    public SoldState(GumballMachine gumballMachine) &#123;
+        this.gumballMachine = gumballMachine;
+    &#125;
+
+    @Override
+    public void insertQuarter() &#123;
+        System.out.println(&quot;Please wait, we&#39;re already giving you a gumball&quot;);
+    &#125;
+
+    @Override
+    public void ejectQuarter() &#123;
+        System.out.println(&quot;Sorry, you already turned the crank&quot;);
+    &#125;
+
+    @Override
+    public void turnCrank() &#123;
+        System.out.println(&quot;Turning twice doesn&#39;t get you another gumball!&quot;);
+    &#125;
+
+    @Override
+    public void dispense() &#123;
+        gumballMachine.releaseBall();
+        if (gumballMachine.getCount() &gt; 0) &#123;
+            gumballMachine.setState(gumballMachine.getNoQuarterState());
+        &#125; else &#123;
+            System.out.println(&quot;Oops, out of gumballs&quot;);
+            gumballMachine.setState(gumballMachine.getSoldOutState());
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class GumballMachine &#123;
+
+    private State soldOutState;
+    private State noQuarterState;
+    private State hasQuarterState;
+    private State soldState;
+
+    private State state;
+    private int count = 0;
+
+    public GumballMachine(int numberGumballs) &#123;
+        count = numberGumballs;
+        soldOutState = new SoldOutState(this);
+        noQuarterState = new NoQuarterState(this);
+        hasQuarterState = new HasQuarterState(this);
+        soldState = new SoldState(this);
+
+        if (numberGumballs &gt; 0) &#123;
+            state = noQuarterState;
+        &#125; else &#123;
+            state = soldOutState;
+        &#125;
+    &#125;
+
+    public void insertQuarter() &#123;
+        state.insertQuarter();
+    &#125;
+
+    public void ejectQuarter() &#123;
+        state.ejectQuarter();
+    &#125;
+
+    public void turnCrank() &#123;
+        state.turnCrank();
+        state.dispense();
+    &#125;
+
+    public void setState(State state) &#123;
+        this.state = state;
+    &#125;
+
+    public void releaseBall() &#123;
+        System.out.println(&quot;A gumball comes rolling out the slot...&quot;);
+        if (count != 0) &#123;
+            count -= 1;
+        &#125;
+    &#125;
+
+    public State getSoldOutState() &#123;
+        return soldOutState;
+    &#125;
+
+    public State getNoQuarterState() &#123;
+        return noQuarterState;
+    &#125;
+
+    public State getHasQuarterState() &#123;
+        return hasQuarterState;
+    &#125;
+
+    public State getSoldState() &#123;
+        return soldState;
+    &#125;
+
+    public int getCount() &#123;
+        return count;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+
+    public static void main(String[] args) &#123;
+        GumballMachine gumballMachine = new GumballMachine(5);
+
+        gumballMachine.insertQuarter();
+        gumballMachine.turnCrank();
+
+        gumballMachine.insertQuarter();
+        gumballMachine.ejectQuarter();
+        gumballMachine.turnCrank();
+
+        gumballMachine.insertQuarter();
+        gumballMachine.turnCrank();
+        gumballMachine.insertQuarter();
+        gumballMachine.turnCrank();
+        gumballMachine.ejectQuarter();
+
+        gumballMachine.insertQuarter();
+        gumballMachine.insertQuarter();
+        gumballMachine.turnCrank();
+        gumballMachine.insertQuarter();
+        gumballMachine.turnCrank();
+        gumballMachine.insertQuarter();
+        gumballMachine.turnCrank();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">You insert a quarter
+You turned...
+A gumball comes rolling out the slot...
+You insert a quarter
+Quarter returned
+You turned, but there&#39;s no quarter
+You need to pay first
+You insert a quarter
+You turned...
+A gumball comes rolling out the slot...
+You insert a quarter
+You turned...
+A gumball comes rolling out the slot...
+You haven&#39;t insert a quarter
+You insert a quarter
+You can&#39;t insert another quarter
+You turned...
+A gumball comes rolling out the slot...
+You insert a quarter
+You turned...
+A gumball comes rolling out the slot...
+Oops, out of gumballs
+You can&#39;t insert a quarter, the machine is sold out
+You turned, but there are no gumballs
+No gumball dispensed
+</code></pre>
+<h2 id="9-策略（Strategy）"><a href="#9-策略（Strategy）" class="headerlink" title="9. 策略（Strategy）"></a>9. 策略（Strategy）</h2><h3 id="Intent-14"><a href="#Intent-14" class="headerlink" title="Intent"></a>Intent</h3><p>定义一系列算法，封装每个算法，并使它们可以互换。</p>
+<p>策略模式可以让算法独立于使用它的客户端。</p>
+<h3 id="Class-Diagram-14"><a href="#Class-Diagram-14" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Strategy 接口定义了一个算法族，它们都实现了  behavior() 方法。</li>
+<li>Context 是使用到该算法族的类，其中的 doSomething() 方法会调用 behavior()，setStrategy(Strategy) 方法可以动态地改变 strategy 对象，也就是说能动态地改变 Context 所使用的算法。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/cd1be8c2-755a-4a66-ad92-2e30f8f47922.png"/> </div><br>
+
+<h3 id="与状态模式的比较"><a href="#与状态模式的比较" class="headerlink" title="与状态模式的比较"></a>与状态模式的比较</h3><p>状态模式的类图和策略模式类似，并且都是能够动态改变对象的行为。但是状态模式是通过状态转移来改变 Context 所组合的 State 对象，而策略模式是通过 Context 本身的决策来改变组合的 Strategy 对象。所谓的状态转移，是指 Context 在运行过程中由于一些条件发生改变而使得 State 对象发生改变，注意必须要是在运行过程中。</p>
+<p>状态模式主要是用来解决状态转移的问题，当状态发生转移了，那么 Context 对象就会改变它的行为；而策略模式主要是用来封装一组可以互相替代的算法族，并且可以根据需要动态地去替换 Context 使用的算法。</p>
+<h3 id="Implementation-14"><a href="#Implementation-14" class="headerlink" title="Implementation"></a>Implementation</h3><p>设计一个鸭子，它可以动态地改变叫声。这里的算法族是鸭子的叫声行为。</p>
+<pre><code class="java">public interface QuackBehavior &#123;
+    void quack();
+&#125;
+</code></pre>
+<pre><code class="java">public class Quack implements QuackBehavior &#123;
+    @Override
+    public void quack() &#123;
+        System.out.println(&quot;quack!&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Squeak implements QuackBehavior&#123;
+    @Override
+    public void quack() &#123;
+        System.out.println(&quot;squeak!&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Duck &#123;
+
+    private QuackBehavior quackBehavior;
+
+    public void performQuack() &#123;
+        if (quackBehavior != null) &#123;
+            quackBehavior.quack();
+        &#125;
+    &#125;
+
+    public void setQuackBehavior(QuackBehavior quackBehavior) &#123;
+        this.quackBehavior = quackBehavior;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+
+    public static void main(String[] args) &#123;
+        Duck duck = new Duck();
+        duck.setQuackBehavior(new Squeak());
+        duck.performQuack();
+        duck.setQuackBehavior(new Quack());
+        duck.performQuack();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">squeak!
+quack!
+</code></pre>
+<h3 id="JDK-12"><a href="#JDK-12" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>java.util.Comparator#compare()</li>
+<li>javax.servlet.http.HttpServlet</li>
+<li>javax.servlet.Filter#doFilter()</li>
+</ul>
+<h2 id="10-模板方法（Template-Method）"><a href="#10-模板方法（Template-Method）" class="headerlink" title="10. 模板方法（Template Method）"></a>10. 模板方法（Template Method）</h2><h3 id="Intent-15"><a href="#Intent-15" class="headerlink" title="Intent"></a>Intent</h3><p>定义算法框架，并将一些步骤的实现延迟到子类。</p>
+<p>通过模板方法，子类可以重新定义算法的某些步骤，而不用改变算法的结构。</p>
+<h3 id="Class-Diagram-15"><a href="#Class-Diagram-15" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/ac6a794b-68c0-486c-902f-8d988eee5766.png"/> </div><br>
+
+<h3 id="Implementation-15"><a href="#Implementation-15" class="headerlink" title="Implementation"></a>Implementation</h3><p>冲咖啡和冲茶都有类似的流程，但是某些步骤会有点不一样，要求复用那些相同步骤的代码。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/11236498-1417-46ce-a1b0-e10054256955.png"/> </div><br>
+
+<pre><code class="java">public abstract class CaffeineBeverage &#123;
+
+    final void prepareRecipe() &#123;
+        boilWater();
+        brew();
+        pourInCup();
+        addCondiments();
+    &#125;
+
+    abstract void brew();
+
+    abstract void addCondiments();
+
+    void boilWater() &#123;
+        System.out.println(&quot;boilWater&quot;);
+    &#125;
+
+    void pourInCup() &#123;
+        System.out.println(&quot;pourInCup&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Coffee extends CaffeineBeverage &#123;
+    @Override
+    void brew() &#123;
+        System.out.println(&quot;Coffee.brew&quot;);
+    &#125;
+
+    @Override
+    void addCondiments() &#123;
+        System.out.println(&quot;Coffee.addCondiments&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Tea extends CaffeineBeverage &#123;
+    @Override
+    void brew() &#123;
+        System.out.println(&quot;Tea.brew&quot;);
+    &#125;
+
+    @Override
+    void addCondiments() &#123;
+        System.out.println(&quot;Tea.addCondiments&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        CaffeineBeverage caffeineBeverage = new Coffee();
+        caffeineBeverage.prepareRecipe();
+        System.out.println(&quot;-----------&quot;);
+        caffeineBeverage = new Tea();
+        caffeineBeverage.prepareRecipe();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">boilWater
+Coffee.brew
+pourInCup
+Coffee.addCondiments
+-----------
+boilWater
+Tea.brew
+pourInCup
+Tea.addCondiments
+</code></pre>
+<h3 id="JDK-13"><a href="#JDK-13" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>java.util.Collections#sort()</li>
+<li>java.io.InputStream#skip()</li>
+<li>java.io.InputStream#read()</li>
+<li>java.util.AbstractList#indexOf()</li>
+</ul>
+<h2 id="11-访问者（Visitor）"><a href="#11-访问者（Visitor）" class="headerlink" title="11. 访问者（Visitor）"></a>11. 访问者（Visitor）</h2><h3 id="Intent-16"><a href="#Intent-16" class="headerlink" title="Intent"></a>Intent</h3><p>为一个对象结构（比如组合结构）增加新能力。</p>
+<h3 id="Class-Diagram-16"><a href="#Class-Diagram-16" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Visitor：访问者，为每一个 ConcreteElement 声明一个 visit 操作</li>
+<li>ConcreteVisitor：具体访问者，存储遍历过程中的累计结果</li>
+<li>ObjectStructure：对象结构，可以是组合结构，或者是一个集合。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/79c6f036-bde6-4393-85a3-ef36a0327bd2.png"/> </div><br>
+
+<h3 id="Implementation-16"><a href="#Implementation-16" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public interface Element &#123;
+    void accept(Visitor visitor);
+&#125;
+</code></pre>
+<pre><code class="java">class CustomerGroup &#123;
+
+    private List&lt;Customer&gt; customers = new ArrayList&lt;&gt;();
+
+    void accept(Visitor visitor) &#123;
+        for (Customer customer : customers) &#123;
+            customer.accept(visitor);
+        &#125;
+    &#125;
+
+    void addCustomer(Customer customer) &#123;
+        customers.add(customer);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Customer implements Element &#123;
+
+    private String name;
+    private List&lt;Order&gt; orders = new ArrayList&lt;&gt;();
+
+    Customer(String name) &#123;
+        this.name = name;
+    &#125;
+
+    String getName() &#123;
+        return name;
+    &#125;
+
+    void addOrder(Order order) &#123;
+        orders.add(order);
+    &#125;
+
+    public void accept(Visitor visitor) &#123;
+        visitor.visit(this);
+        for (Order order : orders) &#123;
+            order.accept(visitor);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Order implements Element &#123;
+
+    private String name;
+    private List&lt;Item&gt; items = new ArrayList();
+
+    Order(String name) &#123;
+        this.name = name;
+    &#125;
+
+    Order(String name, String itemName) &#123;
+        this.name = name;
+        this.addItem(new Item(itemName));
+    &#125;
+
+    String getName() &#123;
+        return name;
+    &#125;
+
+    void addItem(Item item) &#123;
+        items.add(item);
+    &#125;
+
+    public void accept(Visitor visitor) &#123;
+        visitor.visit(this);
+
+        for (Item item : items) &#123;
+            item.accept(visitor);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Item implements Element &#123;
+
+    private String name;
+
+    Item(String name) &#123;
+        this.name = name;
+    &#125;
+
+    String getName() &#123;
+        return name;
+    &#125;
+
+    public void accept(Visitor visitor) &#123;
+        visitor.visit(this);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public interface Visitor &#123;
+    void visit(Customer customer);
+
+    void visit(Order order);
+
+    void visit(Item item);
+&#125;
+</code></pre>
+<pre><code class="java">public class GeneralReport implements Visitor &#123;
+
+    private int customersNo;
+    private int ordersNo;
+    private int itemsNo;
+
+    public void visit(Customer customer) &#123;
+        System.out.println(customer.getName());
+        customersNo++;
+    &#125;
+
+    public void visit(Order order) &#123;
+        System.out.println(order.getName());
+        ordersNo++;
+    &#125;
+
+    public void visit(Item item) &#123;
+        System.out.println(item.getName());
+        itemsNo++;
+    &#125;
+
+    public void displayResults() &#123;
+        System.out.println(&quot;Number of customers: &quot; + customersNo);
+        System.out.println(&quot;Number of orders:    &quot; + ordersNo);
+        System.out.println(&quot;Number of items:     &quot; + itemsNo);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        Customer customer1 = new Customer(&quot;customer1&quot;);
+        customer1.addOrder(new Order(&quot;order1&quot;, &quot;item1&quot;));
+        customer1.addOrder(new Order(&quot;order2&quot;, &quot;item1&quot;));
+        customer1.addOrder(new Order(&quot;order3&quot;, &quot;item1&quot;));
+
+        Order order = new Order(&quot;order_a&quot;);
+        order.addItem(new Item(&quot;item_a1&quot;));
+        order.addItem(new Item(&quot;item_a2&quot;));
+        order.addItem(new Item(&quot;item_a3&quot;));
+        Customer customer2 = new Customer(&quot;customer2&quot;);
+        customer2.addOrder(order);
+
+        CustomerGroup customers = new CustomerGroup();
+        customers.addCustomer(customer1);
+        customers.addCustomer(customer2);
+
+        GeneralReport visitor = new GeneralReport();
+        customers.accept(visitor);
+        visitor.displayResults();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">customer1
+order1
+item1
+order2
+item1
+order3
+item1
+customer2
+order_a
+item_a1
+item_a2
+item_a3
+Number of customers: 2
+Number of orders:    4
+Number of items:     6
+</code></pre>
+<h3 id="JDK-14"><a href="#JDK-14" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>javax.lang.model.element.Element and javax.lang.model.element.ElementVisitor</li>
+<li>javax.lang.model.type.TypeMirror and javax.lang.model.type.TypeVisitor</li>
+</ul>
+<h2 id="12-空对象（Null）"><a href="#12-空对象（Null）" class="headerlink" title="12. 空对象（Null）"></a>12. 空对象（Null）</h2><h3 id="Intent-17"><a href="#Intent-17" class="headerlink" title="Intent"></a>Intent</h3><p>使用什么都不做的空对象来代替 NULL。</p>
+<p>一个方法返回 NULL，意味着方法的调用端需要去检查返回值是否是 NULL，这么做会导致非常多的冗余的检查代码。并且如果某一个调用端忘记了做这个检查返回值，而直接使用返回的对象，那么就有可能抛出空指针异常。</p>
+<h3 id="Class-Diagram-17"><a href="#Class-Diagram-17" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/22870bbe-898f-4c17-a31a-d7c5ee5d1c10.png"/> </div><br>
+
+<h3 id="Implementation-17"><a href="#Implementation-17" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public abstract class AbstractOperation &#123;
+    abstract void request();
+&#125;
+</code></pre>
+<pre><code class="java">public class RealOperation extends AbstractOperation &#123;
+    @Override
+    void request() &#123;
+        System.out.println(&quot;do something&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class NullOperation extends AbstractOperation&#123;
+    @Override
+    void request() &#123;
+        // do nothing
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        AbstractOperation abstractOperation = func(-1);
+        abstractOperation.request();
+    &#125;
+
+    public static AbstractOperation func(int para) &#123;
+        if (para &lt; 0) &#123;
+            return new NullOperation();
+        &#125;
+        return new RealOperation();
+    &#125;
+&#125;
+</code></pre>
+<h1 id="四、结构型"><a href="#四、结构型" class="headerlink" title="四、结构型"></a>四、结构型</h1><h2 id="1-适配器（Adapter）"><a href="#1-适配器（Adapter）" class="headerlink" title="1. 适配器（Adapter）"></a>1. 适配器（Adapter）</h2><h3 id="Intent-18"><a href="#Intent-18" class="headerlink" title="Intent"></a>Intent</h3><p>把一个类接口转换成另一个用户需要的接口。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/3d5b828e-5c4d-48d8-a440-281e4a8e1c92.png"/> </div><br>
+
+<h3 id="Class-Diagram-18"><a href="#Class-Diagram-18" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/ff5152fc-4ff3-44c4-95d6-1061002c364a.png"/> </div><br>
+
+<h3 id="Implementation-18"><a href="#Implementation-18" class="headerlink" title="Implementation"></a>Implementation</h3><p>鸭子（Duck）和火鸡（Turkey）拥有不同的叫声，Duck 的叫声调用 quack() 方法，而 Turkey 调用 gobble() 方法。</p>
+<p>要求将 Turkey 的 gobble() 方法适配成 Duck 的 quack() 方法，从而让火鸡冒充鸭子！</p>
+<pre><code class="java">public interface Duck &#123;
+    void quack();
+&#125;
+</code></pre>
+<pre><code class="java">public interface Turkey &#123;
+    void gobble();
+&#125;
+</code></pre>
+<pre><code class="java">public class WildTurkey implements Turkey &#123;
+    @Override
+    public void gobble() &#123;
+        System.out.println(&quot;gobble!&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class TurkeyAdapter implements Duck &#123;
+    Turkey turkey;
+
+    public TurkeyAdapter(Turkey turkey) &#123;
+        this.turkey = turkey;
+    &#125;
+
+    @Override
+    public void quack() &#123;
+        turkey.gobble();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        Turkey turkey = new WildTurkey();
+        Duck duck = new TurkeyAdapter(turkey);
+        duck.quack();
+    &#125;
+&#125;
+</code></pre>
+<h3 id="JDK-15"><a href="#JDK-15" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/Arrays.html#asList%28T...%29">java.util.Arrays#asList()</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/api/java/util/Collections.html#list-java.util.Enumeration-">java.util.Collections#list()</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/api/java/util/Collections.html#enumeration-java.util.Collection-">java.util.Collections#enumeration()</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/javax/xml/bind/annotation/adapters/XmlAdapter.html#marshal-BoundType-">javax.xml.bind.annotation.adapters.XMLAdapter</a></li>
+</ul>
+<h2 id="2-桥接（Bridge）"><a href="#2-桥接（Bridge）" class="headerlink" title="2. 桥接（Bridge）"></a>2. 桥接（Bridge）</h2><h3 id="Intent-19"><a href="#Intent-19" class="headerlink" title="Intent"></a>Intent</h3><p>将抽象与实现分离开来，使它们可以独立变化。</p>
+<h3 id="Class-Diagram-19"><a href="#Class-Diagram-19" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Abstraction：定义抽象类的接口</li>
+<li>Implementor：定义实现类接口</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/2a1f8b0f-1dd7-4409-b177-a381c58066ad.png"/> </div><br>
+
+<h3 id="Implementation-19"><a href="#Implementation-19" class="headerlink" title="Implementation"></a>Implementation</h3><p>RemoteControl 表示遥控器，指代 Abstraction。</p>
+<p>TV 表示电视，指代 Implementor。</p>
+<p>桥接模式将遥控器和电视分离开来，从而可以独立改变遥控器或者电视的实现。</p>
+<pre><code class="java">public abstract class TV &#123;
+    public abstract void on();
+
+    public abstract void off();
+
+    public abstract void tuneChannel();
+&#125;
+</code></pre>
+<pre><code class="java">public class Sony extends TV &#123;
+    @Override
+    public void on() &#123;
+        System.out.println(&quot;Sony.on()&quot;);
+    &#125;
+
+    @Override
+    public void off() &#123;
+        System.out.println(&quot;Sony.off()&quot;);
+    &#125;
+
+    @Override
+    public void tuneChannel() &#123;
+        System.out.println(&quot;Sony.tuneChannel()&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class RCA extends TV &#123;
+    @Override
+    public void on() &#123;
+        System.out.println(&quot;RCA.on()&quot;);
+    &#125;
+
+    @Override
+    public void off() &#123;
+        System.out.println(&quot;RCA.off()&quot;);
+    &#125;
+
+    @Override
+    public void tuneChannel() &#123;
+        System.out.println(&quot;RCA.tuneChannel()&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public abstract class RemoteControl &#123;
+    protected TV tv;
+
+    public RemoteControl(TV tv) &#123;
+        this.tv = tv;
+    &#125;
+
+    public abstract void on();
+
+    public abstract void off();
+
+    public abstract void tuneChannel();
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteRemoteControl1 extends RemoteControl &#123;
+    public ConcreteRemoteControl1(TV tv) &#123;
+        super(tv);
+    &#125;
+
+    @Override
+    public void on() &#123;
+        System.out.println(&quot;ConcreteRemoteControl1.on()&quot;);
+        tv.on();
+    &#125;
+
+    @Override
+    public void off() &#123;
+        System.out.println(&quot;ConcreteRemoteControl1.off()&quot;);
+        tv.off();
+    &#125;
+
+    @Override
+    public void tuneChannel() &#123;
+        System.out.println(&quot;ConcreteRemoteControl1.tuneChannel()&quot;);
+        tv.tuneChannel();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteRemoteControl2 extends RemoteControl &#123;
+    public ConcreteRemoteControl2(TV tv) &#123;
+        super(tv);
+    &#125;
+
+    @Override
+    public void on() &#123;
+        System.out.println(&quot;ConcreteRemoteControl2.on()&quot;);
+        tv.on();
+    &#125;
+
+    @Override
+    public void off() &#123;
+        System.out.println(&quot;ConcreteRemoteControl2.off()&quot;);
+        tv.off();
+    &#125;
+
+    @Override
+    public void tuneChannel() &#123;
+        System.out.println(&quot;ConcreteRemoteControl2.tuneChannel()&quot;);
+        tv.tuneChannel();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        RemoteControl remoteControl1 = new ConcreteRemoteControl1(new RCA());
+        remoteControl1.on();
+        remoteControl1.off();
+        remoteControl1.tuneChannel();
+        RemoteControl remoteControl2 = new ConcreteRemoteControl2(new Sony());
+         remoteControl2.on();
+         remoteControl2.off();
+         remoteControl2.tuneChannel();
+    &#125;
+&#125;
+</code></pre>
+<h3 id="JDK-16"><a href="#JDK-16" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>AWT (It provides an abstraction layer which maps onto the native OS the windowing support.)</li>
+<li>JDBC</li>
+</ul>
+<h2 id="3-组合（Composite）"><a href="#3-组合（Composite）" class="headerlink" title="3. 组合（Composite）"></a>3. 组合（Composite）</h2><h3 id="Intent-20"><a href="#Intent-20" class="headerlink" title="Intent"></a>Intent</h3><p>将对象组合成树形结构来表示“整体/部分”层次关系，允许用户以相同的方式处理单独对象和组合对象。</p>
+<h3 id="Class-Diagram-20"><a href="#Class-Diagram-20" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><p>组件（Component）类是组合类（Composite）和叶子类（Leaf）的父类，可以把组合类看成是树的中间节点。</p>
+<p>组合对象拥有一个或者多个组件对象，因此组合对象的操作可以委托给组件对象去处理，而组件对象可以是另一个组合对象或者叶子对象。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/2b8bfd57-b4d1-4a75-bfb0-bcf1fba4014a.png"/> </div><br>
+
+<h3 id="Implementation-20"><a href="#Implementation-20" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public abstract class Component &#123;
+    protected String name;
+
+    public Component(String name) &#123;
+        this.name = name;
+    &#125;
+
+    public void print() &#123;
+        print(0);
+    &#125;
+
+    abstract void print(int level);
+
+    abstract public void add(Component component);
+
+    abstract public void remove(Component component);
+&#125;
+</code></pre>
+<pre><code class="java">public class Composite extends Component &#123;
+
+    private List&lt;Component&gt; child;
+
+    public Composite(String name) &#123;
+        super(name);
+        child = new ArrayList&lt;&gt;();
+    &#125;
+
+    @Override
+    void print(int level) &#123;
+        for (int i = 0; i &lt; level; i++) &#123;
+            System.out.print(&quot;--&quot;);
+        &#125;
+        System.out.println(&quot;Composite:&quot; + name);
+        for (Component component : child) &#123;
+            component.print(level + 1);
+        &#125;
+    &#125;
+
+    @Override
+    public void add(Component component) &#123;
+        child.add(component);
+    &#125;
+
+    @Override
+    public void remove(Component component) &#123;
+        child.remove(component);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Leaf extends Component &#123;
+    public Leaf(String name) &#123;
+        super(name);
+    &#125;
+
+    @Override
+    void print(int level) &#123;
+        for (int i = 0; i &lt; level; i++) &#123;
+            System.out.print(&quot;--&quot;);
+        &#125;
+        System.out.println(&quot;left:&quot; + name);
+    &#125;
+
+    @Override
+    public void add(Component component) &#123;
+        throw new UnsupportedOperationException(); // 牺牲透明性换取单一职责原则，这样就不用考虑是叶子节点还是组合节点
+    &#125;
+
+    @Override
+    public void remove(Component component) &#123;
+        throw new UnsupportedOperationException();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        Composite root = new Composite(&quot;root&quot;);
+        Component node1 = new Leaf(&quot;1&quot;);
+        Component node2 = new Composite(&quot;2&quot;);
+        Component node3 = new Leaf(&quot;3&quot;);
+        root.add(node1);
+        root.add(node2);
+        root.add(node3);
+        Component node21 = new Leaf(&quot;21&quot;);
+        Component node22 = new Composite(&quot;22&quot;);
+        node2.add(node21);
+        node2.add(node22);
+        Component node221 = new Leaf(&quot;221&quot;);
+        node22.add(node221);
+        root.print();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">Composite:root
+--left:1
+--Composite:2
+----left:21
+----Composite:22
+------left:221
+--left:3
+</code></pre>
+<h3 id="JDK-17"><a href="#JDK-17" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>javax.swing.JComponent#add(Component)</li>
+<li>java.awt.Container#add(Component)</li>
+<li>java.util.Map#putAll(Map)</li>
+<li>java.util.List#addAll(Collection)</li>
+<li>java.util.Set#addAll(Collection)</li>
+</ul>
+<h2 id="4-装饰（Decorator）"><a href="#4-装饰（Decorator）" class="headerlink" title="4. 装饰（Decorator）"></a>4. 装饰（Decorator）</h2><h3 id="Intent-21"><a href="#Intent-21" class="headerlink" title="Intent"></a>Intent</h3><p>为对象动态添加功能。</p>
+<h3 id="Class-Diagram-21"><a href="#Class-Diagram-21" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><p>装饰者（Decorator）和具体组件（ConcreteComponent）都继承自组件（Component），具体组件的方法实现不需要依赖于其它对象，而装饰者组合了一个组件，这样它可以装饰其它装饰者或者具体组件。所谓装饰，就是把这个装饰者套在被装饰者之上，从而动态扩展被装饰者的功能。装饰者的方法有一部分是自己的，这属于它的功能，然后调用被装饰者的方法实现，从而也保留了被装饰者的功能。可以看到，具体组件应当是装饰层次的最低层，因为只有具体组件的方法实现不需要依赖于其它对象。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/6b833bc2-517a-4270-8a5e-0a5f6df8cd96.png"/> </div><br>
+
+<h3 id="Implementation-21"><a href="#Implementation-21" class="headerlink" title="Implementation"></a>Implementation</h3><p>设计不同种类的饮料，饮料可以添加配料，比如可以添加牛奶，并且支持动态添加新配料。每增加一种配料，该饮料的价格就会增加，要求计算一种饮料的价格。</p>
+<p>下图表示在 DarkRoast 饮料上新增新添加 Mocha 配料，之后又添加了 Whip 配料。DarkRoast 被 Mocha 包裹，Mocha 又被 Whip 包裹。它们都继承自相同父类，都有 cost() 方法，外层类的 cost() 方法调用了内层类的 cost() 方法。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/c9cfd600-bc91-4f3a-9f99-b42f88a5bb24.jpg" width="600"/> </div><br>
+
+<pre><code class="java">public interface Beverage &#123;
+    double cost();
+&#125;
+</code></pre>
+<pre><code class="java">public class DarkRoast implements Beverage &#123;
+    @Override
+    public double cost() &#123;
+        return 1;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class HouseBlend implements Beverage &#123;
+    @Override
+    public double cost() &#123;
+        return 1;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public abstract class CondimentDecorator implements Beverage &#123;
+    protected Beverage beverage;
+&#125;
+</code></pre>
+<pre><code class="java">public class Milk extends CondimentDecorator &#123;
+
+    public Milk(Beverage beverage) &#123;
+        this.beverage = beverage;
+    &#125;
+
+    @Override
+    public double cost() &#123;
+        return 1 + beverage.cost();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Mocha extends CondimentDecorator &#123;
+
+    public Mocha(Beverage beverage) &#123;
+        this.beverage = beverage;
+    &#125;
+
+    @Override
+    public double cost() &#123;
+        return 1 + beverage.cost();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+
+    public static void main(String[] args) &#123;
+        Beverage beverage = new HouseBlend();
+        beverage = new Mocha(beverage);
+        beverage = new Milk(beverage);
+        System.out.println(beverage.cost());
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">3.0
+</code></pre>
+<h3 id="设计原则"><a href="#设计原则" class="headerlink" title="设计原则"></a>设计原则</h3><p>类应该对扩展开放，对修改关闭：也就是添加新功能时不需要修改代码。饮料可以动态添加新的配料，而不需要去修改饮料的代码。</p>
+<p>不可能把所有的类设计成都满足这一原则，应当把该原则应用于最有可能发生改变的地方。</p>
+<h3 id="JDK-18"><a href="#JDK-18" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>java.io.BufferedInputStream(InputStream)</li>
+<li>java.io.DataInputStream(InputStream)</li>
+<li>java.io.BufferedOutputStream(OutputStream)</li>
+<li>java.util.zip.ZipOutputStream(OutputStream)</li>
+<li>java.util.Collections#checked<a href="">List|Map|Set|SortedSet|SortedMap</a></li>
+</ul>
+<h2 id="5-外观（Facade）"><a href="#5-外观（Facade）" class="headerlink" title="5. 外观（Facade）"></a>5. 外观（Facade）</h2><h3 id="Intent-22"><a href="#Intent-22" class="headerlink" title="Intent"></a>Intent</h3><p>提供了一个统一的接口，用来访问子系统中的一群接口，从而让子系统更容易使用。</p>
+<h3 id="Class-Diagram-22"><a href="#Class-Diagram-22" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/f9978fa6-9f49-4a0f-8540-02d269ac448f.png"/> </div><br>
+
+<h3 id="Implementation-22"><a href="#Implementation-22" class="headerlink" title="Implementation"></a>Implementation</h3><p>观看电影需要操作很多电器，使用外观模式实现一键看电影功能。</p>
+<pre><code class="java">public class SubSystem &#123;
+    public void turnOnTV() &#123;
+        System.out.println(&quot;turnOnTV()&quot;);
+    &#125;
+
+    public void setCD(String cd) &#123;
+        System.out.println(&quot;setCD( &quot; + cd + &quot; )&quot;);
+    &#125;
+
+    public void startWatching()&#123;
+        System.out.println(&quot;startWatching()&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Facade &#123;
+    private SubSystem subSystem = new SubSystem();
+
+    public void watchMovie() &#123;
+        subSystem.turnOnTV();
+        subSystem.setCD(&quot;a movie&quot;);
+        subSystem.startWatching();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+    public static void main(String[] args) &#123;
+        Facade facade = new Facade();
+        facade.watchMovie();
+    &#125;
+&#125;
+</code></pre>
+<h3 id="设计原则-1"><a href="#设计原则-1" class="headerlink" title="设计原则"></a>设计原则</h3><p>最少知识原则：只和你的密友谈话。也就是说客户对象所需要交互的对象应当尽可能少。</p>
+<h2 id="6-享元（Flyweight）"><a href="#6-享元（Flyweight）" class="headerlink" title="6. 享元（Flyweight）"></a>6. 享元（Flyweight）</h2><h3 id="Intent-23"><a href="#Intent-23" class="headerlink" title="Intent"></a>Intent</h3><p>利用共享的方式来支持大量细粒度的对象，这些对象一部分内部状态是相同的。</p>
+<h3 id="Class-Diagram-23"><a href="#Class-Diagram-23" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><ul>
+<li>Flyweight：享元对象</li>
+<li>IntrinsicState：内部状态，享元对象共享内部状态</li>
+<li>ExtrinsicState：外部状态，每个享元对象的外部状态不同</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/5f5c22d5-9c0e-49e1-b5b0-6cc7032724d4.png"/> </div><br>
+
+<h3 id="Implementation-23"><a href="#Implementation-23" class="headerlink" title="Implementation"></a>Implementation</h3><pre><code class="java">public interface Flyweight &#123;
+    void doOperation(String extrinsicState);
+&#125;
+</code></pre>
+<pre><code class="java">public class ConcreteFlyweight implements Flyweight &#123;
+
+    private String intrinsicState;
+
+    public ConcreteFlyweight(String intrinsicState) &#123;
+        this.intrinsicState = intrinsicState;
+    &#125;
+
+    @Override
+    public void doOperation(String extrinsicState) &#123;
+        System.out.println(&quot;Object address: &quot; + System.identityHashCode(this));
+        System.out.println(&quot;IntrinsicState: &quot; + intrinsicState);
+        System.out.println(&quot;ExtrinsicState: &quot; + extrinsicState);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class FlyweightFactory &#123;
+
+    private HashMap&lt;String, Flyweight&gt; flyweights = new HashMap&lt;&gt;();
+
+    Flyweight getFlyweight(String intrinsicState) &#123;
+        if (!flyweights.containsKey(intrinsicState)) &#123;
+            Flyweight flyweight = new ConcreteFlyweight(intrinsicState);
+            flyweights.put(intrinsicState, flyweight);
+        &#125;
+        return flyweights.get(intrinsicState);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class Client &#123;
+
+    public static void main(String[] args) &#123;
+        FlyweightFactory factory = new FlyweightFactory();
+        Flyweight flyweight1 = factory.getFlyweight(&quot;aa&quot;);
+        Flyweight flyweight2 = factory.getFlyweight(&quot;aa&quot;);
+        flyweight1.doOperation(&quot;x&quot;);
+        flyweight2.doOperation(&quot;y&quot;);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="html">Object address: 1163157884
+IntrinsicState: aa
+ExtrinsicState: x
+Object address: 1163157884
+IntrinsicState: aa
+ExtrinsicState: y
+</code></pre>
+<h3 id="JDK-19"><a href="#JDK-19" class="headerlink" title="JDK"></a>JDK</h3><p>Java 利用缓存来加速大量小对象的访问时间。</p>
+<ul>
+<li>java.lang.Integer#valueOf(int)</li>
+<li>java.lang.Boolean#valueOf(boolean)</li>
+<li>java.lang.Byte#valueOf(byte)</li>
+<li>java.lang.Character#valueOf(char)</li>
+</ul>
+<h2 id="7-代理（Proxy）"><a href="#7-代理（Proxy）" class="headerlink" title="7. 代理（Proxy）"></a>7. 代理（Proxy）</h2><h3 id="Intent-24"><a href="#Intent-24" class="headerlink" title="Intent"></a>Intent</h3><p>控制对其它对象的访问。</p>
+<h3 id="Class-Diagram-24"><a href="#Class-Diagram-24" class="headerlink" title="Class Diagram"></a>Class Diagram</h3><p>代理有以下四类：</p>
+<ul>
+<li>远程代理（Remote Proxy）：控制对远程对象（不同地址空间）的访问，它负责将请求及其参数进行编码，并向不同地址空间中的对象发送已经编码的请求。</li>
+<li>虚拟代理（Virtual Proxy）：根据需要创建开销很大的对象，它可以缓存实体的附加信息，以便延迟对它的访问，例如在网站加载一个很大图片时，不能马上完成，可以用虚拟代理缓存图片的大小信息，然后生成一张临时图片代替原始图片。</li>
+<li>保护代理（Protection Proxy）：按权限控制对象的访问，它负责检查调用者是否具有实现一个请求所必须的访问权限。</li>
+<li>智能代理（Smart Reference）：取代了简单的指针，它在访问对象时执行一些附加操作：记录对象的引用次数；当第一次引用一个对象时，将它装入内存；在访问一个实际对象前，检查是否已经锁定了它，以确保其它对象不能改变它。</li>
+</ul>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/9b679ff5-94c6-48a7-b9b7-2ea868e828ed.png"/> </div><br>
+
+<h3 id="Implementation-24"><a href="#Implementation-24" class="headerlink" title="Implementation"></a>Implementation</h3><p>以下是一个虚拟代理的实现，模拟了图片延迟加载的情况下使用与图片大小相等的临时内容去替换原始图片，直到图片加载完成才将图片显示出来。</p>
+<pre><code class="java">public interface Image &#123;
+    void showImage();
+&#125;
+</code></pre>
+<pre><code class="java">public class HighResolutionImage implements Image &#123;
+
+    private URL imageURL;
+    private long startTime;
+    private int height;
+    private int width;
+
+    public int getHeight() &#123;
+        return height;
+    &#125;
+
+    public int getWidth() &#123;
+        return width;
+    &#125;
+
+    public HighResolutionImage(URL imageURL) &#123;
+        this.imageURL = imageURL;
+        this.startTime = System.currentTimeMillis();
+        this.width = 600;
+        this.height = 600;
+    &#125;
+
+    public boolean isLoad() &#123;
+        // 模拟图片加载，延迟 3s 加载完成
+        long endTime = System.currentTimeMillis();
+        return endTime - startTime &gt; 3000;
+    &#125;
+
+    @Override
+    public void showImage() &#123;
+        System.out.println(&quot;Real Image: &quot; + imageURL);
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class ImageProxy implements Image &#123;
+
+    private HighResolutionImage highResolutionImage;
+
+    public ImageProxy(HighResolutionImage highResolutionImage) &#123;
+        this.highResolutionImage = highResolutionImage;
+    &#125;
+
+    @Override
+    public void showImage() &#123;
+        while (!highResolutionImage.isLoad()) &#123;
+            try &#123;
+                System.out.println(&quot;Temp Image: &quot; + highResolutionImage.getWidth() + &quot; &quot; + highResolutionImage.getHeight());
+                Thread.sleep(100);
+            &#125; catch (InterruptedException e) &#123;
+                e.printStackTrace();
+            &#125;
+        &#125;
+        highResolutionImage.showImage();
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class ImageViewer &#123;
+
+    public static void main(String[] args) throws Exception &#123;
+        String image = &quot;http://image.jpg&quot;;
+        URL url = new URL(image);
+        HighResolutionImage highResolutionImage = new HighResolutionImage(url);
+        ImageProxy imageProxy = new ImageProxy(highResolutionImage);
+        imageProxy.showImage();
+    &#125;
+&#125;
+</code></pre>
+<h3 id="JDK-20"><a href="#JDK-20" class="headerlink" title="JDK"></a>JDK</h3><ul>
+<li>java.lang.reflect.Proxy</li>
+<li>RMI</li>
+</ul>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li>弗里曼. Head First 设计模式 [M]. 中国电力出版社, 2007.</li>
+<li>Gamma E. 设计模式: 可复用面向对象软件的基础 [M]. 机械工业出版社, 2007.</li>
+<li>Bloch J. Effective java[M]. Addison-Wesley Professional, 2017.</li>
+<li><a target="_blank" rel="noopener" href="http://www.oodesign.com/">Design Patterns</a></li>
+<li><a target="_blank" rel="noopener" href="http://java-design-patterns.com/">Design patterns implemented in Java</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.programering.com/a/MTNxAzMwATY.html">The breakdown of design patterns in JDK</a></li>
+</ul>
+<div align="center"><img width="320px" src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/githubio/公众号二维码-2.png"></img></div>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

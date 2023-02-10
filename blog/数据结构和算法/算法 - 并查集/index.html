@@ -1,0 +1,243 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="
+前言
+Quick Find
+Quick Union
+加权 Quick Union
+路径压缩的加权 Quick Union
+比较
+
+前言用于解决动态连通性问题，能动态连接两个点，并且判断两个点是否连通。
+  
+
+
+
+
+方法
+描述
+
+
+
+UF(int N)
+构造一个大小为 N 的并查集
+
+
+void union(int p, int q)
+连接 p 和 q 节点
+
+
+int find(int p)
+查找 p 所在的连通分量编号
+
+
+boolean connected(int p, int q)
+判断 p 和 q 节点是否连通
+
+
+public abstract class UF &amp;#123;
+
+    protected int[] id;
+
+    public UF(int N) &amp;#123;
+     .."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center"></p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Quick-Find"><span class="toc-text">Quick Find</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Quick-Union"><span class="toc-text">Quick Union</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8A%A0%E6%9D%83-Quick-Union"><span class="toc-text">加权 Quick Union</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%B7%AF%E5%BE%84%E5%8E%8B%E7%BC%A9%E7%9A%84%E5%8A%A0%E6%9D%83-Quick-Union"><span class="toc-text">路径压缩的加权 Quick Union</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%AF%94%E8%BE%83"><span class="toc-text">比较</span></a></li></ol></div><div class="column is-9"><header class="my-4"></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle"></h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.697Z">2023-01-31</time><article class="mt-2 post-content"><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#quick-find">Quick Find</a></li>
+<li><a href="#quick-union">Quick Union</a></li>
+<li><a href="#%E5%8A%A0%E6%9D%83-quick-union">加权 Quick Union</a></li>
+<li><a href="#%E8%B7%AF%E5%BE%84%E5%8E%8B%E7%BC%A9%E7%9A%84%E5%8A%A0%E6%9D%83-quick-union">路径压缩的加权 Quick Union</a></li>
+<li><a href="#%E6%AF%94%E8%BE%83">比较</a></li>
+</ul>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>用于解决动态连通性问题，能动态连接两个点，并且判断两个点是否连通。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/02943a90-7dd4-4e9a-9325-f8217d3cc54d.jpg" width="350"/> </div><br>
+
+<table>
+<thead>
+<tr>
+<th align="center">方法</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">UF(int N)</td>
+<td align="center">构造一个大小为 N 的并查集</td>
+</tr>
+<tr>
+<td align="center">void union(int p, int q)</td>
+<td align="center">连接 p 和 q 节点</td>
+</tr>
+<tr>
+<td align="center">int find(int p)</td>
+<td align="center">查找 p 所在的连通分量编号</td>
+</tr>
+<tr>
+<td align="center">boolean connected(int p, int q)</td>
+<td align="center">判断 p 和 q 节点是否连通</td>
+</tr>
+</tbody></table>
+<pre><code class="java">public abstract class UF &#123;
+
+    protected int[] id;
+
+    public UF(int N) &#123;
+        id = new int[N];
+        for (int i = 0; i &lt; N; i++) &#123;
+            id[i] = i;
+        &#125;
+    &#125;
+
+    public boolean connected(int p, int q) &#123;
+        return find(p) == find(q);
+    &#125;
+
+    public abstract int find(int p);
+
+    public abstract void union(int p, int q);
+&#125;
+</code></pre>
+<h1 id="Quick-Find"><a href="#Quick-Find" class="headerlink" title="Quick Find"></a>Quick Find</h1><p>可以快速进行 find 操作，也就是可以快速判断两个节点是否连通。</p>
+<p>需要保证同一连通分量的所有节点的 id 值相等，就可以通过判断两个节点的 id 值是否相等从而判断其连通性。</p>
+<p>但是 union 操作代价却很高，需要将其中一个连通分量中的所有节点 id 值都修改为另一个节点的 id 值。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/0972501d-f854-4d26-8fce-babb27c267f6.jpg" width="320"/> </div><br>
+
+<pre><code class="java">public class QuickFindUF extends UF &#123;
+
+    public QuickFindUF(int N) &#123;
+        super(N);
+    &#125;
+
+
+    @Override
+    public int find(int p) &#123;
+        return id[p];
+    &#125;
+
+
+    @Override
+    public void union(int p, int q) &#123;
+        int pID = find(p);
+        int qID = find(q);
+
+        if (pID == qID) &#123;
+            return;
+        &#125;
+
+        for (int i = 0; i &lt; id.length; i++) &#123;
+            if (id[i] == pID) &#123;
+                id[i] = qID;
+            &#125;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<h1 id="Quick-Union"><a href="#Quick-Union" class="headerlink" title="Quick Union"></a>Quick Union</h1><p>可以快速进行 union 操作，只需要修改一个节点的 id 值即可。</p>
+<p>但是 find 操作开销很大，因为同一个连通分量的节点 id 值不同，id 值只是用来指向另一个节点。因此需要一直向上查找操作，直到找到最上层的节点。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/11b27de5-5a9d-45e4-95cc-417fa3ad1d38.jpg" width="280"/> </div><br>
+
+<pre><code class="java">public class QuickUnionUF extends UF &#123;
+
+    public QuickUnionUF(int N) &#123;
+        super(N);
+    &#125;
+
+
+    @Override
+    public int find(int p) &#123;
+        while (p != id[p]) &#123;
+            p = id[p];
+        &#125;
+        return p;
+    &#125;
+
+
+    @Override
+    public void union(int p, int q) &#123;
+        int pRoot = find(p);
+        int qRoot = find(q);
+
+        if (pRoot != qRoot) &#123;
+            id[pRoot] = qRoot;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>这种方法可以快速进行 union 操作，但是 find 操作和树高成正比，最坏的情况下树的高度为节点的数目。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/23e4462b-263f-4d15-8805-529e0ca7a4d1.jpg" width="100"/> </div><br>
+
+<h1 id="加权-Quick-Union"><a href="#加权-Quick-Union" class="headerlink" title="加权 Quick Union"></a>加权 Quick Union</h1><p>为了解决 quick-union 的树通常会很高的问题，加权 quick-union 在 union 操作时会让较小的树连接较大的树上面。</p>
+<p>理论研究证明，加权 quick-union 算法构造的树深度最多不超过 logN。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/a9f18f8a-c1ea-422e-aa56-d91716b0f755.jpg" width="150"/> </div><br>
+
+<pre><code class="java">public class WeightedQuickUnionUF extends UF &#123;
+
+    // 保存节点的数量信息
+    private int[] sz;
+
+
+    public WeightedQuickUnionUF(int N) &#123;
+        super(N);
+        this.sz = new int[N];
+        for (int i = 0; i &lt; N; i++) &#123;
+            this.sz[i] = 1;
+        &#125;
+    &#125;
+
+
+    @Override
+    public int find(int p) &#123;
+        while (p != id[p]) &#123;
+            p = id[p];
+        &#125;
+        return p;
+    &#125;
+
+
+    @Override
+    public void union(int p, int q) &#123;
+
+        int i = find(p);
+        int j = find(q);
+
+        if (i == j) return;
+
+        if (sz[i] &lt; sz[j]) &#123;
+            id[i] = j;
+            sz[j] += sz[i];
+        &#125; else &#123;
+            id[j] = i;
+            sz[i] += sz[j];
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<h1 id="路径压缩的加权-Quick-Union"><a href="#路径压缩的加权-Quick-Union" class="headerlink" title="路径压缩的加权 Quick Union"></a>路径压缩的加权 Quick Union</h1><p>在检查节点的同时将它们直接链接到根节点，只需要在 find 中添加一个循环即可。</p>
+<h1 id="比较"><a href="#比较" class="headerlink" title="比较"></a>比较</h1><table>
+<thead>
+<tr>
+<th align="center">算法</th>
+<th align="center">union</th>
+<th align="center">find</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">Quick Find</td>
+<td align="center">N</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center">Quick Union</td>
+<td align="center">树高</td>
+<td align="center">树高</td>
+</tr>
+<tr>
+<td align="center">加权 Quick Union</td>
+<td align="center">logN</td>
+<td align="center">logN</td>
+</tr>
+<tr>
+<td align="center">路径压缩的加权 Quick Union</td>
+<td align="center">非常接近 1</td>
+<td align="center">非常接近 1</td>
+</tr>
+</tbody></table>
+<div align="center"><img width="320px" src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/githubio/公众号二维码-2.png"></img></div>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>
