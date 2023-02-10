@@ -1,0 +1,613 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="Android 中的进程间通信，采用 Binder 机制，那线程间通信呢？Android 给出了一个机制 —— Handler。
+一提起 Handler，就不得不提到它的全家：
+
+Message
+MessageQueue
+Looper
+Handler
+
+我们来一个个地解释一下。
+
+
+Message —— 信件Message 在何时都会代表『消息』的意思。在 Android 中消息还会附带一些其他的数据，供暂存消息的 MessageQueue 和分发消息的 Looper 以及处理消息的 Handler使用。
+Message 中包含可供 Handler 使用的三个字段，分别是两个int字段和一个Object字段。
+我们来看看 Message 的定义：
+// android.os.Message
+
+// 注意，虽.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Handler 和它的朋友们</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Message-%E2%80%94%E2%80%94-%E4%BF%A1%E4%BB%B6"><span class="toc-text">Message —— 信件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MessageQueue-%E2%80%94%E2%80%94-%E9%82%AE%E7%AD%92"><span class="toc-text">MessageQueue —— 邮筒</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Looper-%E2%80%94%E2%80%94-%E9%A9%AC%E8%BD%A6"><span class="toc-text">Looper —— 马车</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Handler-%E2%80%94%E2%80%94-%E9%82%AE%E9%80%92%E5%91%98"><span class="toc-text">Handler —— 邮递员</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/Handler"><i class="tag post-item-tag">Handler</i></a><a href="/tags/Android%20Framwork"><i class="tag post-item-tag">Android Framwork</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">Handler 和它的朋友们</h1><time class="has-text-grey" datetime="2020-01-01T16:00:00.000Z">2020-01-02</time><article class="mt-2 post-content"><p>Android 中的进程间通信，采用 Binder 机制，那线程间通信呢？Android 给出了一个机制 —— Handler。</p>
+<p>一提起 Handler，就不得不提到它的<strong>全家</strong>：</p>
+<ul>
+<li>Message</li>
+<li>MessageQueue</li>
+<li>Looper</li>
+<li>Handler</li>
+</ul>
+<p>我们来一个个地解释一下。</p>
+<span id="more"></span>
+
+<h2 id="Message-——-信件"><a href="#Message-——-信件" class="headerlink" title="Message —— 信件"></a>Message —— 信件</h2><p>Message 在何时都会代表『消息』的意思。在 Android 中消息还会附带一些其他的数据，供<strong>暂存消息的 MessageQueue</strong> 和<strong>分发消息的 Looper</strong> 以及<strong>处理消息的 Handler</strong>使用。</p>
+<p>Message 中包含可供 Handler 使用的三个字段，分别是<strong>两个<code>int</code>字段</strong>和<strong>一个<code>Object</code>字段</strong>。</p>
+<p>我们来看看 Message 的定义：</p>
+<pre><code class="java">// android.os.Message
+
+// 注意，虽然 Message 的构造函数是 public的，但最好的获取 Message 的方法还是使用 Message.obtain() 或者是 Handler.obtainMessage() 方法，它会从回收池子中拿出一个对象来
+public final class Message implements Parcelable &#123;
+    // 消息的 code，可以让接收者辨认这是哪个消息
+    // 每一个 Handler 应对 code 时都有自己的命名空间，所以你不用担心会与其他的 Handler 有冲突
+    public int what;
+
+    // arg1 和 arg2 相比较 setData(Bundle) 来说是消耗很低，如果你只需要暂存几个 int 值的话，可以用这两个参数
+    public int arg1;
+    public int arg2;
+
+    // 想存啥就存啥，但是要存储的数据必须是一个 Parcelable 对象
+    // 注意在Android 4.0之前不支持 Parcelable 对象
+    public Object obj;
+
+    ...
+
+    /*package*/ Bundle data;
+
+    // 存储着要处理消息的 Handler 的实例
+    @UnsupportedAppUsage
+    /*package*/ Handler target;
+
+    // 要处理消息时，可以回调的方法
+    @UnsupportedAppUsage
+    /*package*/ Runnable callback;
+
+    // 有时会链式存储下一条消息
+    @UnsupportedAppUsage
+    /*package*/ Message next;
+
+    // 池子锁
+    public static final Object sPoolSync = new Object();
+
+    // 一个池，用来暂存消息，这样如果需要新消息实例的话，就直接使用池里的，而不用再新建实例了
+    private static Message sPool;
+    private static int sPoolSize = 0;
+    private static final int MAX_POOL_SIZE = 50;
+
+    // 从全局池中拿出一个新的消息，在很多情况下可以避免生成一个新的对象
+    public static Message obtain() &#123;
+        synchronized (sPoolSync) &#123;
+            if (sPool != null) &#123;
+                Message m = sPool;
+                sPool = m.next;
+                m.next = null;
+                m.flags = 0; // clear in-use flag
+                sPoolSize--;
+                return m;
+            &#125;
+        &#125;
+        return new Message();
+    &#125;
+
+    // obtain() 方法的各种重载方法，但最后都会调用上面的方法
+    // 比如比较常用的 obtain(Handler)
+    // 与 obtain() 相同，但是会把 target 设置为传入的 Handler
+    public static Message obtain(Handler h) &#123;
+        Message m = obtain();
+        m.target = h;
+
+        return m;
+    &#125;
+    ...
+
+    // 将一个 Message 实例扔回全局池中
+    // 在调用完这个方法后，你绝对不能再动这个 Message，因为它已经被释放了。
+    // 回收一个正在队列中或正在被传递给 Handler 的消息是错误的
+    public void recycle() &#123;
+        if (isInUse()) &#123;
+            if (gCheckRecycle) &#123;
+                throw new IllegalStateException(&quot;This message cannot be recycled because it &quot;
+                        + &quot;is still in use.&quot;);
+            &#125;
+            return;
+        &#125;
+        recycleUnchecked();
+    &#125;
+
+    // 回收一个可能正在使用的 Message
+    // 该方法会在 MessageQueue 内部使用，也会在 Looper 抛弃 Message 时使用
+    void recycleUnchecked() &#123;
+        // 标记为 FLAG_IN_USE，并清空它内部的东西
+        // Mark the message as in use while it remains in the recycled object pool.
+        // Clear out all other details.
+        flags = FLAG_IN_USE;
+        what = 0;
+        arg1 = 0;
+        arg2 = 0;
+        obj = null;
+        replyTo = null;
+        sendingUid = UID_NONE;
+        workSourceUid = UID_NONE;
+        when = 0;
+        target = null;
+        callback = null;
+        data = null;
+
+        synchronized (sPoolSync) &#123;
+            if (sPoolSize &lt; MAX_POOL_SIZE) &#123;
+                next = sPool;
+                sPool = this;
+                sPoolSize++;
+            &#125;
+        &#125;
+    &#125;
+
+    // 将 Message 发送到 Handler，也即 target 变量
+    public void sendToTarget() &#123;
+        target.sendMessage(this);
+    &#125;
+&#125;
+</code></pre>
+<p>从上面的代码，我们可以看出几个 Message 的特性：</p>
+<ol>
+<li>有一个『回收池』的概念，如果 Message 完成使命之后被抛弃，那这个 Message 实例会被清空数据并扔到回收池中。如果再需要新建 Message 实例的时候，就直接从池中拿，避免了新建 Message 实例。</li>
+<li>如果要新建 Message 实例，使用<code>Message.obtain()</code>方法，而不是调用<code>new Message()</code>。</li>
+<li>Message 本身包含了一个 Handler 的引用，存储在 target 成员变量中，在发送消息时，会调用<code>target.sendMessage(this)</code>将自身传递到 Handler 中。</li>
+</ol>
+<h2 id="MessageQueue-——-邮筒"><a href="#MessageQueue-——-邮筒" class="headerlink" title="MessageQueue —— 邮筒"></a>MessageQueue —— 邮筒</h2><p>在 MessageQueue 的类注释里写着：</p>
+<blockquote>
+<p> Low-level class holding the list of messages to be dispatched by a Looper.  Messages are not added directly to a MessageQueue, but rather through Handler objects associated with the Looper.<br> 它是一个低等级的类，拿着一堆 Message 等待 Looper 来分发。Message 并不是直接就添加到 MessageQueue 中，而是通过与 Looper 关联的 Handler 来操作的。</p>
+</blockquote>
+<p>MessageQueue 最重要的功能当然就是维护本身的队列，提供进、出的方法给 Looper，以及掌管 Message 的生命周期。</p>
+<p>我们分别来看看这几种特性是如何完成的。</p>
+<pre><code class="java">// android.os.MessageQueue.java
+
+public final class MessageQueue &#123;
+    // 如果是 true，表示消息队列能退出
+    @UnsupportedAppUsage
+    private final boolean mQuitAllowed;
+    ...
+    @UnsupportedAppUsage
+    Message mMessages;
+
+    // 添加消息
+    boolean enqueueMessage(Message msg, long when) &#123;
+        // 各种判断
+        ...
+
+        synchronized (this) &#123;
+            // 如果正在退出，就不能添加了
+            // 同时还得回收这个消息
+            if (mQuitting) &#123;
+                IllegalStateException e = new IllegalStateException(
+                        msg.target + &quot; sending message to a Handler on a dead thread&quot;);
+                Log.w(TAG, e.getMessage(), e);
+                msg.recycle();
+                return false;
+            &#125;
+
+            msg.markInUse();
+            msg.when = when;
+            Message p = mMessages;
+            boolean needWake;
+            // 如果 MessageQueue 中没有消息
+            if (p == null || when == 0 || when &lt; p.when) &#123;
+                msg.next = p;
+                mMessages = msg;
+                needWake = mBlocked;
+            &#125; else &#123;
+                // Inserted within the middle of the queue.  Usually we don&#39;t have to wake
+                // up the event queue unless there is a barrier at the head of the queue
+                // and the message is the earliest asynchronous message in the queue.
+                needWake = mBlocked &amp;&amp; p.target == null &amp;&amp; msg.isAsynchronous();
+                Message prev;
+                // 循环查看 Message.next，如有，就继续查看 next，如果没有，就把消息添加到队尾 Message.next 中
+                for (;;) &#123;
+                    prev = p;
+                    p = p.next;
+                    if (p == null || when &lt; p.when) &#123;
+                        break;
+                    &#125;
+                    if (needWake &amp;&amp; p.isAsynchronous()) &#123;
+                        needWake = false;
+                    &#125;
+                &#125;
+                msg.next = p; // invariant: p == prev.next
+                prev.next = msg; // 然后把当前 Message 赋值到上一个 Message 的 next 中 
+            &#125;
+
+            // We can assume mPtr != 0 because mQuitting is false.
+            if (needWake) &#123;
+                nativeWake(mPtr);
+            &#125;
+        &#125;
+        return true;
+    &#125;
+
+    // 获取队头消息
+    @UnsupportedAppUsage
+    Message next() &#123;
+        // 如果 Looper 已经完蛋了，就返回 null 了
+        final long ptr = mPtr;
+        if (ptr == 0) &#123;
+            return null;
+        &#125;
+
+        int pendingIdleHandlerCount = -1; // -1 only during first iteration
+        int nextPollTimeoutMillis = 0;
+        for (;;) &#123;
+            if (nextPollTimeoutMillis != 0) &#123;
+                Binder.flushPendingCommands();
+            &#125;
+
+            nativePollOnce(ptr, nextPollTimeoutMillis);
+
+            synchronized (this) &#123;
+                // Try to retrieve the next message.  Return if found.
+                final long now = SystemClock.uptimeMillis();
+                Message prevMsg = null;
+                Message msg = mMessages;
+                if (msg != null &amp;&amp; msg.target == null) &#123;
+                    // Stalled by a barrier.  Find the next asynchronous message in the queue.
+                    do &#123;
+                        prevMsg = msg;
+                        msg = msg.next;
+                    &#125; while (msg != null &amp;&amp; !msg.isAsynchronous());
+                &#125;
+                if (msg != null) &#123;
+                    if (now &lt; msg.when) &#123;
+                        // 还没到发送消息的时候，就设置一个超时，等时间到了再唤醒它
+                        nextPollTimeoutMillis = (int) Math.min(msg.when - now, Integer.MAX_VALUE);
+                    &#125; else &#123;
+                        // 到发送消息的时候了，获取它
+                        mBlocked = false;
+                        if (prevMsg != null) &#123;
+                            prevMsg.next = msg.next;
+                        &#125; else &#123;
+                            mMessages = msg.next;
+                        &#125;
+                        msg.next = null;
+                        if (DEBUG) Log.v(TAG, &quot;Returning message: &quot; + msg);
+                        msg.markInUse();
+                        return msg;
+                    &#125;
+                &#125; else &#123;
+                    // No more messages.
+                    nextPollTimeoutMillis = -1;
+                &#125;
+                ...
+            &#125;
+            ...
+        &#125;
+    &#125;
+
+    ...
+    // 根据 Handler 和 what 移除 Message，同时要回收这个 Message
+    void removeMessages(Handler h, int what, Object object) &#123;
+        ...
+        synchronized (this) &#123;
+            Message p = mMessages;
+            ...
+            p.recycleUnchecked();
+        &#125;
+        ...
+    &#125;
+&#125;
+</code></pre>
+<p>读完上面的代码，我们可以发现，其实 MessageQueue 并不想我们想象的，有一个真实的『队列』存在，而是用 Message 的 next，建立了一个链表，形成了所谓的『队列』。在『进』的流程里比较简单，就是建立链表的过程；而『出』的流程相对复杂一些，是利用了一个死循环，因为每条 Message 都有自己『要被发送』的时间戳，如果时间没到，那还要等待一下，如果时间已到，就取出，并把其它的 Message 向队头提一位。</p>
+<p>可以用两个流程图来展示『进』与『出』：</p>
+<p><img src="/img/30.png"></p>
+<h2 id="Looper-——-马车"><a href="#Looper-——-马车" class="headerlink" title="Looper —— 马车"></a>Looper —— 马车</h2><p>Looper 是一个死循环。它负责不停地读取 MessageQueue 中的消息，如果一旦有消息，就拿出来，扔给 Handler，然后又进入自己的小圈子里不问世事。一旦 MessageQuee 里没有消息了，那它也就结束自己的工作。</p>
+<p>我们看看它的代码：</p>
+<pre><code class="java">// android.os.Looper.java
+
+/**
+  * Class used to run a message loop for a thread.  Threads by default do
+  * not have a message loop associated with them; to create one, call
+  * &#123;@link #prepare&#125; in the thread that is to run the loop, and then
+  * &#123;@link #loop&#125; to have it process messages until the loop is stopped.
+  *
+  * &lt;p&gt;Most interaction with a message loop is through the
+  * &#123;@link Handler&#125; class.
+  *
+  * &lt;p&gt;This is a typical example of the implementation of a Looper thread,
+  * using the separation of &#123;@link #prepare&#125; and &#123;@link #loop&#125; to create an
+  * initial Handler to communicate with the Looper.
+  *
+  * &lt;pre&gt;
+  *  class LooperThread extends Thread &#123;
+  *      public Handler mHandler;
+  *
+  *      public void run() &#123;
+  *          Looper.prepare();
+  *
+  *          mHandler = new Handler() &#123;
+  *              public void handleMessage(Message msg) &#123;
+  *                  // process incoming messages here
+  *              &#125;
+  *          &#125;;
+  *
+  *          Looper.loop();
+  *      &#125;
+  *  &#125;&lt;/pre&gt;
+  */
+public final class Looper &#123;
+    ...
+    @UnsupportedAppUsage
+    static final ThreadLocal&lt;Looper&gt; sThreadLocal = new ThreadLocal&lt;Looper&gt;();
+    @UnsupportedAppUsage
+    private static Looper sMainLooper;  // guarded by Looper.class
+    private static Observer sObserver;
+
+    @UnsupportedAppUsage
+    final MessageQueue mQueue;
+    final Thread mThread;
+
+    /** 将当前线程初始化为一个 Looper。
+      * 之后，在真正启动这个 Looper 之前，你就可以用这个 Looper 去创建 Handler了。
+      * 在调用完 prepare() 之后一定要调用 loop() 方法，如果要停止，则调用 quit()
+      */
+    public static void prepare() &#123;
+        prepare(true);
+    &#125;
+
+    private static void prepare(boolean quitAllowed) &#123;
+        if (sThreadLocal.get() != null) &#123;
+            throw new RuntimeException(&quot;Only one Looper may be created per thread&quot;);
+        &#125;
+        sThreadLocal.set(new Looper(quitAllowed));
+    &#125;
+
+    /**
+     * 将当前线程初始化为一个 Looper，并将其当做应用的 main looper。
+     * 介个方法是由 Android 来调用的，所以理论上来说，你应该压根用不到这个方法。
+     */
+    public static void prepareMainLooper() &#123;
+        prepare(false);
+        synchronized (Looper.class) &#123;
+            if (sMainLooper != null) &#123;
+                throw new IllegalStateException(&quot;The main Looper has already been prepared.&quot;);
+            &#125;
+            sMainLooper = myLooper();
+        &#125;
+    &#125;
+
+    /**
+     * 返回应用的 main looper，在应用的主线程里存活的那个
+     */
+    public static Looper getMainLooper() &#123;
+        synchronized (Looper.class) &#123;
+            return sMainLooper;
+        &#125;
+    &#125;
+
+    ...
+
+    /**
+     * 开始监听 message queue，一定记得要调用 quit() 来停止 Looper
+     */
+    public static void loop() &#123;
+        // 拿到调用此方法的当前线程下的 Looper 实例
+        final Looper me = myLooper();
+        if (me == null) &#123;
+            throw new RuntimeException(&quot;No Looper; Looper.prepare() wasn&#39;t called on this thread.&quot;);
+        &#125;
+        final MessageQueue queue = me.mQueue;
+
+        ...
+
+        // 开启自闭模式
+        for (;;) &#123;
+            Message msg = queue.next(); // 可能会 block，因为在 MessageQueue.next() 中，
+                                        // 调用了 nativePollOnce 方法，可能会引起阻塞。
+                                        // 也就是说，没有消息的时候，Looper 就在这儿『等着』。
+            if (msg == null) &#123;
+                // 木有 message，意味着 message queue 正在 quit
+                // 一旦 return，这个 Looper 就结束了
+                return;
+            &#125;
+
+            // 各种检查
+            ...
+            
+            try &#123;
+                // 发送消息
+                msg.target.dispatchMessage(msg);
+                ...
+            &#125; catch (Exception exception) &#123;
+                ...
+            &#125; finally &#123;
+                ...
+            &#125;
+
+            ...
+        &#125;
+    &#125;
+
+    /**
+     * 从 sThreadLocal 中获取当前线程下的 Looper
+     * 此处利用了 ThreadLocal，某个线程下存储的数据，只有这个线程能读取，其他线程不可以，从而达到
+     * 线程与 Looper 的『绑定』效果
+     */
+    public static @Nullable Looper myLooper() &#123;
+        return sThreadLocal.get();
+    &#125;
+
+    /**
+     * 返回当前线程下 Looper 的 MessageQueue。
+     * 该方法必须从一个正在跑 Looper 的线程下调用，否则就会抛出 NullPointerException。
+     */
+    public static @NonNull MessageQueue myQueue() &#123;
+        return myLooper().mQueue;
+    &#125;
+
+    // 初始化
+    private Looper(boolean quitAllowed) &#123;
+        mQueue = new MessageQueue(quitAllowed);
+        mThread = Thread.currentThread();
+    &#125;
+
+    ...
+
+    // 返回当前线程是否是 Looper 的线程
+    public boolean isCurrentThread() &#123;
+        return Thread.currentThread() == mThread;
+    &#125;
+
+    ...
+
+    public interface Observer &#123;
+        // Message 分发之前被调用
+        Object messageDispatchStarting();
+
+        // Message 被 Handler 处理过了之后调用
+        void messageDispatched(Object token, Message msg);
+
+        // Message 处理过程中出现异常时调用
+        void dispatchingThrewException(Object token, Message msg, Exception exception);
+    &#125;
+</code></pre>
+<p>Looper 类比较清晰，职责也相对单一，就是用死循环的方式，一直通过<code>MessageQueue.next()</code>方法获取 Message，然后调用<code>msg.target.dispatchMessage(msg)</code>方法，将 Message 交给 Handler 处理（<code>msg.target</code>是 Handler 类型）。</p>
+<p>等任务全部处理完成后，<code>使用 MessageQueue.quit()</code> 清空消息，结束 Looper 的循环。</p>
+<p>有一个比较经典的但是又很无厘头的问题：主线程的 Looper 死循环为什么不会导致 ANR？</p>
+<p>这个问题其实算是偷换概念。</p>
+<p>首先，死循环不是造成 ANR 的必然原因，ANR 是因为消息队列中的消息没有得到及时处理才造成的，比如 BroadcastReceiver 的<code>onReceive()</code>方法中处理事务超过了10秒，比如<code>onTouch()</code>事件超过了5秒，才会导致 ANR。</p>
+<p>第二，主线程的 Looper 死循环，最多也就会导致个 OOM，但是主线程在没有消息时也会休眠、进入阻塞状态，当有新消息来临时，再被唤醒，分发消息，实际上对于内存的消耗非常小。</p>
+<p>第三，如果主线程的 Looper 不循环了，那<code>main()</code>方法就抛出一个异常结束了，就整个应用就退出了。</p>
+<p>另外，我们看到，<code>prepare()</code>方法中使用到了 ThreadLocal 的机制，该机制的描述是：<strong>A 线程下使用了 <code>ThreadLocal.set()</code> 方法存储了某个资源，那么只有在 A 线程下才能通过 <code>ThreadLocal.get()</code> 方法拿到这个资源，从而实现了资源隔离</strong>。对 ThreadLocal 的详解，在<a href="/threadlocal/">这篇文章</a>里。</p>
+<h2 id="Handler-——-邮递员"><a href="#Handler-——-邮递员" class="headerlink" title="Handler —— 邮递员"></a>Handler —— 邮递员</h2><p>Handler 顾名思义就是处理者。当接到 Message 的时候，就马不停蹄地开始工作。它的头脑很简单，给我活我就干，没活我就等着。</p>
+<p>我们在初始化 Handler 的时候，有几种方式：</p>
+<ol>
+<li>直接调用<code>new Handler()</code>。</li>
+</ol>
+<p>我们来看看在这种情况下 Handler 的构造函数。</p>
+<pre><code class="java">// android.os.Handler.java
+
+public Handler() &#123;
+    this(null, false);
+&#125;
+
+public Handler(@Nullable Callback callback, boolean async) &#123;
+    // 检查持有该实例的类是否会导致内存泄漏
+    if (FIND_POTENTIAL_LEAKS) &#123;
+        final Class&lt;? extends Handler&gt; klass = getClass();
+        if ((klass.isAnonymousClass() || klass.isMemberClass() || klass.isLocalClass()) &amp;&amp;
+                (klass.getModifiers() &amp; Modifier.STATIC) == 0) &#123;
+            Log.w(TAG, &quot;The following Handler class should be static or leaks might occur: &quot; +
+                klass.getCanonicalName());
+        &#125;
+    &#125;
+
+    // 调用了 Looper.myLooper() 方法，来获取 Looper 的实例。
+    // 刚才上面讲过了，只能获取当前线程下的 Looper，所以，一般情况下，我们 new 一个 Handler 的时候，都是
+    // 在主线程下，那这个 mLooper 其实就是 Main Looper
+    mLooper = Looper.myLooper();
+    // 如果一个线程被创建了，但是它的 Looper 没有调用过 prepare()，也就是没有启用，那获取到的 Looper 就是空
+    if (mLooper == null) &#123;
+        throw new RuntimeException(
+            &quot;Can&#39;t create handler inside thread &quot; + Thread.currentThread()
+                    + &quot; that has not called Looper.prepare()&quot;);
+    &#125;
+    mQueue = mLooper.mQueue;
+    mCallback = callback;
+    mAsynchronous = async;
+&#125;
+</code></pre>
+<ol start="2">
+<li>创建 Handler 实例时传入 Looper。</li>
+</ol>
+<p>同样地，也看看这种情况下，会调用哪个构造函数：</p>
+<pre><code class="java">// android.os.Handler.java
+
+public Handler(@NonNull Looper looper) &#123;
+        this(looper, null, false);
+&#125;
+
+public Handler(@NonNull Looper looper, @Nullable Callback callback, boolean async) &#123;
+    mLooper = looper;
+    mQueue = looper.mQueue;
+    mCallback = callback;
+    mAsynchronous = async;
+&#125;
+</code></pre>
+<p>有了 Looper 就可以直接赋值了，Handler 也并不关心当前的 Looper 是在哪个线程下，干就完了。</p>
+<p>我们也观察到，Handler 的几个重载的构造函数里，总会有 Callback 参数，言下之意，是 Handler 在某个节点，应该会调用这个 Callback。我们来看看代码是不是这么写的，从 Looper 向 Handler 发送消息开始：</p>
+<pre><code class="java">// android.os.Handler.java
+
+public void dispatchMessage(@NonNull Message msg) &#123;
+    if (msg.callback != null) &#123;
+        handleCallback(msg);
+    &#125; else &#123;
+        if (mCallback != null) &#123;
+            if (mCallback.handleMessage(msg)) &#123;
+                return;
+            &#125;
+        &#125;
+        handleMessage(msg);
+    &#125;
+&#125;
+
+// 子类必须要实现这个方法，才能获取 Message
+// 但它不是抽象方法，所以可以不实现该方法
+public void handleMessage(@NonNull Message msg) &#123;
+&#125;
+</code></pre>
+<p>是了，如果在 Message 中有 Callback，那就直接回调 Message 中的 Callback，下面的就不走了。</p>
+<p>如果给 Handler 设置了 Callback，那就调用，如果该 Callback 的实现类里，返回了<code>true</code>，那就不再调用 handleMessage 方法；如果返回了<code>false</code>，那就再调用一次 handleMessage 方法。</p>
+<p>Callback 的定义是这样的：</p>
+<pre><code class="java">// 你可以用 Callback 接口来初始化一个 Handler，这样你就不用去继承 Handler 然后去实现一堆方法了
+// 说白了，就是简单地实现一个回调功能
+public interface Callback &#123;
+    // 返回 true 的话，就不再继续处理
+    boolean handleMessage(@NonNull Message msg);
+&#125;
+</code></pre>
+<p>刚才在 Looper 的代码中看到，<code>msg.target.diapatch()</code>是在向 Handler 发送消息，那<code>msg.target</code>是什么时候被赋值的呢？</p>
+<p>我们来看 Handler 中最著名的<code>post()</code>方法。</p>
+<pre><code class="java">// android.os.Handler.java
+
+// 把一个 Runnable 的实例添加到 MessageQueue 中。
+// 这个 Runnable 将会运行在 Handler 所在的线程上。
+// 返回 true 的话，就是正确地放入了 MessageQueue，否则就返回 false，通常是因为 MessageQueue 正在退出
+public final boolean post(@NonNull Runnable r) &#123;
+    return sendMessageDelayed(getPostMessage(r), 0);
+&#125;
+
+// 向 MessageQueue 中添加一个 Message，如果有延时，那就在这个时间段（current time + delayMillis）再添加
+// 这个 Message 回头能在 handleMessage 里拿到，当前，所在的线程也是 Hanlder 绑定的线程
+// 添加成功后返回 true，添加失败返回 false
+// 添加成功不代表一定能被处理
+public final boolean sendMessageDelayed(@NonNull Message msg, long delayMillis) &#123;
+    if (delayMillis &lt; 0) &#123;
+        delayMillis = 0;
+    &#125;
+    return sendMessageAtTime(msg, SystemClock.uptimeMillis() + delayMillis);
+&#125;
+
+// 在一个绝对时间（毫秒）时，将 Message 添加到 MessageQueue 中
+// 这个时间是基于 android.os.SystemClock#uptimeMillis
+// 这个 Message 回头能在 handleMessage 里拿到，当前，所在的线程也是 Hanlder 绑定的线程
+// 添加成功后返回 true，添加失败返回 false
+// 添加成功不代表一定能被处理
+public boolean sendMessageAtTime(@NonNull Message msg, long uptimeMillis) &#123;
+    MessageQueue queue = mQueue;
+    if (queue == null) &#123;
+        RuntimeException e = new RuntimeException(
+                this + &quot; sendMessageAtTime() called with no mQueue&quot;);
+        Log.w(&quot;Looper&quot;, e.getMessage(), e);
+        return false;
+    &#125;
+    return enqueueMessage(queue, msg, uptimeMillis);
+&#125;
+
+private boolean enqueueMessage(@NonNull MessageQueue queue, @NonNull Message msg,
+        long uptimeMillis) &#123;
+    // 赋值了，将 msg.target 赋值为自身的实例
+    msg.target = this; 
+    msg.workSourceUid = ThreadLocalWorkSource.getUid();
+
+    if (mAsynchronous) &#123;
+        msg.setAsynchronous(true);
+    &#125;
+    return queue.enqueueMessage(msg, uptimeMillis);
+&#125;
+</code></pre>
+<p>也就是说，Handler 不光只是处理消息，也要负责将消息添加到 MessageQueue 中。</p>
+<p>关于这四大天王的关系，可以用一个关系图来展示一下：</p>
+<p><img src="/img/31.png"></p>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/%E9%9D%A2%E8%AF%95/%E7%BD%91%E7%BB%9C%E9%9D%A2%E8%AF%95%E9%A2%98/" title="网络面试题"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: 网络面试题</span></a><a class="button is-default" href="/%E9%9D%A2%E8%AF%95/%E9%9D%9E%E6%8A%80%E6%9C%AF%E9%9D%A2%E8%AF%95%E9%A2%98/" title="非技术面试题"><span class="has-text-weight-semibold">Next: 非技术面试题</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

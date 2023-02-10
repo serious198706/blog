@@ -1,0 +1,1152 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="
+BFS
+1. 计算在网格中从原点到特定点的最短路径长度
+2. 组成整数的最小平方数数量
+3. 最短单词路径
+
+
+DFS
+1. 查找最大的连通面积
+2. 矩阵中的连通分量数目
+3. 好友关系的连通分量数目
+4. 填充封闭区域
+5. 能到达的太平洋和大西洋的区域
+
+
+Backtracking
+1. 数字键盘组合
+2. IP 地址划分
+3. 在矩阵中寻找字符串
+4. 输出二叉树中所有从根到叶子的路径
+5. 排列
+6. 含有相同元素求排列
+7. 组合
+8. 组合求和
+9. 含有相同元素的组合求和
+10. 1-9 数字的组合求和
+11. 子集
+12. 含有相同元素求子集
+13. 分割字符串使得每个部分都是回文数
+14. 数独
+15. N 皇后
+
+
+
+深度优先搜索和广度优先搜索广泛运用于树和图中，但是它们的应用远远不.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center"></p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#BFS"><span class="toc-text">BFS</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%AE%A1%E7%AE%97%E5%9C%A8%E7%BD%91%E6%A0%BC%E4%B8%AD%E4%BB%8E%E5%8E%9F%E7%82%B9%E5%88%B0%E7%89%B9%E5%AE%9A%E7%82%B9%E7%9A%84%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84%E9%95%BF%E5%BA%A6"><span class="toc-text">1. 计算在网格中从原点到特定点的最短路径长度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%BB%84%E6%88%90%E6%95%B4%E6%95%B0%E7%9A%84%E6%9C%80%E5%B0%8F%E5%B9%B3%E6%96%B9%E6%95%B0%E6%95%B0%E9%87%8F"><span class="toc-text">2. 组成整数的最小平方数数量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%9C%80%E7%9F%AD%E5%8D%95%E8%AF%8D%E8%B7%AF%E5%BE%84"><span class="toc-text">3. 最短单词路径</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#DFS"><span class="toc-text">DFS</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%9F%A5%E6%89%BE%E6%9C%80%E5%A4%A7%E7%9A%84%E8%BF%9E%E9%80%9A%E9%9D%A2%E7%A7%AF"><span class="toc-text">1. 查找最大的连通面积</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%9F%A9%E9%98%B5%E4%B8%AD%E7%9A%84%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F%E6%95%B0%E7%9B%AE"><span class="toc-text">2. 矩阵中的连通分量数目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%A5%BD%E5%8F%8B%E5%85%B3%E7%B3%BB%E7%9A%84%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F%E6%95%B0%E7%9B%AE"><span class="toc-text">3. 好友关系的连通分量数目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%A1%AB%E5%85%85%E5%B0%81%E9%97%AD%E5%8C%BA%E5%9F%9F"><span class="toc-text">4. 填充封闭区域</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%83%BD%E5%88%B0%E8%BE%BE%E7%9A%84%E5%A4%AA%E5%B9%B3%E6%B4%8B%E5%92%8C%E5%A4%A7%E8%A5%BF%E6%B4%8B%E7%9A%84%E5%8C%BA%E5%9F%9F"><span class="toc-text">5. 能到达的太平洋和大西洋的区域</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Backtracking"><span class="toc-text">Backtracking</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%95%B0%E5%AD%97%E9%94%AE%E7%9B%98%E7%BB%84%E5%90%88"><span class="toc-text">1. 数字键盘组合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-IP-%E5%9C%B0%E5%9D%80%E5%88%92%E5%88%86"><span class="toc-text">2. IP 地址划分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%9C%A8%E7%9F%A9%E9%98%B5%E4%B8%AD%E5%AF%BB%E6%89%BE%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="toc-text">3. 在矩阵中寻找字符串</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E8%BE%93%E5%87%BA%E4%BA%8C%E5%8F%89%E6%A0%91%E4%B8%AD%E6%89%80%E6%9C%89%E4%BB%8E%E6%A0%B9%E5%88%B0%E5%8F%B6%E5%AD%90%E7%9A%84%E8%B7%AF%E5%BE%84"><span class="toc-text">4. 输出二叉树中所有从根到叶子的路径</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E6%8E%92%E5%88%97"><span class="toc-text">5. 排列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%90%AB%E6%9C%89%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%B1%82%E6%8E%92%E5%88%97"><span class="toc-text">6. 含有相同元素求排列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E7%BB%84%E5%90%88"><span class="toc-text">7. 组合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E7%BB%84%E5%90%88%E6%B1%82%E5%92%8C"><span class="toc-text">8. 组合求和</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E5%90%AB%E6%9C%89%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E7%9A%84%E7%BB%84%E5%90%88%E6%B1%82%E5%92%8C"><span class="toc-text">9. 含有相同元素的组合求和</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-1-9-%E6%95%B0%E5%AD%97%E7%9A%84%E7%BB%84%E5%90%88%E6%B1%82%E5%92%8C"><span class="toc-text">10. 1-9 数字的组合求和</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E5%AD%90%E9%9B%86"><span class="toc-text">11. 子集</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-%E5%90%AB%E6%9C%89%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%B1%82%E5%AD%90%E9%9B%86"><span class="toc-text">12. 含有相同元素求子集</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#13-%E5%88%86%E5%89%B2%E5%AD%97%E7%AC%A6%E4%B8%B2%E4%BD%BF%E5%BE%97%E6%AF%8F%E4%B8%AA%E9%83%A8%E5%88%86%E9%83%BD%E6%98%AF%E5%9B%9E%E6%96%87%E6%95%B0"><span class="toc-text">13. 分割字符串使得每个部分都是回文数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#14-%E6%95%B0%E7%8B%AC"><span class="toc-text">14. 数独</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#15-N-%E7%9A%87%E5%90%8E"><span class="toc-text">15. N 皇后</span></a></li></ol></li></ol></div><div class="column is-9"><header class="my-4"></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle"></h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.695Z">2023-01-31</time><article class="mt-2 post-content"><ul>
+<li><a href="#bfs">BFS</a><ul>
+<li><a href="#1-%E8%AE%A1%E7%AE%97%E5%9C%A8%E7%BD%91%E6%A0%BC%E4%B8%AD%E4%BB%8E%E5%8E%9F%E7%82%B9%E5%88%B0%E7%89%B9%E5%AE%9A%E7%82%B9%E7%9A%84%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84%E9%95%BF%E5%BA%A6">1. 计算在网格中从原点到特定点的最短路径长度</a></li>
+<li><a href="#2-%E7%BB%84%E6%88%90%E6%95%B4%E6%95%B0%E7%9A%84%E6%9C%80%E5%B0%8F%E5%B9%B3%E6%96%B9%E6%95%B0%E6%95%B0%E9%87%8F">2. 组成整数的最小平方数数量</a></li>
+<li><a href="#3-%E6%9C%80%E7%9F%AD%E5%8D%95%E8%AF%8D%E8%B7%AF%E5%BE%84">3. 最短单词路径</a></li>
+</ul>
+</li>
+<li><a href="#dfs">DFS</a><ul>
+<li><a href="#1-%E6%9F%A5%E6%89%BE%E6%9C%80%E5%A4%A7%E7%9A%84%E8%BF%9E%E9%80%9A%E9%9D%A2%E7%A7%AF">1. 查找最大的连通面积</a></li>
+<li><a href="#2-%E7%9F%A9%E9%98%B5%E4%B8%AD%E7%9A%84%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F%E6%95%B0%E7%9B%AE">2. 矩阵中的连通分量数目</a></li>
+<li><a href="#3-%E5%A5%BD%E5%8F%8B%E5%85%B3%E7%B3%BB%E7%9A%84%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F%E6%95%B0%E7%9B%AE">3. 好友关系的连通分量数目</a></li>
+<li><a href="#4-%E5%A1%AB%E5%85%85%E5%B0%81%E9%97%AD%E5%8C%BA%E5%9F%9F">4. 填充封闭区域</a></li>
+<li><a href="#5-%E8%83%BD%E5%88%B0%E8%BE%BE%E7%9A%84%E5%A4%AA%E5%B9%B3%E6%B4%8B%E5%92%8C%E5%A4%A7%E8%A5%BF%E6%B4%8B%E7%9A%84%E5%8C%BA%E5%9F%9F">5. 能到达的太平洋和大西洋的区域</a></li>
+</ul>
+</li>
+<li><a href="#backtracking">Backtracking</a><ul>
+<li><a href="#1-%E6%95%B0%E5%AD%97%E9%94%AE%E7%9B%98%E7%BB%84%E5%90%88">1. 数字键盘组合</a></li>
+<li><a href="#2-ip-%E5%9C%B0%E5%9D%80%E5%88%92%E5%88%86">2. IP 地址划分</a></li>
+<li><a href="#3-%E5%9C%A8%E7%9F%A9%E9%98%B5%E4%B8%AD%E5%AF%BB%E6%89%BE%E5%AD%97%E7%AC%A6%E4%B8%B2">3. 在矩阵中寻找字符串</a></li>
+<li><a href="#4-%E8%BE%93%E5%87%BA%E4%BA%8C%E5%8F%89%E6%A0%91%E4%B8%AD%E6%89%80%E6%9C%89%E4%BB%8E%E6%A0%B9%E5%88%B0%E5%8F%B6%E5%AD%90%E7%9A%84%E8%B7%AF%E5%BE%84">4. 输出二叉树中所有从根到叶子的路径</a></li>
+<li><a href="#5-%E6%8E%92%E5%88%97">5. 排列</a></li>
+<li><a href="#6-%E5%90%AB%E6%9C%89%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%B1%82%E6%8E%92%E5%88%97">6. 含有相同元素求排列</a></li>
+<li><a href="#7-%E7%BB%84%E5%90%88">7. 组合</a></li>
+<li><a href="#8-%E7%BB%84%E5%90%88%E6%B1%82%E5%92%8C">8. 组合求和</a></li>
+<li><a href="#9-%E5%90%AB%E6%9C%89%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E7%9A%84%E7%BB%84%E5%90%88%E6%B1%82%E5%92%8C">9. 含有相同元素的组合求和</a></li>
+<li><a href="#10-1-9-%E6%95%B0%E5%AD%97%E7%9A%84%E7%BB%84%E5%90%88%E6%B1%82%E5%92%8C">10. 1-9 数字的组合求和</a></li>
+<li><a href="#11-%E5%AD%90%E9%9B%86">11. 子集</a></li>
+<li><a href="#12-%E5%90%AB%E6%9C%89%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%B1%82%E5%AD%90%E9%9B%86">12. 含有相同元素求子集</a></li>
+<li><a href="#13-%E5%88%86%E5%89%B2%E5%AD%97%E7%AC%A6%E4%B8%B2%E4%BD%BF%E5%BE%97%E6%AF%8F%E4%B8%AA%E9%83%A8%E5%88%86%E9%83%BD%E6%98%AF%E5%9B%9E%E6%96%87%E6%95%B0">13. 分割字符串使得每个部分都是回文数</a></li>
+<li><a href="#14-%E6%95%B0%E7%8B%AC">14. 数独</a></li>
+<li><a href="#15-n-%E7%9A%87%E5%90%8E">15. N 皇后</a></li>
+</ul>
+</li>
+</ul>
+<p>深度优先搜索和广度优先搜索广泛运用于树和图中，但是它们的应用远远不止如此。</p>
+<h1 id="BFS"><a href="#BFS" class="headerlink" title="BFS"></a>BFS</h1><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/95903878-725b-4ed9-bded-bc4aae0792a9.jpg"/> </div><br>
+
+<p>广度优先搜索一层一层地进行遍历，每层遍历都是以上一层遍历的结果作为起点，遍历一个距离能访问到的所有节点。需要注意的是，遍历过的节点不能再次被遍历。</p>
+<p>第一层：</p>
+<ul>
+<li>0 -&gt; {6,2,1,5}</li>
+</ul>
+<p>第二层：</p>
+<ul>
+<li>6 -&gt; {4}</li>
+<li>2 -&gt; {}</li>
+<li>1 -&gt; {}</li>
+<li>5 -&gt; {3}</li>
+</ul>
+<p>第三层：</p>
+<ul>
+<li>4 -&gt; {}</li>
+<li>3 -&gt; {}</li>
+</ul>
+<p>每一层遍历的节点都与根节点距离相同。设 d<sub>i</sub> 表示第 i 个节点与根节点的距离，推导出一个结论：对于先遍历的节点 i 与后遍历的节点 j，有 d<sub>i</sub> &lt;= d<sub>j</sub>。利用这个结论，可以求解最短路径等   <strong>最优解</strong>   问题：第一次遍历到目的节点，其所经过的路径为最短路径。应该注意的是，使用 BFS 只能求解无权图的最短路径，无权图是指从一个节点到另一个节点的代价都记为 1。</p>
+<p>在程序实现 BFS 时需要考虑以下问题：</p>
+<ul>
+<li>队列：用来存储每一轮遍历得到的节点；</li>
+<li>标记：对于遍历过的节点，应该将它标记，防止重复遍历。</li>
+</ul>
+<h2 id="1-计算在网格中从原点到特定点的最短路径长度"><a href="#1-计算在网格中从原点到特定点的最短路径长度" class="headerlink" title="1. 计算在网格中从原点到特定点的最短路径长度"></a>1. 计算在网格中从原点到特定点的最短路径长度</h2><p>1091. Shortest Path in Binary Matrix(Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/shortest-path-in-binary-matrix/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/shortest-path-in-binary-matrix/">力扣</a></p>
+<pre><code class="html">[[1,1,0,1],
+ [1,0,1,0],
+ [1,1,1,1],
+ [1,0,1,1]]
+</code></pre>
+<p>题目描述：0 表示可以经过某个位置，求解从左上角到右下角的最短路径长度。</p>
+<pre><code class="java">public int shortestPathBinaryMatrix(int[][] grids) &#123;
+        if (grids == null || grids.length == 0 || grids[0].length == 0) &#123;
+            return -1;
+        &#125;
+        int[][] direction = &#123;&#123;1, -1&#125;, &#123;1, 0&#125;, &#123;1, 1&#125;, &#123;0, -1&#125;, &#123;0, 1&#125;, &#123;-1, -1&#125;, &#123;-1, 0&#125;, &#123;-1, 1&#125;&#125;;
+        int m = grids.length, n = grids[0].length;
+        Queue&lt;Pair&lt;Integer, Integer&gt;&gt; queue = new LinkedList&lt;&gt;();
+        queue.add(new Pair&lt;&gt;(0, 0));
+        int pathLength = 0;
+        while (!queue.isEmpty()) &#123;
+            int size = queue.size();
+            pathLength++;
+            while (size-- &gt; 0) &#123;
+                Pair&lt;Integer, Integer&gt; cur = queue.poll();
+                int cr = cur.getKey(), cc = cur.getValue();
+                if (grids[cr][cc] == 1) &#123;
+                    continue;
+                &#125;
+                if (cr == m - 1 &amp;&amp; cc == n - 1) &#123;
+                    return pathLength;
+                &#125;
+                grids[cr][cc] = 1; // 标记
+                for (int[] d : direction) &#123;
+                    int nr = cr + d[0], nc = cc + d[1];
+                    if (nr &lt; 0 || nr &gt;= m || nc &lt; 0 || nc &gt;= n) &#123;
+                        continue;
+                    &#125;
+                    queue.add(new Pair&lt;&gt;(nr, nc));
+                &#125;
+            &#125;
+        &#125;
+        return -1;
+    &#125;
+</code></pre>
+<h2 id="2-组成整数的最小平方数数量"><a href="#2-组成整数的最小平方数数量" class="headerlink" title="2. 组成整数的最小平方数数量"></a>2. 组成整数的最小平方数数量</h2><p>279. Perfect Squares (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/perfect-squares/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/perfect-squares/description/">力扣</a></p>
+<pre><code class="html">For example, given n = 12, return 3 because 12 = 4 + 4 + 4; given n = 13, return 2 because 13 = 4 + 9.
+</code></pre>
+<p>可以将每个整数看成图中的一个节点，如果两个整数之差为一个平方数，那么这两个整数所在的节点就有一条边。</p>
+<p>要求解最小的平方数数量，就是求解从节点 n 到节点 0 的最短路径。</p>
+<p>本题也可以用动态规划求解，在之后动态规划部分中会再次出现。</p>
+<pre><code class="java">public int numSquares(int n) &#123;
+    List&lt;Integer&gt; squares = generateSquares(n);
+    Queue&lt;Integer&gt; queue = new LinkedList&lt;&gt;();
+    boolean[] marked = new boolean[n + 1];
+    queue.add(n);
+    marked[n] = true;
+    int level = 0;
+    while (!queue.isEmpty()) &#123;
+        int size = queue.size();
+        level++;
+        while (size-- &gt; 0) &#123;
+            int cur = queue.poll();
+            for (int s : squares) &#123;
+                int next = cur - s;
+                if (next &lt; 0) &#123;
+                    break;
+                &#125;
+                if (next == 0) &#123;
+                    return level;
+                &#125;
+                if (marked[next]) &#123;
+                    continue;
+                &#125;
+                marked[next] = true;
+                queue.add(next);
+            &#125;
+        &#125;
+    &#125;
+    return n;
+&#125;
+
+/**
+ * 生成小于 n 的平方数序列
+ * @return 1,4,9,...
+ */
+private List&lt;Integer&gt; generateSquares(int n) &#123;
+    List&lt;Integer&gt; squares = new ArrayList&lt;&gt;();
+    int square = 1;
+    int diff = 3;
+    while (square &lt;= n) &#123;
+        squares.add(square);
+        square += diff;
+        diff += 2;
+    &#125;
+    return squares;
+&#125;
+</code></pre>
+<h2 id="3-最短单词路径"><a href="#3-最短单词路径" class="headerlink" title="3. 最短单词路径"></a>3. 最短单词路径</h2><p>127. Word Ladder (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/word-ladder/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/word-ladder/description/">力扣</a></p>
+<pre><code class="html">Input:
+beginWord = &quot;hit&quot;,
+endWord = &quot;cog&quot;,
+wordList = [&quot;hot&quot;,&quot;dot&quot;,&quot;dog&quot;,&quot;lot&quot;,&quot;log&quot;,&quot;cog&quot;]
+
+Output: 5
+
+Explanation: As one shortest transformation is &quot;hit&quot; -&gt; &quot;hot&quot; -&gt; &quot;dot&quot; -&gt; &quot;dog&quot; -&gt; &quot;cog&quot;,
+return its length 5.
+</code></pre>
+<pre><code class="html">Input:
+beginWord = &quot;hit&quot;
+endWord = &quot;cog&quot;
+wordList = [&quot;hot&quot;,&quot;dot&quot;,&quot;dog&quot;,&quot;lot&quot;,&quot;log&quot;]
+
+Output: 0
+
+Explanation: The endWord &quot;cog&quot; is not in wordList, therefore no possible transformation.
+</code></pre>
+<p>题目描述：找出一条从 beginWord 到 endWord 的最短路径，每次移动规定为改变一个字符，并且改变之后的字符串必须在 wordList 中。</p>
+<pre><code class="java">public int ladderLength(String beginWord, String endWord, List&lt;String&gt; wordList) &#123;
+    wordList.add(beginWord);
+    int N = wordList.size();
+    int start = N - 1;
+    int end = 0;
+    while (end &lt; N &amp;&amp; !wordList.get(end).equals(endWord)) &#123;
+        end++;
+    &#125;
+    if (end == N) &#123;
+        return 0;
+    &#125;
+    List&lt;Integer&gt;[] graphic = buildGraphic(wordList);
+    return getShortestPath(graphic, start, end);
+&#125;
+
+private List&lt;Integer&gt;[] buildGraphic(List&lt;String&gt; wordList) &#123;
+    int N = wordList.size();
+    List&lt;Integer&gt;[] graphic = new List[N];
+    for (int i = 0; i &lt; N; i++) &#123;
+        graphic[i] = new ArrayList&lt;&gt;();
+        for (int j = 0; j &lt; N; j++) &#123;
+            if (isConnect(wordList.get(i), wordList.get(j))) &#123;
+                graphic[i].add(j);
+            &#125;
+        &#125;
+    &#125;
+    return graphic;
+&#125;
+
+private boolean isConnect(String s1, String s2) &#123;
+    int diffCnt = 0;
+    for (int i = 0; i &lt; s1.length() &amp;&amp; diffCnt &lt;= 1; i++) &#123;
+        if (s1.charAt(i) != s2.charAt(i)) &#123;
+            diffCnt++;
+        &#125;
+    &#125;
+    return diffCnt == 1;
+&#125;
+
+private int getShortestPath(List&lt;Integer&gt;[] graphic, int start, int end) &#123;
+    Queue&lt;Integer&gt; queue = new LinkedList&lt;&gt;();
+    boolean[] marked = new boolean[graphic.length];
+    queue.add(start);
+    marked[start] = true;
+    int path = 1;
+    while (!queue.isEmpty()) &#123;
+        int size = queue.size();
+        path++;
+        while (size-- &gt; 0) &#123;
+            int cur = queue.poll();
+            for (int next : graphic[cur]) &#123;
+                if (next == end) &#123;
+                    return path;
+                &#125;
+                if (marked[next]) &#123;
+                    continue;
+                &#125;
+                marked[next] = true;
+                queue.add(next);
+            &#125;
+        &#125;
+    &#125;
+    return 0;
+&#125;
+</code></pre>
+<h1 id="DFS"><a href="#DFS" class="headerlink" title="DFS"></a>DFS</h1><div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/74dc31eb-6baa-47ea-ab1c-d27a0ca35093.png"/> </div><br>
+
+<p>广度优先搜索一层一层遍历，每一层得到的所有新节点，要用队列存储起来以备下一层遍历的时候再遍历。</p>
+<p>而深度优先搜索在得到一个新节点时立即对新节点进行遍历：从节点 0 出发开始遍历，得到到新节点 6 时，立马对新节点 6 进行遍历，得到新节点 4；如此反复以这种方式遍历新节点，直到没有新节点了，此时返回。返回到根节点 0 的情况是，继续对根节点 0 进行遍历，得到新节点 2，然后继续以上步骤。</p>
+<p>从一个节点出发，使用 DFS 对一个图进行遍历时，能够遍历到的节点都是从初始节点可达的，DFS 常用来求解这种   <strong>可达性</strong>   问题。</p>
+<p>在程序实现 DFS 时需要考虑以下问题：</p>
+<ul>
+<li>栈：用栈来保存当前节点信息，当遍历新节点返回时能够继续遍历当前节点。可以使用递归栈。</li>
+<li>标记：和 BFS 一样同样需要对已经遍历过的节点进行标记。</li>
+</ul>
+<h2 id="1-查找最大的连通面积"><a href="#1-查找最大的连通面积" class="headerlink" title="1. 查找最大的连通面积"></a>1. 查找最大的连通面积</h2><p>695. Max Area of Island (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/max-area-of-island/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/max-area-of-island/description/">力扣</a></p>
+<pre><code class="html">[[0,0,1,0,0,0,0,1,0,0,0,0,0],
+ [0,0,0,0,0,0,0,1,1,1,0,0,0],
+ [0,1,1,0,1,0,0,0,0,0,0,0,0],
+ [0,1,0,0,1,1,0,0,1,0,1,0,0],
+ [0,1,0,0,1,1,0,0,1,1,1,0,0],
+ [0,0,0,0,0,0,0,0,0,0,1,0,0],
+ [0,0,0,0,0,0,0,1,1,1,0,0,0],
+ [0,0,0,0,0,0,0,1,1,0,0,0,0]]
+</code></pre>
+<pre><code class="java">private int m, n;
+private int[][] direction = &#123;&#123;0, 1&#125;, &#123;0, -1&#125;, &#123;1, 0&#125;, &#123;-1, 0&#125;&#125;;
+
+public int maxAreaOfIsland(int[][] grid) &#123;
+    if (grid == null || grid.length == 0) &#123;
+        return 0;
+    &#125;
+    m = grid.length;
+    n = grid[0].length;
+    int maxArea = 0;
+    for (int i = 0; i &lt; m; i++) &#123;
+        for (int j = 0; j &lt; n; j++) &#123;
+            maxArea = Math.max(maxArea, dfs(grid, i, j));
+        &#125;
+    &#125;
+    return maxArea;
+&#125;
+
+private int dfs(int[][] grid, int r, int c) &#123;
+    if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n || grid[r][c] == 0) &#123;
+        return 0;
+    &#125;
+    grid[r][c] = 0;
+    int area = 1;
+    for (int[] d : direction) &#123;
+        area += dfs(grid, r + d[0], c + d[1]);
+    &#125;
+    return area;
+&#125;
+</code></pre>
+<h2 id="2-矩阵中的连通分量数目"><a href="#2-矩阵中的连通分量数目" class="headerlink" title="2. 矩阵中的连通分量数目"></a>2. 矩阵中的连通分量数目</h2><p>200. Number of Islands (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/number-of-islands/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/number-of-islands/description/">力扣</a></p>
+<pre><code class="html">Input:
+11000
+11000
+00100
+00011
+
+Output: 3
+</code></pre>
+<p>可以将矩阵表示看成一张有向图。</p>
+<pre><code class="java">private int m, n;
+private int[][] direction = &#123;&#123;0, 1&#125;, &#123;0, -1&#125;, &#123;1, 0&#125;, &#123;-1, 0&#125;&#125;;
+
+public int numIslands(char[][] grid) &#123;
+    if (grid == null || grid.length == 0) &#123;
+        return 0;
+    &#125;
+    m = grid.length;
+    n = grid[0].length;
+    int islandsNum = 0;
+    for (int i = 0; i &lt; m; i++) &#123;
+        for (int j = 0; j &lt; n; j++) &#123;
+            if (grid[i][j] != &#39;0&#39;) &#123;
+                dfs(grid, i, j);
+                islandsNum++;
+            &#125;
+        &#125;
+    &#125;
+    return islandsNum;
+&#125;
+
+private void dfs(char[][] grid, int i, int j) &#123;
+    if (i &lt; 0 || i &gt;= m || j &lt; 0 || j &gt;= n || grid[i][j] == &#39;0&#39;) &#123;
+        return;
+    &#125;
+    grid[i][j] = &#39;0&#39;;
+    for (int[] d : direction) &#123;
+        dfs(grid, i + d[0], j + d[1]);
+    &#125;
+&#125;
+</code></pre>
+<h2 id="3-好友关系的连通分量数目"><a href="#3-好友关系的连通分量数目" class="headerlink" title="3. 好友关系的连通分量数目"></a>3. 好友关系的连通分量数目</h2><p>547. Friend Circles (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/friend-circles/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/friend-circles/description/">力扣</a></p>
+<pre><code class="html">Input:
+[[1,1,0],
+ [1,1,0],
+ [0,0,1]]
+
+Output: 2
+
+Explanation:The 0th and 1st students are direct friends, so they are in a friend circle.
+The 2nd student himself is in a friend circle. So return 2.
+</code></pre>
+<p>题目描述：好友关系可以看成是一个无向图，例如第 0 个人与第 1 个人是好友，那么 M[0][1] 和 M[1][0] 的值都为 1。</p>
+<pre><code class="java">private int n;
+
+public int findCircleNum(int[][] M) &#123;
+    n = M.length;
+    int circleNum = 0;
+    boolean[] hasVisited = new boolean[n];
+    for (int i = 0; i &lt; n; i++) &#123;
+        if (!hasVisited[i]) &#123;
+            dfs(M, i, hasVisited);
+            circleNum++;
+        &#125;
+    &#125;
+    return circleNum;
+&#125;
+
+private void dfs(int[][] M, int i, boolean[] hasVisited) &#123;
+    hasVisited[i] = true;
+    for (int k = 0; k &lt; n; k++) &#123;
+        if (M[i][k] == 1 &amp;&amp; !hasVisited[k]) &#123;
+            dfs(M, k, hasVisited);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="4-填充封闭区域"><a href="#4-填充封闭区域" class="headerlink" title="4. 填充封闭区域"></a>4. 填充封闭区域</h2><p>130. Surrounded Regions (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/surrounded-regions/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/surrounded-regions/description/">力扣</a></p>
+<pre><code class="html">For example,
+X X X X
+X O O X
+X X O X
+X O X X
+
+After running your function, the board should be:
+X X X X
+X X X X
+X X X X
+X O X X
+</code></pre>
+<p>题目描述：使被 ‘X’ 包围的 ‘O’ 转换为 ‘X’。</p>
+<p>先填充最外侧，剩下的就是里侧了。</p>
+<pre><code class="java">private int[][] direction = &#123;&#123;0, 1&#125;, &#123;0, -1&#125;, &#123;1, 0&#125;, &#123;-1, 0&#125;&#125;;
+private int m, n;
+
+public void solve(char[][] board) &#123;
+    if (board == null || board.length == 0) &#123;
+        return;
+    &#125;
+
+    m = board.length;
+    n = board[0].length;
+
+    for (int i = 0; i &lt; m; i++) &#123;
+        dfs(board, i, 0);
+        dfs(board, i, n - 1);
+    &#125;
+    for (int i = 0; i &lt; n; i++) &#123;
+        dfs(board, 0, i);
+        dfs(board, m - 1, i);
+    &#125;
+
+    for (int i = 0; i &lt; m; i++) &#123;
+        for (int j = 0; j &lt; n; j++) &#123;
+            if (board[i][j] == &#39;T&#39;) &#123;
+                board[i][j] = &#39;O&#39;;
+            &#125; else if (board[i][j] == &#39;O&#39;) &#123;
+                board[i][j] = &#39;X&#39;;
+            &#125;
+        &#125;
+    &#125;
+&#125;
+
+private void dfs(char[][] board, int r, int c) &#123;
+    if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n || board[r][c] != &#39;O&#39;) &#123;
+        return;
+    &#125;
+    board[r][c] = &#39;T&#39;;
+    for (int[] d : direction) &#123;
+        dfs(board, r + d[0], c + d[1]);
+    &#125;
+&#125;
+</code></pre>
+<h2 id="5-能到达的太平洋和大西洋的区域"><a href="#5-能到达的太平洋和大西洋的区域" class="headerlink" title="5. 能到达的太平洋和大西洋的区域"></a>5. 能到达的太平洋和大西洋的区域</h2><p>417. Pacific Atlantic Water Flow (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/pacific-atlantic-water-flow/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/pacific-atlantic-water-flow/description/">力扣</a></p>
+<pre><code class="html">Given the following 5x5 matrix:
+
+  Pacific ~   ~   ~   ~   ~
+       ~  1   2   2   3  (5) *
+       ~  3   2   3  (4) (4) *
+       ~  2   4  (5)  3   1  *
+       ~ (6) (7)  1   4   5  *
+       ~ (5)  1   1   2   4  *
+          *   *   *   *   * Atlantic
+
+Return:
+[[0, 4], [1, 3], [1, 4], [2, 2], [3, 0], [3, 1], [4, 0]] (positions with parentheses in above matrix).
+</code></pre>
+<p>左边和上边是太平洋，右边和下边是大西洋，内部的数字代表海拔，海拔高的地方的水能够流到低的地方，求解水能够流到太平洋和大西洋的所有位置。</p>
+<pre><code class="java">private int m, n;
+private int[][] matrix;
+private int[][] direction = &#123;&#123;0, 1&#125;, &#123;0, -1&#125;, &#123;1, 0&#125;, &#123;-1, 0&#125;&#125;;
+
+public List&lt;List&lt;Integer&gt;&gt; pacificAtlantic(int[][] matrix) &#123;
+    List&lt;List&lt;Integer&gt;&gt; ret = new ArrayList&lt;&gt;();
+    if (matrix == null || matrix.length == 0) &#123;
+        return ret;
+    &#125;
+
+    m = matrix.length;
+    n = matrix[0].length;
+    this.matrix = matrix;
+    boolean[][] canReachP = new boolean[m][n];
+    boolean[][] canReachA = new boolean[m][n];
+
+    for (int i = 0; i &lt; m; i++) &#123;
+        dfs(i, 0, canReachP);
+        dfs(i, n - 1, canReachA);
+    &#125;
+    for (int i = 0; i &lt; n; i++) &#123;
+        dfs(0, i, canReachP);
+        dfs(m - 1, i, canReachA);
+    &#125;
+
+    for (int i = 0; i &lt; m; i++) &#123;
+        for (int j = 0; j &lt; n; j++) &#123;
+            if (canReachP[i][j] &amp;&amp; canReachA[i][j]) &#123;
+                ret.add(Arrays.asList(i, j));
+            &#125;
+        &#125;
+    &#125;
+
+    return ret;
+&#125;
+
+private void dfs(int r, int c, boolean[][] canReach) &#123;
+    if (canReach[r][c]) &#123;
+        return;
+    &#125;
+    canReach[r][c] = true;
+    for (int[] d : direction) &#123;
+        int nextR = d[0] + r;
+        int nextC = d[1] + c;
+        if (nextR &lt; 0 || nextR &gt;= m || nextC &lt; 0 || nextC &gt;= n
+                || matrix[r][c] &gt; matrix[nextR][nextC]) &#123;
+
+            continue;
+        &#125;
+        dfs(nextR, nextC, canReach);
+    &#125;
+&#125;
+</code></pre>
+<h1 id="Backtracking"><a href="#Backtracking" class="headerlink" title="Backtracking"></a>Backtracking</h1><p>Backtracking（回溯）属于 DFS。</p>
+<ul>
+<li>普通 DFS 主要用在   <strong>可达性问题</strong>  ，这种问题只需要执行到特点的位置然后返回即可。</li>
+<li>而 Backtracking 主要用于求解   <strong>排列组合</strong>   问题，例如有 { ‘a’,’b’,’c’ } 三个字符，求解所有由这三个字符排列得到的字符串，这种问题在执行到特定的位置返回之后还会继续执行求解过程。</li>
+</ul>
+<p>因为 Backtracking 不是立即返回，而要继续求解，因此在程序实现时，需要注意对元素的标记问题：</p>
+<ul>
+<li>在访问一个新元素进入新的递归调用时，需要将新元素标记为已经访问，这样才能在继续递归调用时不用重复访问该元素；</li>
+<li>但是在递归返回时，需要将元素标记为未访问，因为只需要保证在一个递归链中不同时访问一个元素，可以访问已经访问过但是不在当前递归链中的元素。</li>
+</ul>
+<h2 id="1-数字键盘组合"><a href="#1-数字键盘组合" class="headerlink" title="1. 数字键盘组合"></a>1. 数字键盘组合</h2><p>17. Letter Combinations of a Phone Number (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/letter-combinations-of-a-phone-number/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/letter-combinations-of-a-phone-number/description/">力扣</a></p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/9823768c-212b-4b1a-b69a-b3f59e07b977.jpg"/> </div><br>
+
+<pre><code class="html">Input:Digit string &quot;23&quot;
+Output: [&quot;ad&quot;, &quot;ae&quot;, &quot;af&quot;, &quot;bd&quot;, &quot;be&quot;, &quot;bf&quot;, &quot;cd&quot;, &quot;ce&quot;, &quot;cf&quot;].
+</code></pre>
+<pre><code class="java">private static final String[] KEYS = &#123;&quot;&quot;, &quot;&quot;, &quot;abc&quot;, &quot;def&quot;, &quot;ghi&quot;, &quot;jkl&quot;, &quot;mno&quot;, &quot;pqrs&quot;, &quot;tuv&quot;, &quot;wxyz&quot;&#125;;
+
+public List&lt;String&gt; letterCombinations(String digits) &#123;
+    List&lt;String&gt; combinations = new ArrayList&lt;&gt;();
+    if (digits == null || digits.length() == 0) &#123;
+        return combinations;
+    &#125;
+    doCombination(new StringBuilder(), combinations, digits);
+    return combinations;
+&#125;
+
+private void doCombination(StringBuilder prefix, List&lt;String&gt; combinations, final String digits) &#123;
+    if (prefix.length() == digits.length()) &#123;
+        combinations.add(prefix.toString());
+        return;
+    &#125;
+    int curDigits = digits.charAt(prefix.length()) - &#39;0&#39;;
+    String letters = KEYS[curDigits];
+    for (char c : letters.toCharArray()) &#123;
+        prefix.append(c);                         // 添加
+        doCombination(prefix, combinations, digits);
+        prefix.deleteCharAt(prefix.length() - 1); // 删除
+    &#125;
+&#125;
+</code></pre>
+<h2 id="2-IP-地址划分"><a href="#2-IP-地址划分" class="headerlink" title="2. IP 地址划分"></a>2. IP 地址划分</h2><p>93. Restore IP Addresses(Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/restore-ip-addresses/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/restore-ip-addresses/description/">力扣</a></p>
+<pre><code class="html">Given &quot;25525511135&quot;,
+return [&quot;255.255.11.135&quot;, &quot;255.255.111.35&quot;].
+</code></pre>
+<pre><code class="java">public List&lt;String&gt; restoreIpAddresses(String s) &#123;
+    List&lt;String&gt; addresses = new ArrayList&lt;&gt;();
+    StringBuilder tempAddress = new StringBuilder();
+    doRestore(0, tempAddress, addresses, s);
+    return addresses;
+&#125;
+
+private void doRestore(int k, StringBuilder tempAddress, List&lt;String&gt; addresses, String s) &#123;
+    if (k == 4 || s.length() == 0) &#123;
+        if (k == 4 &amp;&amp; s.length() == 0) &#123;
+            addresses.add(tempAddress.toString());
+        &#125;
+        return;
+    &#125;
+    for (int i = 0; i &lt; s.length() &amp;&amp; i &lt;= 2; i++) &#123;
+        if (i != 0 &amp;&amp; s.charAt(0) == &#39;0&#39;) &#123;
+            break;
+        &#125;
+        String part = s.substring(0, i + 1);
+        if (Integer.valueOf(part) &lt;= 255) &#123;
+            if (tempAddress.length() != 0) &#123;
+                part = &quot;.&quot; + part;
+            &#125;
+            tempAddress.append(part);
+            doRestore(k + 1, tempAddress, addresses, s.substring(i + 1));
+            tempAddress.delete(tempAddress.length() - part.length(), tempAddress.length());
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="3-在矩阵中寻找字符串"><a href="#3-在矩阵中寻找字符串" class="headerlink" title="3. 在矩阵中寻找字符串"></a>3. 在矩阵中寻找字符串</h2><p>79. Word Search (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/word-search/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/word-search/description/">力扣</a></p>
+<pre><code class="html">For example,
+Given board =
+[
+  [&#39;A&#39;,&#39;B&#39;,&#39;C&#39;,&#39;E&#39;],
+  [&#39;S&#39;,&#39;F&#39;,&#39;C&#39;,&#39;S&#39;],
+  [&#39;A&#39;,&#39;D&#39;,&#39;E&#39;,&#39;E&#39;]
+]
+word = &quot;ABCCED&quot;, -&gt; returns true,
+word = &quot;SEE&quot;, -&gt; returns true,
+word = &quot;ABCB&quot;, -&gt; returns false.
+</code></pre>
+<pre><code class="java">private final static int[][] direction = &#123;&#123;1, 0&#125;, &#123;-1, 0&#125;, &#123;0, 1&#125;, &#123;0, -1&#125;&#125;;
+private int m;
+private int n;
+
+public boolean exist(char[][] board, String word) &#123;
+    if (word == null || word.length() == 0) &#123;
+        return true;
+    &#125;
+    if (board == null || board.length == 0 || board[0].length == 0) &#123;
+        return false;
+    &#125;
+
+    m = board.length;
+    n = board[0].length;
+    boolean[][] hasVisited = new boolean[m][n];
+
+    for (int r = 0; r &lt; m; r++) &#123;
+        for (int c = 0; c &lt; n; c++) &#123;
+            if (backtracking(0, r, c, hasVisited, board, word)) &#123;
+                return true;
+            &#125;
+        &#125;
+    &#125;
+
+    return false;
+&#125;
+
+private boolean backtracking(int curLen, int r, int c, boolean[][] visited, final char[][] board, final String word) &#123;
+    if (curLen == word.length()) &#123;
+        return true;
+    &#125;
+    if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n
+            || board[r][c] != word.charAt(curLen) || visited[r][c]) &#123;
+
+        return false;
+    &#125;
+
+    visited[r][c] = true;
+
+    for (int[] d : direction) &#123;
+        if (backtracking(curLen + 1, r + d[0], c + d[1], visited, board, word)) &#123;
+            return true;
+        &#125;
+    &#125;
+
+    visited[r][c] = false;
+
+    return false;
+&#125;
+</code></pre>
+<h2 id="4-输出二叉树中所有从根到叶子的路径"><a href="#4-输出二叉树中所有从根到叶子的路径" class="headerlink" title="4. 输出二叉树中所有从根到叶子的路径"></a>4. 输出二叉树中所有从根到叶子的路径</h2><p>257. Binary Tree Paths (Easy)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/binary-tree-paths/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/binary-tree-paths/description/">力扣</a></p>
+<pre><code class="html">  1
+ /  \
+2    3
+ \
+  5
+</code></pre>
+<pre><code class="html">[&quot;1-&gt;2-&gt;5&quot;, &quot;1-&gt;3&quot;]
+</code></pre>
+<pre><code class="java">
+public List&lt;String&gt; binaryTreePaths(TreeNode root) &#123;
+    List&lt;String&gt; paths = new ArrayList&lt;&gt;();
+    if (root == null) &#123;
+        return paths;
+    &#125;
+    List&lt;Integer&gt; values = new ArrayList&lt;&gt;();
+    backtracking(root, values, paths);
+    return paths;
+&#125;
+
+private void backtracking(TreeNode node, List&lt;Integer&gt; values, List&lt;String&gt; paths) &#123;
+    if (node == null) &#123;
+        return;
+    &#125;
+    values.add(node.val);
+    if (isLeaf(node)) &#123;
+        paths.add(buildPath(values));
+    &#125; else &#123;
+        backtracking(node.left, values, paths);
+        backtracking(node.right, values, paths);
+    &#125;
+    values.remove(values.size() - 1);
+&#125;
+
+private boolean isLeaf(TreeNode node) &#123;
+    return node.left == null &amp;&amp; node.right == null;
+&#125;
+
+private String buildPath(List&lt;Integer&gt; values) &#123;
+    StringBuilder str = new StringBuilder();
+    for (int i = 0; i &lt; values.size(); i++) &#123;
+        str.append(values.get(i));
+        if (i != values.size() - 1) &#123;
+            str.append(&quot;-&gt;&quot;);
+        &#125;
+    &#125;
+    return str.toString();
+&#125;
+</code></pre>
+<h2 id="5-排列"><a href="#5-排列" class="headerlink" title="5. 排列"></a>5. 排列</h2><p>46. Permutations (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/permutations/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/permutations/description/">力扣</a></p>
+<pre><code class="html">[1,2,3] have the following permutations:
+[
+  [1,2,3],
+  [1,3,2],
+  [2,1,3],
+  [2,3,1],
+  [3,1,2],
+  [3,2,1]
+]
+</code></pre>
+<pre><code class="java">public List&lt;List&lt;Integer&gt;&gt; permute(int[] nums) &#123;
+    List&lt;List&lt;Integer&gt;&gt; permutes = new ArrayList&lt;&gt;();
+    List&lt;Integer&gt; permuteList = new ArrayList&lt;&gt;();
+    boolean[] hasVisited = new boolean[nums.length];
+    backtracking(permuteList, permutes, hasVisited, nums);
+    return permutes;
+&#125;
+
+private void backtracking(List&lt;Integer&gt; permuteList, List&lt;List&lt;Integer&gt;&gt; permutes, boolean[] visited, final int[] nums) &#123;
+    if (permuteList.size() == nums.length) &#123;
+        permutes.add(new ArrayList&lt;&gt;(permuteList)); // 重新构造一个 List
+        return;
+    &#125;
+    for (int i = 0; i &lt; visited.length; i++) &#123;
+        if (visited[i]) &#123;
+            continue;
+        &#125;
+        visited[i] = true;
+        permuteList.add(nums[i]);
+        backtracking(permuteList, permutes, visited, nums);
+        permuteList.remove(permuteList.size() - 1);
+        visited[i] = false;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="6-含有相同元素求排列"><a href="#6-含有相同元素求排列" class="headerlink" title="6. 含有相同元素求排列"></a>6. 含有相同元素求排列</h2><p>47. Permutations II (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/permutations-ii/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/permutations-ii/description/">力扣</a></p>
+<pre><code class="html">[1,1,2] have the following unique permutations:
+[[1,1,2], [1,2,1], [2,1,1]]
+</code></pre>
+<p>数组元素可能含有相同的元素，进行排列时就有可能出现重复的排列，要求重复的排列只返回一个。</p>
+<p>在实现上，和 Permutations 不同的是要先排序，然后在添加一个元素时，判断这个元素是否等于前一个元素，如果等于，并且前一个元素还未访问，那么就跳过这个元素。</p>
+<pre><code class="java">public List&lt;List&lt;Integer&gt;&gt; permuteUnique(int[] nums) &#123;
+    List&lt;List&lt;Integer&gt;&gt; permutes = new ArrayList&lt;&gt;();
+    List&lt;Integer&gt; permuteList = new ArrayList&lt;&gt;();
+    Arrays.sort(nums);  // 排序
+    boolean[] hasVisited = new boolean[nums.length];
+    backtracking(permuteList, permutes, hasVisited, nums);
+    return permutes;
+&#125;
+
+private void backtracking(List&lt;Integer&gt; permuteList, List&lt;List&lt;Integer&gt;&gt; permutes, boolean[] visited, final int[] nums) &#123;
+    if (permuteList.size() == nums.length) &#123;
+        permutes.add(new ArrayList&lt;&gt;(permuteList));
+        return;
+    &#125;
+
+    for (int i = 0; i &lt; visited.length; i++) &#123;
+        if (i != 0 &amp;&amp; nums[i] == nums[i - 1] &amp;&amp; !visited[i - 1]) &#123;
+            continue;  // 防止重复
+        &#125;
+        if (visited[i])&#123;
+            continue;
+        &#125;
+        visited[i] = true;
+        permuteList.add(nums[i]);
+        backtracking(permuteList, permutes, visited, nums);
+        permuteList.remove(permuteList.size() - 1);
+        visited[i] = false;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="7-组合"><a href="#7-组合" class="headerlink" title="7. 组合"></a>7. 组合</h2><p>77. Combinations (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/combinations/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/combinations/description/">力扣</a></p>
+<pre><code class="html">If n = 4 and k = 2, a solution is:
+[
+  [2,4],
+  [3,4],
+  [2,3],
+  [1,2],
+  [1,3],
+  [1,4],
+]
+</code></pre>
+<pre><code class="java">public List&lt;List&lt;Integer&gt;&gt; combine(int n, int k) &#123;
+    List&lt;List&lt;Integer&gt;&gt; combinations = new ArrayList&lt;&gt;();
+    List&lt;Integer&gt; combineList = new ArrayList&lt;&gt;();
+    backtracking(combineList, combinations, 1, k, n);
+    return combinations;
+&#125;
+
+private void backtracking(List&lt;Integer&gt; combineList, List&lt;List&lt;Integer&gt;&gt; combinations, int start, int k, final int n) &#123;
+    if (k == 0) &#123;
+        combinations.add(new ArrayList&lt;&gt;(combineList));
+        return;
+    &#125;
+    for (int i = start; i &lt;= n - k + 1; i++) &#123;  // 剪枝
+        combineList.add(i);
+        backtracking(combineList, combinations, i + 1, k - 1, n);
+        combineList.remove(combineList.size() - 1);
+    &#125;
+&#125;
+</code></pre>
+<h2 id="8-组合求和"><a href="#8-组合求和" class="headerlink" title="8. 组合求和"></a>8. 组合求和</h2><p>39. Combination Sum (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/combination-sum/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/combination-sum/description/">力扣</a></p>
+<pre><code class="html">given candidate set [2, 3, 6, 7] and target 7,
+A solution set is:
+[[7],[2, 2, 3]]
+</code></pre>
+<pre><code class="java">public List&lt;List&lt;Integer&gt;&gt; combinationSum(int[] candidates, int target) &#123;
+    List&lt;List&lt;Integer&gt;&gt; combinations = new ArrayList&lt;&gt;();
+    backtracking(new ArrayList&lt;&gt;(), combinations, 0, target, candidates);
+    return combinations;
+&#125;
+
+private void backtracking(List&lt;Integer&gt; tempCombination, List&lt;List&lt;Integer&gt;&gt; combinations,
+                          int start, int target, final int[] candidates) &#123;
+
+    if (target == 0) &#123;
+        combinations.add(new ArrayList&lt;&gt;(tempCombination));
+        return;
+    &#125;
+    for (int i = start; i &lt; candidates.length; i++) &#123;
+        if (candidates[i] &lt;= target) &#123;
+            tempCombination.add(candidates[i]);
+            backtracking(tempCombination, combinations, i, target - candidates[i], candidates);
+            tempCombination.remove(tempCombination.size() - 1);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="9-含有相同元素的组合求和"><a href="#9-含有相同元素的组合求和" class="headerlink" title="9. 含有相同元素的组合求和"></a>9. 含有相同元素的组合求和</h2><p>40. Combination Sum II (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/combination-sum-ii/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/combination-sum-ii/description/">力扣</a></p>
+<pre><code class="html">For example, given candidate set [10, 1, 2, 7, 6, 1, 5] and target 8,
+A solution set is:
+[
+  [1, 7],
+  [1, 2, 5],
+  [2, 6],
+  [1, 1, 6]
+]
+</code></pre>
+<pre><code class="java">public List&lt;List&lt;Integer&gt;&gt; combinationSum2(int[] candidates, int target) &#123;
+    List&lt;List&lt;Integer&gt;&gt; combinations = new ArrayList&lt;&gt;();
+    Arrays.sort(candidates);
+    backtracking(new ArrayList&lt;&gt;(), combinations, new boolean[candidates.length], 0, target, candidates);
+    return combinations;
+&#125;
+
+private void backtracking(List&lt;Integer&gt; tempCombination, List&lt;List&lt;Integer&gt;&gt; combinations,
+                          boolean[] hasVisited, int start, int target, final int[] candidates) &#123;
+
+    if (target == 0) &#123;
+        combinations.add(new ArrayList&lt;&gt;(tempCombination));
+        return;
+    &#125;
+    for (int i = start; i &lt; candidates.length; i++) &#123;
+        if (i != 0 &amp;&amp; candidates[i] == candidates[i - 1] &amp;&amp; !hasVisited[i - 1]) &#123;
+            continue;
+        &#125;
+        if (candidates[i] &lt;= target) &#123;
+            tempCombination.add(candidates[i]);
+            hasVisited[i] = true;
+            backtracking(tempCombination, combinations, hasVisited, i + 1, target - candidates[i], candidates);
+            hasVisited[i] = false;
+            tempCombination.remove(tempCombination.size() - 1);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="10-1-9-数字的组合求和"><a href="#10-1-9-数字的组合求和" class="headerlink" title="10. 1-9 数字的组合求和"></a>10. 1-9 数字的组合求和</h2><p>216. Combination Sum III (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/combination-sum-iii/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/combination-sum-iii/description/">力扣</a></p>
+<pre><code class="html">Input: k = 3, n = 9
+
+Output:
+
+[[1,2,6], [1,3,5], [2,3,4]]
+</code></pre>
+<p>从 1-9 数字中选出 k 个数不重复的数，使得它们的和为 n。</p>
+<pre><code class="java">public List&lt;List&lt;Integer&gt;&gt; combinationSum3(int k, int n) &#123;
+    List&lt;List&lt;Integer&gt;&gt; combinations = new ArrayList&lt;&gt;();
+    List&lt;Integer&gt; path = new ArrayList&lt;&gt;();
+    backtracking(k, n, 1, path, combinations);
+    return combinations;
+&#125;
+
+private void backtracking(int k, int n, int start,
+                          List&lt;Integer&gt; tempCombination, List&lt;List&lt;Integer&gt;&gt; combinations) &#123;
+
+    if (k == 0 &amp;&amp; n == 0) &#123;
+        combinations.add(new ArrayList&lt;&gt;(tempCombination));
+        return;
+    &#125;
+    if (k == 0 || n == 0) &#123;
+        return;
+    &#125;
+    for (int i = start; i &lt;= 9; i++) &#123;
+        tempCombination.add(i);
+        backtracking(k - 1, n - i, i + 1, tempCombination, combinations);
+        tempCombination.remove(tempCombination.size() - 1);
+    &#125;
+&#125;
+</code></pre>
+<h2 id="11-子集"><a href="#11-子集" class="headerlink" title="11. 子集"></a>11. 子集</h2><p>78. Subsets (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/subsets/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/subsets/description/">力扣</a></p>
+<p>找出集合的所有子集，子集不能重复，[1, 2] 和 [2, 1] 这种子集算重复</p>
+<pre><code class="java">public List&lt;List&lt;Integer&gt;&gt; subsets(int[] nums) &#123;
+    List&lt;List&lt;Integer&gt;&gt; subsets = new ArrayList&lt;&gt;();
+    List&lt;Integer&gt; tempSubset = new ArrayList&lt;&gt;();
+    for (int size = 0; size &lt;= nums.length; size++) &#123;
+        backtracking(0, tempSubset, subsets, size, nums); // 不同的子集大小
+    &#125;
+    return subsets;
+&#125;
+
+private void backtracking(int start, List&lt;Integer&gt; tempSubset, List&lt;List&lt;Integer&gt;&gt; subsets,
+                          final int size, final int[] nums) &#123;
+
+    if (tempSubset.size() == size) &#123;
+        subsets.add(new ArrayList&lt;&gt;(tempSubset));
+        return;
+    &#125;
+    for (int i = start; i &lt; nums.length; i++) &#123;
+        tempSubset.add(nums[i]);
+        backtracking(i + 1, tempSubset, subsets, size, nums);
+        tempSubset.remove(tempSubset.size() - 1);
+    &#125;
+&#125;
+</code></pre>
+<h2 id="12-含有相同元素求子集"><a href="#12-含有相同元素求子集" class="headerlink" title="12. 含有相同元素求子集"></a>12. 含有相同元素求子集</h2><p>90. Subsets II (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/subsets-ii/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/subsets-ii/description/">力扣</a></p>
+<pre><code class="html">For example,
+If nums = [1,2,2], a solution is:
+
+[
+  [2],
+  [1],
+  [1,2,2],
+  [2,2],
+  [1,2],
+  []
+]
+</code></pre>
+<pre><code class="java">public List&lt;List&lt;Integer&gt;&gt; subsetsWithDup(int[] nums) &#123;
+    Arrays.sort(nums);
+    List&lt;List&lt;Integer&gt;&gt; subsets = new ArrayList&lt;&gt;();
+    List&lt;Integer&gt; tempSubset = new ArrayList&lt;&gt;();
+    boolean[] hasVisited = new boolean[nums.length];
+    for (int size = 0; size &lt;= nums.length; size++) &#123;
+        backtracking(0, tempSubset, subsets, hasVisited, size, nums); // 不同的子集大小
+    &#125;
+    return subsets;
+&#125;
+
+private void backtracking(int start, List&lt;Integer&gt; tempSubset, List&lt;List&lt;Integer&gt;&gt; subsets, boolean[] hasVisited,
+                          final int size, final int[] nums) &#123;
+
+    if (tempSubset.size() == size) &#123;
+        subsets.add(new ArrayList&lt;&gt;(tempSubset));
+        return;
+    &#125;
+    for (int i = start; i &lt; nums.length; i++) &#123;
+        if (i != 0 &amp;&amp; nums[i] == nums[i - 1] &amp;&amp; !hasVisited[i - 1]) &#123;
+            continue;
+        &#125;
+        tempSubset.add(nums[i]);
+        hasVisited[i] = true;
+        backtracking(i + 1, tempSubset, subsets, hasVisited, size, nums);
+        hasVisited[i] = false;
+        tempSubset.remove(tempSubset.size() - 1);
+    &#125;
+&#125;
+</code></pre>
+<h2 id="13-分割字符串使得每个部分都是回文数"><a href="#13-分割字符串使得每个部分都是回文数" class="headerlink" title="13. 分割字符串使得每个部分都是回文数"></a>13. 分割字符串使得每个部分都是回文数</h2><p>131. Palindrome Partitioning (Medium)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/palindrome-partitioning/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/palindrome-partitioning/description/">力扣</a></p>
+<pre><code class="html">For example, given s = &quot;aab&quot;,
+Return
+
+[
+  [&quot;aa&quot;,&quot;b&quot;],
+  [&quot;a&quot;,&quot;a&quot;,&quot;b&quot;]
+]
+</code></pre>
+<pre><code class="java">public List&lt;List&lt;String&gt;&gt; partition(String s) &#123;
+    List&lt;List&lt;String&gt;&gt; partitions = new ArrayList&lt;&gt;();
+    List&lt;String&gt; tempPartition = new ArrayList&lt;&gt;();
+    doPartition(s, partitions, tempPartition);
+    return partitions;
+&#125;
+
+private void doPartition(String s, List&lt;List&lt;String&gt;&gt; partitions, List&lt;String&gt; tempPartition) &#123;
+    if (s.length() == 0) &#123;
+        partitions.add(new ArrayList&lt;&gt;(tempPartition));
+        return;
+    &#125;
+    for (int i = 0; i &lt; s.length(); i++) &#123;
+        if (isPalindrome(s, 0, i)) &#123;
+            tempPartition.add(s.substring(0, i + 1));
+            doPartition(s.substring(i + 1), partitions, tempPartition);
+            tempPartition.remove(tempPartition.size() - 1);
+        &#125;
+    &#125;
+&#125;
+
+private boolean isPalindrome(String s, int begin, int end) &#123;
+    while (begin &lt; end) &#123;
+        if (s.charAt(begin++) != s.charAt(end--)) &#123;
+            return false;
+        &#125;
+    &#125;
+    return true;
+&#125;
+</code></pre>
+<h2 id="14-数独"><a href="#14-数独" class="headerlink" title="14. 数独"></a>14. 数独</h2><p>37. Sudoku Solver (Hard)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/sudoku-solver/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/sudoku-solver/description/">力扣</a></p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/0e8fdc96-83c1-4798-9abe-45fc91d70b9d.png"/> </div><br>
+
+<pre><code class="java">private boolean[][] rowsUsed = new boolean[9][10];
+private boolean[][] colsUsed = new boolean[9][10];
+private boolean[][] cubesUsed = new boolean[9][10];
+private char[][] board;
+
+public void solveSudoku(char[][] board) &#123;
+    this.board = board;
+    for (int i = 0; i &lt; 9; i++)
+        for (int j = 0; j &lt; 9; j++) &#123;
+            if (board[i][j] == &#39;.&#39;) &#123;
+                continue;
+            &#125;
+            int num = board[i][j] - &#39;0&#39;;
+            rowsUsed[i][num] = true;
+            colsUsed[j][num] = true;
+            cubesUsed[cubeNum(i, j)][num] = true;
+        &#125;
+        backtracking(0, 0);
+&#125;
+
+private boolean backtracking(int row, int col) &#123;
+    while (row &lt; 9 &amp;&amp; board[row][col] != &#39;.&#39;) &#123;
+        row = col == 8 ? row + 1 : row;
+        col = col == 8 ? 0 : col + 1;
+    &#125;
+    if (row == 9) &#123;
+        return true;
+    &#125;
+    for (int num = 1; num &lt;= 9; num++) &#123;
+        if (rowsUsed[row][num] || colsUsed[col][num] || cubesUsed[cubeNum(row, col)][num]) &#123;
+            continue;
+        &#125;
+        rowsUsed[row][num] = colsUsed[col][num] = cubesUsed[cubeNum(row, col)][num] = true;
+        board[row][col] = (char) (num + &#39;0&#39;);
+        if (backtracking(row, col)) &#123;
+            return true;
+        &#125;
+        board[row][col] = &#39;.&#39;;
+        rowsUsed[row][num] = colsUsed[col][num] = cubesUsed[cubeNum(row, col)][num] = false;
+    &#125;
+    return false;
+&#125;
+
+private int cubeNum(int i, int j) &#123;
+    int r = i / 3;
+    int c = j / 3;
+    return r * 3 + c;
+&#125;
+</code></pre>
+<h2 id="15-N-皇后"><a href="#15-N-皇后" class="headerlink" title="15. N 皇后"></a>15. N 皇后</h2><p>51. N-Queens (Hard)</p>
+<p><a target="_blank" rel="noopener" href="https://leetcode.com/problems/n-queens/description/">Leetcode</a> / <a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/n-queens/description/">力扣</a></p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/067b310c-6877-40fe-9dcf-10654e737485.jpg"/> </div><br>
+
+<p>在 n*n 的矩阵中摆放 n 个皇后，并且每个皇后不能在同一行，同一列，同一对角线上，求所有的 n 皇后的解。</p>
+<p>一行一行地摆放，在确定一行中的那个皇后应该摆在哪一列时，需要用三个标记数组来确定某一列是否合法，这三个标记数组分别为：列标记数组、45 度对角线标记数组和 135 度对角线标记数组。</p>
+<p>45 度对角线标记数组的长度为 2 * n - 1，通过下图可以明确 (r, c) 的位置所在的数组下标为 r + c。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/9c422923-1447-4a3b-a4e1-97e663738187.jpg" width="300px"> </div><br>
+
+
+<p>135 度对角线标记数组的长度也是 2 * n - 1，(r, c) 的位置所在的数组下标为 n - 1 - (r - c)。</p>
+<div align="center"> <img src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/7a85e285-e152-4116-b6dc-3fab27ba9437.jpg" width="300px"> </div><br>
+
+<pre><code class="java">private List&lt;List&lt;String&gt;&gt; solutions;
+private char[][] nQueens;
+private boolean[] colUsed;
+private boolean[] diagonals45Used;
+private boolean[] diagonals135Used;
+private int n;
+
+public List&lt;List&lt;String&gt;&gt; solveNQueens(int n) &#123;
+    solutions = new ArrayList&lt;&gt;();
+    nQueens = new char[n][n];
+    for (int i = 0; i &lt; n; i++) &#123;
+        Arrays.fill(nQueens[i], &#39;.&#39;);
+    &#125;
+    colUsed = new boolean[n];
+    diagonals45Used = new boolean[2 * n - 1];
+    diagonals135Used = new boolean[2 * n - 1];
+    this.n = n;
+    backtracking(0);
+    return solutions;
+&#125;
+
+private void backtracking(int row) &#123;
+    if (row == n) &#123;
+        List&lt;String&gt; list = new ArrayList&lt;&gt;();
+        for (char[] chars : nQueens) &#123;
+            list.add(new String(chars));
+        &#125;
+        solutions.add(list);
+        return;
+    &#125;
+
+    for (int col = 0; col &lt; n; col++) &#123;
+        int diagonals45Idx = row + col;
+        int diagonals135Idx = n - 1 - (row - col);
+        if (colUsed[col] || diagonals45Used[diagonals45Idx] || diagonals135Used[diagonals135Idx]) &#123;
+            continue;
+        &#125;
+        nQueens[row][col] = &#39;Q&#39;;
+        colUsed[col] = diagonals45Used[diagonals45Idx] = diagonals135Used[diagonals135Idx] = true;
+        backtracking(row + 1);
+        colUsed[col] = diagonals45Used[diagonals45Idx] = diagonals135Used[diagonals135Idx] = false;
+        nQueens[row][col] = &#39;.&#39;;
+    &#125;
+&#125;
+</code></pre>
+<div align="center"><img width="320px" src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/githubio/公众号二维码-2.png"></img></div>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="每种语言都会有条件表达式，在Linux下的Bash中也不例外。
+这篇文章来详细讲一下bash中的条件表达式的运用。
+
+
+在Bash中，基本可以分为两类，一类是使用test命令，另一种是使用”[]”表达式。这两种方式的功能是等价的。
+在Bash中，要注意，不要把写其他语言的习惯带到这儿来，因为Bash是通过解释来直接执行命令的，不需要编译过程，所以为了规避一些可能出现的问题，在”[]”中间，每个元素都必须用空格隔开。比如：
+[ -e /home/tom ]
+[ $num -eq 2 ]
+[ &amp;quot;$string&amp;quot; = &amp;quot;You are a genius!&amp;quot; ]    // 注意，等号两边须发有空格
+[ &amp;quot;$p&amp;quot; != &amp;quot;sss&amp;quot; ] .."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Bash 中的条件表达式</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E6%AF%94%E8%BE%83%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="toc-text">文件比较运算符</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%AF%94%E8%BE%83%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="toc-text">字符串比较运算符</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%97%E6%9C%AF%E6%AF%94%E8%BE%83%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="toc-text">算术比较运算符</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E9%87%8D%E6%9D%A1%E4%BB%B6%E5%88%A4%E5%AE%9A"><span class="toc-text">多重条件判定</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Linux"><i class="tag post-item-tag">Linux</i></a><a href="/tags/Bash"><i class="tag post-item-tag">Bash</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">Bash 中的条件表达式</h1><time class="has-text-grey" datetime="2013-01-22T06:19:00.000Z">2013-01-22</time><article class="mt-2 post-content"><p>每种语言都会有条件表达式，在Linux下的Bash中也不例外。</p>
+<p>这篇文章来详细讲一下bash中的条件表达式的运用。</p>
+<span id="more"></span>
+
+<p>在Bash中，基本可以分为两类，一类是使用test命令，另一种是使用”[]”表达式。这两种方式的功能是等价的。</p>
+<p>在Bash中，要注意，不要把写其他语言的习惯带到这儿来，因为Bash是通过解释来直接执行命令的，不需要编译过程，所以为了规避一些可能出现的问题，在”[]”中间，每个元素都必须用空格隔开。比如：</p>
+<pre><code class="bash">[ -e /home/tom ]
+[ $num -eq 2 ]
+[ &quot;$string&quot; = &quot;You are a genius!&quot; ]    // 注意，等号两边须发有空格
+[ &quot;$p&quot; != &quot;sss&quot; ] || [ &quot;$p&quot; != &quot;ttt&quot; ]    // 同样地，&quot;!=&quot;两边也必须有空格
+</code></pre>
+<p>如果写成这样：</p>
+<pre><code class="bash">[ -e /home/tom]
+[$num -eq 2]
+[ &quot;$string&quot;=&quot;You are a genius!&quot;]  // [ ]运算符将&quot;$string&quot;=&quot;You are a genius!&quot;视为一个整体了
+[&quot;$p&quot;!=&quot;sss&quot;]||[&quot;$p&quot;!=&quot;ttt&quot;]
+</code></pre>
+<p>是无法正确执行的。</p>
+<p>下面看几个运行符。</p>
+<h3 id="文件比较运算符"><a href="#文件比较运算符" class="headerlink" title="文件比较运算符"></a>文件比较运算符</h3><p>[ -e filename ]  如果filename存在,则为真     </p>
+<pre><code class="bash">[ -e /var/log/syslog ]
+    or
+test -e /var/log/syslog
+</code></pre>
+<p>[ -d filename ]  如果filename为目录,则为真   </p>
+<pre><code class="bash">[ -d /tmp/mydir ]
+    or
+test -d /tmp/mydir
+</code></pre>
+<p>[ -f filename ]   如果filename为常规文件,则为真    </p>
+<pre><code class="bash">[ -f /usr/bin/httpd ]
+    or
+test -f /usr/bin/httpd
+</code></pre>
+<p>[ -L filename ]  如果filename为符号链接,则为真   </p>
+<pre><code class="bash">[ -L /usr/bin/apache2 ]
+    or
+test -L /usr/bin/apache2
+</code></pre>
+<p>[ -r filename ]   如果filename可读,则为真        </p>
+<pre><code class="bash">[ -r /var/log/syslog ]
+    or
+test -r /var/log/syslog
+</code></pre>
+<p>[ -w filename ]  如果filename可写,则为真       </p>
+<pre><code class="bash">[ -w /var/haha.txt ]
+    or
+test -w /var/haha.txt
+</code></pre>
+<p>[ -x filename ]  如果filename可执行,则为真     </p>
+<pre><code class="bash">[ -x /etc/init.d/mysqld ]
+    or
+test -x /etc/init.d/mysqld
+</code></pre>
+<p>[ filename1 -nt filename2 ] 如果filename1比filename2新,则为真  </p>
+<pre><code class="bash">[ /tmp/install/etc/services -nt /etc/services ]   // newer than
+    or
+test /tmp/install/etc/services -nt /etc/services
+</code></pre>
+<p>[ filename1 -ot filename2 ] 如果filename1比filename2旧,则为真  </p>
+<pre><code class="bash">[ /home/tom/test -ot /home/tom/test1 ]    // older than
+    or
+test /home/tom/test -ot /home/tom/test1
+</code></pre>
+<p>[ filename1 -ef filename2 ] 判断filename1与filename2是否为同一文件，可用在hard link的判定上。主要意义在于判定两个文件是否均指向同一个inode。</p>
+<pre><code class="bash">[ /usr/bin/apache2 -ef /etc/bin/apache2 ]    // equal file
+    or
+test /usr/bin/apache2 -ef /etc/bin/apache2
+</code></pre>
+<h3 id="字符串比较运算符"><a href="#字符串比较运算符" class="headerlink" title="字符串比较运算符"></a>字符串比较运算符</h3><p>(请注意引号的使用，这是防止空格扰乱代码的好方法)</p>
+<p>[ -z string ] 如果string长度为零,则为真  </p>
+<pre><code class="bash">[ -z &quot;$myvar&quot; ]
+    or
+test -z &quot;$myvar&quot;
+</code></pre>
+<p>[ -n string ] 如果string长度非零,则为真  </p>
+<pre><code class="bash">[ -n &quot;$myvar&quot; ]  // -n也可以省略
+    or
+test -n &quot;$myvar&quot;
+</code></pre>
+<p>[ string1  = string2 ] 如果string1与string2相同,则为真  </p>
+<pre><code class="bash">[ &quot;$myvar&quot; = &quot;one two three&quot; ]    // &quot;==&quot; 也是可以的，在bash中，进行判断时，&quot;=&quot; 和 &quot;==&quot; 的功能是相同的， 这一点跟编程语言中不太相同
+                                  // 但为了区别开来，还是建议用 &quot;==&quot;
+    or
+test &quot;$myvar&quot; = &quot;one two three&quot;
+</code></pre>
+<p>[ string1 != string2 ] 如果string1与string2不同,则为真  </p>
+<pre><code class="bash">[ &quot;$myvar&quot; != &quot;one two three&quot; ]
+    or
+test &quot;$myvar&quot; != &quot;one two three&quot;
+</code></pre>
+<h3 id="算术比较运算符"><a href="#算术比较运算符" class="headerlink" title="算术比较运算符"></a>算术比较运算符</h3><p>[ num1 -eq num2 ]  等于</p>
+<pre><code class="bash">[ $mynum -eq 3 ]    // equal
+    or
+test $mynum -eq 3
+</code></pre>
+<p>[ num1 -ne num2 ]  不等于</p>
+<pre><code class="bash">[ $mynum -ne 3 ]    // not equal
+    or
+test $mynum -ne 3
+</code></pre>
+<p>[ num1 -lt num2 ]  小于</p>
+<pre><code class="bash">[ $mynum -lt 3 ]    // less than
+    or
+test $mynum -lt 3
+</code></pre>
+<p>[ num1 -le num2 ]  小于或等于</p>
+<pre><code class="bash">[ $mynum -le 3 ]    // less or equal
+    or
+test mynum -le 3
+</code></pre>
+<p>[ num1 -gt num2 ]  大于</p>
+<pre><code class="bash">[ $mynum -gt 3 ]    // greater than
+    or
+test $mynum -gt 3
+</code></pre>
+<p>[ num1 -ge num2 ]  大于或等于</p>
+<pre><code class="bash">[ $mynum -ge 3 ]    // greater or equal
+    or
+test $mynum -ge 3
+</code></pre>
+<h3 id="多重条件判定"><a href="#多重条件判定" class="headerlink" title="多重条件判定"></a>多重条件判定</h3><p>-a 两个条件同时成立，则为真</p>
+<pre><code class="bash">[ -r /home/tom/test -a -x /home/tom/test ]    // 即test文件同时具有rx权限时，才返回真
+    or
+test -r /home/tom/test -a -x /home/tom/test 
+</code></pre>
+<p>-o 任意一个条件成立，则为真</p>
+<pre><code class="bash">[ -r /home/tom/test -o -x /home/tom/test ]    // 即test文件具有r或x权限时，都返回真
+    or
+test -r /home/tom/test -o -x /home/tom/test 
+</code></pre>
+<p>！ 条件不成立，则为真</p>
+<pre><code class="bash">[ ! -x /home/tom/test ]    // 即test文件同时不具有x权限时，才返回真
+    or
+test ! -x /home/tom/test 
+</code></pre>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/%E5%8F%A3%E6%B0%B4/my-2012/" title="我的2012"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: 我的2012</span></a><a class="button is-default" href="/%E5%8F%A3%E6%B0%B4/%E4%B8%8D%E8%A6%81%E6%8A%B1%E6%80%A8/" title="弱者只会抱怨，强者总会改变"><span class="has-text-weight-semibold">Next: 弱者只会抱怨，强者总会改变</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

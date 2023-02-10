@@ -1,0 +1,235 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="
+数学模型
+1. 近似
+2. 增长数量级
+3. 内循环
+4. 成本模型
+
+
+注意事项
+1. 大常数
+2. 缓存
+3. 对最坏情况下的性能的保证
+4. 随机化算法
+5. 均摊分析
+
+
+ThreeSum
+1. ThreeSumSlow
+2. ThreeSumBinarySearch
+3. ThreeSumTwoPointer
+
+
+倍率实验
+
+数学模型1. 近似N3/6-N2/2+N/3 ~ N3/6。使用 ~f(N) 来表示所有随着 N 的增大除以 f(N) 的结果趋近于 1 的函数。
+2. 增长数量级N3/6-N2/2+N/3 的增长数量级为 O(N3)。增长数量级将算法与它的具体实现隔离开来，一个算法的增长数量级为 O(N3) 与它是否用 Java 实现，是否运行于特定计算机上无关。
+3. 内循环执行最频繁.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center"></p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E5%AD%A6%E6%A8%A1%E5%9E%8B"><span class="toc-text">数学模型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%BF%91%E4%BC%BC"><span class="toc-text">1. 近似</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%A2%9E%E9%95%BF%E6%95%B0%E9%87%8F%E7%BA%A7"><span class="toc-text">2. 增长数量级</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%86%85%E5%BE%AA%E7%8E%AF"><span class="toc-text">3. 内循环</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%88%90%E6%9C%AC%E6%A8%A1%E5%9E%8B"><span class="toc-text">4. 成本模型</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-text">注意事项</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%A4%A7%E5%B8%B8%E6%95%B0"><span class="toc-text">1. 大常数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%BC%93%E5%AD%98"><span class="toc-text">2. 缓存</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%AF%B9%E6%9C%80%E5%9D%8F%E6%83%85%E5%86%B5%E4%B8%8B%E7%9A%84%E6%80%A7%E8%83%BD%E7%9A%84%E4%BF%9D%E8%AF%81"><span class="toc-text">3. 对最坏情况下的性能的保证</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E9%9A%8F%E6%9C%BA%E5%8C%96%E7%AE%97%E6%B3%95"><span class="toc-text">4. 随机化算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%9D%87%E6%91%8A%E5%88%86%E6%9E%90"><span class="toc-text">5. 均摊分析</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#ThreeSum"><span class="toc-text">ThreeSum</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-ThreeSumSlow"><span class="toc-text">1. ThreeSumSlow</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-ThreeSumBinarySearch"><span class="toc-text">2. ThreeSumBinarySearch</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-ThreeSumTwoPointer"><span class="toc-text">3. ThreeSumTwoPointer</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%80%8D%E7%8E%87%E5%AE%9E%E9%AA%8C"><span class="toc-text">倍率实验</span></a></li></ol></div><div class="column is-9"><header class="my-4"></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle"></h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.701Z">2023-01-31</time><article class="mt-2 post-content"><ul>
+<li><a href="#%E6%95%B0%E5%AD%A6%E6%A8%A1%E5%9E%8B">数学模型</a><ul>
+<li><a href="#1-%E8%BF%91%E4%BC%BC">1. 近似</a></li>
+<li><a href="#2-%E5%A2%9E%E9%95%BF%E6%95%B0%E9%87%8F%E7%BA%A7">2. 增长数量级</a></li>
+<li><a href="#3-%E5%86%85%E5%BE%AA%E7%8E%AF">3. 内循环</a></li>
+<li><a href="#4-%E6%88%90%E6%9C%AC%E6%A8%A1%E5%9E%8B">4. 成本模型</a></li>
+</ul>
+</li>
+<li><a href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9">注意事项</a><ul>
+<li><a href="#1-%E5%A4%A7%E5%B8%B8%E6%95%B0">1. 大常数</a></li>
+<li><a href="#2-%E7%BC%93%E5%AD%98">2. 缓存</a></li>
+<li><a href="#3-%E5%AF%B9%E6%9C%80%E5%9D%8F%E6%83%85%E5%86%B5%E4%B8%8B%E7%9A%84%E6%80%A7%E8%83%BD%E7%9A%84%E4%BF%9D%E8%AF%81">3. 对最坏情况下的性能的保证</a></li>
+<li><a href="#4-%E9%9A%8F%E6%9C%BA%E5%8C%96%E7%AE%97%E6%B3%95">4. 随机化算法</a></li>
+<li><a href="#5-%E5%9D%87%E6%91%8A%E5%88%86%E6%9E%90">5. 均摊分析</a></li>
+</ul>
+</li>
+<li><a href="#threesum">ThreeSum</a><ul>
+<li><a href="#1-threesumslow">1. ThreeSumSlow</a></li>
+<li><a href="#2-threesumbinarysearch">2. ThreeSumBinarySearch</a></li>
+<li><a href="#3-threesumtwopointer">3. ThreeSumTwoPointer</a></li>
+</ul>
+</li>
+<li><a href="#%E5%80%8D%E7%8E%87%E5%AE%9E%E9%AA%8C">倍率实验</a></li>
+</ul>
+<h1 id="数学模型"><a href="#数学模型" class="headerlink" title="数学模型"></a>数学模型</h1><h2 id="1-近似"><a href="#1-近似" class="headerlink" title="1. 近似"></a>1. 近似</h2><p>N<sup>3</sup>/6-N<sup>2</sup>/2+N/3 ~ N<sup>3</sup>/6。使用 ~f(N) 来表示所有随着 N 的增大除以 f(N) 的结果趋近于 1 的函数。</p>
+<h2 id="2-增长数量级"><a href="#2-增长数量级" class="headerlink" title="2. 增长数量级"></a>2. 增长数量级</h2><p>N<sup>3</sup>/6-N<sup>2</sup>/2+N/3 的增长数量级为 O(N<sup>3</sup>)。增长数量级将算法与它的具体实现隔离开来，一个算法的增长数量级为 O(N<sup>3</sup>) 与它是否用 Java 实现，是否运行于特定计算机上无关。</p>
+<h2 id="3-内循环"><a href="#3-内循环" class="headerlink" title="3. 内循环"></a>3. 内循环</h2><p>执行最频繁的指令决定了程序执行的总时间，把这些指令称为程序的内循环。</p>
+<h2 id="4-成本模型"><a href="#4-成本模型" class="headerlink" title="4. 成本模型"></a>4. 成本模型</h2><p>使用成本模型来评估算法，例如数组的访问次数就是一种成本模型。</p>
+<h1 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h1><h2 id="1-大常数"><a href="#1-大常数" class="headerlink" title="1. 大常数"></a>1. 大常数</h2><p>在求近似时，如果低级项的常数系数很大，那么近似的结果是错误的。</p>
+<h2 id="2-缓存"><a href="#2-缓存" class="headerlink" title="2. 缓存"></a>2. 缓存</h2><p>计算机系统会使用缓存技术来组织内存，访问数组相邻的元素会比访问不相邻的元素快很多。</p>
+<h2 id="3-对最坏情况下的性能的保证"><a href="#3-对最坏情况下的性能的保证" class="headerlink" title="3. 对最坏情况下的性能的保证"></a>3. 对最坏情况下的性能的保证</h2><p>在核反应堆、心脏起搏器或者刹车控制器中的软件，最坏情况下的性能是十分重要的。</p>
+<h2 id="4-随机化算法"><a href="#4-随机化算法" class="headerlink" title="4. 随机化算法"></a>4. 随机化算法</h2><p>通过打乱输入，去除算法对输入的依赖。</p>
+<h2 id="5-均摊分析"><a href="#5-均摊分析" class="headerlink" title="5. 均摊分析"></a>5. 均摊分析</h2><p>将所有操作的总成本除于操作总数来将成本均摊。例如对一个空栈进行 N 次连续的 push() 调用需要访问数组的次数为 N+4+8+16+…+2N=5N-4（N 是向数组写入元素的次数，其余都是调整数组大小时进行复制需要的访问数组次数），均摊后访问数组的平均次数为常数。</p>
+<h1 id="ThreeSum"><a href="#ThreeSum" class="headerlink" title="ThreeSum"></a>ThreeSum</h1><p>ThreeSum 用于统计一个数组中和为 0 的三元组数量。</p>
+<pre><code class="java">public interface ThreeSum &#123;
+    int count(int[] nums);
+&#125;
+</code></pre>
+<h2 id="1-ThreeSumSlow"><a href="#1-ThreeSumSlow" class="headerlink" title="1. ThreeSumSlow"></a>1. ThreeSumSlow</h2><p>该算法的内循环为 <code>if (nums[i] + nums[j] + nums[k] == 0)</code> 语句，总共执行的次数为 N(N-1)(N-2) = N<sup>3</sup>/6-N<sup>2</sup>/2+N/3，因此它的近似执行次数为 ~N<sup>3</sup>/6，增长数量级为 O(N<sup>3</sup>)。</p>
+<pre><code class="java">public class ThreeSumSlow implements ThreeSum &#123;
+    @Override
+    public int count(int[] nums) &#123;
+        int N = nums.length;
+        int cnt = 0;
+        for (int i = 0; i &lt; N; i++) &#123;
+            for (int j = i + 1; j &lt; N; j++) &#123;
+                for (int k = j + 1; k &lt; N; k++) &#123;
+                    if (nums[i] + nums[j] + nums[k] == 0) &#123;
+                        cnt++;
+                    &#125;
+                &#125;
+            &#125;
+        &#125;
+        return cnt;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="2-ThreeSumBinarySearch"><a href="#2-ThreeSumBinarySearch" class="headerlink" title="2. ThreeSumBinarySearch"></a>2. ThreeSumBinarySearch</h2><p>将数组进行排序，对两个元素求和，并用二分查找方法查找是否存在该和的相反数，如果存在，就说明存在和为 0 的三元组。</p>
+<p>应该注意的是，只有数组不含有相同元素才能使用这种解法，否则二分查找的结果会出错。</p>
+<p>该方法可以将 ThreeSum 算法增长数量级降低为 O(N<sup>2</sup>logN)。</p>
+<pre><code class="java">public class ThreeSumBinarySearch implements ThreeSum &#123;
+
+    @Override
+    public int count(int[] nums) &#123;
+        Arrays.sort(nums);
+        int N = nums.length;
+        int cnt = 0;
+        for (int i = 0; i &lt; N; i++) &#123;
+            for (int j = i + 1; j &lt; N; j++) &#123;
+                int target = -nums[i] - nums[j];
+                int index = BinarySearch.search(nums, target);
+                // 应该注意这里的下标必须大于 j，否则会重复统计。
+                if (index &gt; j) &#123;
+                    cnt++;
+                &#125;
+            &#125;
+        &#125;
+        return cnt;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class BinarySearch &#123;
+
+    public static int search(int[] nums, int target) &#123;
+        int l = 0, h = nums.length - 1;
+        while (l &lt;= h) &#123;
+            int m = l + (h - l) / 2;
+            if (target == nums[m]) &#123;
+                return m;
+            &#125; else if (target &gt; nums[m]) &#123;
+                l = m + 1;
+            &#125; else &#123;
+                h = m - 1;
+            &#125;
+        &#125;
+        return -1;
+    &#125;
+&#125;
+</code></pre>
+<h2 id="3-ThreeSumTwoPointer"><a href="#3-ThreeSumTwoPointer" class="headerlink" title="3. ThreeSumTwoPointer"></a>3. ThreeSumTwoPointer</h2><p>更有效的方法是先将数组排序，然后使用双指针进行查找，时间复杂度为 O(N<sup>2</sup>)。</p>
+<p>同样不适用与数组存在重复元素的情况。</p>
+<pre><code class="java">public class ThreeSumTwoPointer implements ThreeSum &#123;
+
+    @Override
+    public int count(int[] nums) &#123;
+        int N = nums.length;
+        int cnt = 0;
+        Arrays.sort(nums);
+        for (int i = 0; i &lt; N - 2; i++) &#123;
+            int l = i + 1, h = N - 1, target = -nums[i];
+            while (l &lt; h) &#123;
+                int sum = nums[l] + nums[h];
+                if (sum == target) &#123;
+                    cnt++;
+                    l++;
+                    h--;
+                &#125; else if (sum &lt; target) &#123;
+                    l++;
+                &#125; else &#123;
+                    h--;
+                &#125;
+            &#125;
+        &#125;
+        return cnt;
+    &#125;
+&#125;
+</code></pre>
+<h1 id="倍率实验"><a href="#倍率实验" class="headerlink" title="倍率实验"></a>倍率实验</h1><p>如果 T(N) ~ aN<sup>b</sup>logN，那么 T(2N)/T(N) ~ 2<sup>b</sup>。</p>
+<p>例如对于暴力的 ThreeSum 算法，近似时间为 ~N<sup>3</sup>/6。进行如下实验：多次运行该算法，每次取的 N 值为前一次的两倍，统计每次执行的时间，并统计本次运行时间与前一次运行时间的比值，得到如下结果：</p>
+<table>
+<thead>
+<tr>
+<th align="center">N</th>
+<th align="center">Time(ms)</th>
+<th align="center">Ratio</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">500</td>
+<td align="center">48</td>
+<td align="center">/</td>
+</tr>
+<tr>
+<td align="center">1000</td>
+<td align="center">320</td>
+<td align="center">6.7</td>
+</tr>
+<tr>
+<td align="center">2000</td>
+<td align="center">555</td>
+<td align="center">1.7</td>
+</tr>
+<tr>
+<td align="center">4000</td>
+<td align="center">4105</td>
+<td align="center">7.4</td>
+</tr>
+<tr>
+<td align="center">8000</td>
+<td align="center">33575</td>
+<td align="center">8.2</td>
+</tr>
+<tr>
+<td align="center">16000</td>
+<td align="center">268909</td>
+<td align="center">8.0</td>
+</tr>
+</tbody></table>
+<p>可以看到，T(2N)/T(N) ~ 2<sup>3</sup>，因此可以确定 T(N) ~ aN<sup>3</sup>logN。</p>
+<pre><code class="java">public class RatioTest &#123;
+
+    public static void main(String[] args) &#123;
+        int N = 500;
+        int loopTimes = 7;
+        double preTime = -1;
+        while (loopTimes-- &gt; 0) &#123;
+            int[] nums = new int[N];
+            StopWatch.start();
+            ThreeSum threeSum = new ThreeSumSlow();
+            int cnt = threeSum.count(nums);
+            System.out.println(cnt);
+            double elapsedTime = StopWatch.elapsedTime();
+            double ratio = preTime == -1 ? 0 : elapsedTime / preTime;
+            System.out.println(N + &quot;  &quot; + elapsedTime + &quot;  &quot; + ratio);
+            preTime = elapsedTime;
+            N *= 2;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<pre><code class="java">public class StopWatch &#123;
+
+    private static long start;
+
+
+    public static void start() &#123;
+        start = System.currentTimeMillis();
+    &#125;
+
+
+    public static double elapsedTime() &#123;
+        long now = System.currentTimeMillis();
+        return (now - start) / 1000.0;
+    &#125;
+&#125;
+</code></pre>
+<div align="center"><img width="320px" src="https://cs-notes-1256109796.cos.ap-guangzhou.myqcloud.com/githubio/公众号二维码-2.png"></img></div>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

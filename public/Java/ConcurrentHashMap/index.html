@@ -1,0 +1,604 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="ConcurrentHashMap 底层是基于数组 + 链表组成的，不过在 jdk1.7 和 1.8 中具体实现稍有不同。
+
+
+JDK 1.7数据结构在 JDK1.7 中是这样的：
+
+如图所示，是由 Segment 数组、HashEntry 组成，和 HashMap 一样，仍然是数组加链表。
+Segment 是 ConcurrentHashMap 的一个内部类，主要的组成如下：
+static final class Segment&amp;lt;K,V&amp;gt; extends ReentrantLock implements Serializable &amp;#123;    
+
+    private static final long serialVersionUID = 2249069246763182397L; .."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">ConcurrentHashMap</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK-1-7"><span class="toc-text">JDK 1.7</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-text">数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#put"><span class="toc-text">put()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#get"><span class="toc-text">get()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%89%A9%E5%AE%B9%E6%9C%BA%E5%88%B6"><span class="toc-text">扩容机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#size"><span class="toc-text">size()</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK-1-8"><span class="toc-text">JDK 1.8</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-1"><span class="toc-text">数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#put-1"><span class="toc-text">put()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#get-1"><span class="toc-text">get()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%89%A9%E5%AE%B9%E6%9C%BA%E5%88%B6-1"><span class="toc-text">扩容机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#size-1"><span class="toc-text">size()</span></a></li></ol></li></ol></div><div class="column is-9"><header class="my-4"></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">ConcurrentHashMap</h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.693Z">2023-01-31</time><article class="mt-2 post-content"><p>ConcurrentHashMap 底层是基于<strong>数组 + 链表</strong>组成的，不过在 jdk1.7 和 1.8 中具体实现稍有不同。</p>
+<span id="more"></span>
+
+<h2 id="JDK-1-7"><a href="#JDK-1-7" class="headerlink" title="JDK 1.7"></a>JDK 1.7</h2><h3 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h3><p>在 JDK1.7 中是这样的：</p>
+<p><img src="/img/concurrent-hashmap-1589261515.png"></p>
+<p>如图所示，是由 Segment 数组、HashEntry 组成，和 HashMap 一样，仍然是<strong>数组加链表</strong>。</p>
+<p>Segment 是 ConcurrentHashMap 的一个内部类，主要的组成如下：</p>
+<pre><code class="java">static final class Segment&lt;K,V&gt; extends ReentrantLock implements Serializable &#123;    
+
+    private static final long serialVersionUID = 2249069246763182397L;    
+
+    // 和 HashMap 中的 HashEntry 作用一样，真正存放数据的地方   
+    transient volatile HashEntry&lt;K,V&gt;[] table;    
+
+    transient int count;
+
+    // 用于 fail-fast，快速失败
+    transient int modCount;
+
+    // 大小
+    transient int threshold;
+
+    // 负载因子
+    final float loadFactor;
+&#125;
+</code></pre>
+<p>HashEntry 跟 HashMap 中的 Entry 基本相同，但是不同点是，他**使用<code>volatile</code>去修饰了他的数据<code>value</code>还有下一个节点<code>next</code>**。</p>
+<blockquote>
+<p><strong><code>volatile</code>的功能</strong></p>
+<p>保证了不同线程对这个变量进行操作时的可见性，即一个线程修改了某个变量的值，这新值对其他线程来说是立即可见的。（实现可见性）</p>
+<p>禁止进行指令重排序。（实现有序性）</p>
+<p>注意：<code>volatile</code>只能保证对<strong>单次读/写的原子性</strong>。i++ 这种操作不能保证原子性。</p>
+</blockquote>
+<p>原理上来说，ConcurrentHashMap 采用了分段锁技术，其中<strong>Segment 继承于 ReentrantLock</strong>。</p>
+<p>它不会像 HashTable 那样不管是<code>put()</code>还是<code>get()</code>操作都需要做同步处理，理论上 ConcurrentHashMap 支持 CurrencyLevel (值为 Segment 数组数量）的线程并发。</p>
+<p>每当一个线程占用锁访问一个 Segment 时，不会影响到其他的 Segment。</p>
+<p>就是说如果 Segment 当前大小是16他的并发度就是16，可以同时允许16个线程操作16个 Segment 而且还是线程安全的。</p>
+<h3 id="put"><a href="#put" class="headerlink" title="put()"></a><code>put()</code></h3><p>我们看一下 ConcurrentHashMap 的<code>put()</code>方法：</p>
+<pre><code class="java">// jdk1.7 ConcurrentHashMap.java
+public V put(K key, V value) &#123;
+    Segment&lt;K,V&gt; s;
+
+    if (value == null)
+        throw new NullPointerException(); //这就是为啥他不可以put null值的原因
+    int hash = hash(key);
+    int j = (hash &gt;&gt;&gt; segmentShift) &amp; segmentMask;
+    // if 中拿到的 s 不是 volatile 的，将会在 ensureSegment 中重新进行检查
+    if ((s = (Segment&lt;K,V&gt;)UNSAFE.getObject(segments, (j &lt;&lt; SSHIFT) + SBASE)) == null)
+        s = ensureSegment(j);
+    return s.put(key, hash, value, false);
+&#125;
+</code></pre>
+<p>他先定位到当前 key 属于哪个 Segment，然后再对该 Segment 进行<code>put()</code>操作。</p>
+<p>然后我们看看 Segment 的<code>put()</code>源代码，你就知道他是怎么做到线程安全的了，关键句子我注释了。</p>
+<pre><code class="java">final V put(K key, int hash, V value, boolean onlyIfAbsent) &#123;
+    // 将当前 Segment 中的 table 通过 key 的 hashcode 定位到 HashEntry
+    // 因为 Segment 继承自 ReentrantLock，所以此处直接调用了父类的 tryLock() 方法，持有当前锁
+    HashEntry&lt;K,V&gt; node = tryLock() ? null : scanAndLockForPut(key, hash, value);
+    V oldValue;
+    try &#123;
+        HashEntry&lt;K,V&gt;[] tab = table;
+        // 计算 index
+        int index = (tab.length - 1) &amp; hash;
+        HashEntry&lt;K,V&gt; first = entryAt(tab, index);
+        for (HashEntry&lt;K,V&gt; e = first;;) &#123;
+            // 如果拿到的当前 index 的值不为空，表示该 index 上有数据，需要进行覆盖
+            if (e != null) &#123;
+                K k;
+                // 遍历该 HashEntry，
+                // 如果不为空则判断传入的 key 和当前遍历的 key 是否相等，相等则覆盖旧的 value。
+                if ((k = e.key) == key ||
+                    (e.hash == hash &amp;&amp; key.equals(k))) &#123;
+                    oldValue = e.value;
+                    if (!onlyIfAbsent) &#123;
+                        e.value = value;
+                        ++modCount;
+                    &#125;
+                    break;
+                &#125;
+                e = e.next;
+            &#125;
+            else &#123;
+                // 不为空则需要新建一个 HashEntry 并加入到 Segment 中，同时会先判断是否需要扩容
+                if (node != null)
+                    node.setNext(first);
+                else
+                    node = new HashEntry&lt;K,V&gt;(hash, key, value, first);
+                int c = count + 1;
+                // 判断是否需要扩容
+                if (c &gt; threshold &amp;&amp; tab.length &lt; MAXIMUM_CAPACITY)
+                    rehash(node);
+                else
+                    setEntryAt(tab, index, node);
+                ++modCount;
+                count = c;
+                oldValue = null;
+                break;
+            &#125;
+        &#125;
+    &#125; finally &#123;
+        //释放锁
+        unlock();
+    &#125;
+    return oldValue;
+&#125;
+
+private HashEntry&lt;K,V&gt; scanAndLockForPut(K key, int hash, V value) &#123;
+    HashEntry&lt;K,V&gt; first = entryForHash(this, hash);
+    HashEntry&lt;K,V&gt; e = first;
+    HashEntry&lt;K,V&gt; node = null;
+    int retries = -1;
+    while (!tryLock()) &#123;  // 自旋获取锁
+        HashEntry&lt;K,V&gt; f;
+        if (retries &lt; 0) &#123;
+            if (e == null) &#123;
+                if (node == null) // 尝试创建新的 HashEntry
+                    node = new HashEntry&lt;K,V&gt;(hash, key, value, null);
+                retries = 0;
+            &#125;
+            else if (key.equals(e.key))
+                retries = 0;
+            else
+                e = e.next;
+        &#125;
+        else if (++retries &gt; MAX_SCAN_RETRIES) &#123; 
+            // 直接使用阻塞锁的方式，暴力而有效
+            lock();
+            break;
+        &#125;
+        else if ((retries &amp; 1) == 0 &amp;&amp;
+                    (f = entryForHash(this, hash)) != first) &#123;
+            e = first = f; // re-traverse if entry changed
+            retries = -1;
+        &#125;
+    &#125;
+    return node;
+&#125;
+</code></pre>
+<p>首先第一步的时候会尝试<strong>获取锁</strong>，如果获取失败肯定就有其他线程存在竞争，则利用<code>scanAndLockForPut()</code><strong>自旋获取锁</strong>。如果重试的次数达到了<code>MAX_SCAN_RETRIES</code>（CPU数量大于1时，值为64，否则为1）则改为阻塞锁获取，保证能获取成功。</p>
+<blockquote>
+<p>自旋就是执行一段无意义的循环。</p>
+</blockquote>
+<h3 id="get"><a href="#get" class="headerlink" title="get()"></a><code>get()</code></h3><p><code>get()</code>逻辑比较简单，定位 Segment → 定位 HashEntry → 定位链表节点：</p>
+<pre><code class="java">    public V get(Object key) &#123;
+        Segment&lt;K,V&gt; s; // manually integrate access methods to reduce overhead
+        HashEntry&lt;K,V&gt;[] tab;
+        int h = hash(key.hashCode());
+        long u = (((h &gt;&gt;&gt; segmentShift) &amp; segmentMask) &lt;&lt; SSHIFT) + SBASE;
+        // 定位 Segment
+        if ((s = (Segment&lt;K,V&gt;)UNSAFE.getObjectVolatile(segments, u)) != null &amp;&amp;
+            (tab = s.table) != null) &#123;
+            // 定位 HashEntry
+            for (HashEntry&lt;K,V&gt; e = (HashEntry&lt;K,V&gt;) UNSAFE.getObjectVolatile
+                     (tab, ((long)(((tab.length - 1) &amp; h)) &lt;&lt; TSHIFT) + TBASE);
+                 e != null; e = e.next) &#123;
+                K k;
+                // 定位链表上的节点
+                if ((k = e.key) == key || (e.hash == h &amp;&amp; key.equals(k)))
+                    return e.value;
+            &#125;
+        &#125;
+        return null;
+    &#125;
+</code></pre>
+<p>由于 HashEntry 中的<code>value</code>属性是用<code>volatile</code>关键词修饰的，保证了内存可见性，所以每次获取时都是最新值。所以 ConcurrentHashMap 的<code>get()</code>方法是非常高效的，因为整个过程都不需要加锁。</p>
+<p>但是，虽然 JDK1.7 中可以支持每个 Segment 并发访问，但是还是存在一些问题：<strong>我们去查询的时候，还得遍历链表</strong>，会导致效率很低，这个跟 JDK1.7 的 HashMap 是存在的一样问题，所以他在 JDK1.8 完全优化了。</p>
+<h3 id="扩容机制"><a href="#扩容机制" class="headerlink" title="扩容机制"></a>扩容机制</h3><p>然后讲讲在 JDK1.7 中的扩容机制。</p>
+<p>我们向上翻一下，在<code>put()</code>方法中，当判断需要扩容时，调用的是<code>rehash()</code>方法，我们来看看它是如何做的：</p>
+<pre><code class="java">private void rehash(HashEntry&lt;K,V&gt; node) &#123;
+    HashEntry&lt;K,V&gt;[] oldTable = table;
+    int oldCapacity = oldTable.length;
+    int newCapacity = oldCapacity &lt;&lt; 1; // 与 HashMap 相同，采用2次幂扩容
+    threshold = (int)(newCapacity * loadFactor);
+    HashEntry&lt;K,V&gt;[] newTable = (HashEntry&lt;K,V&gt;[]) new HashEntry[newCapacity];
+    int sizeMask = newCapacity - 1;
+    for (int i = 0; i &lt; oldCapacity ; i++) &#123;
+        HashEntry&lt;K,V&gt; e = oldTable[i];
+        if (e != null) &#123;
+            HashEntry&lt;K,V&gt; next = e.next;
+            int idx = e.hash &amp; sizeMask;
+            if (next == null)   // 链表中只有一个节点
+                newTable[idx] = e;
+            else &#123; // 将原来的顺序原封不动地移到新的 table 中
+                HashEntry&lt;K,V&gt; lastRun = e;
+                int lastIdx = idx;
+                for (HashEntry&lt;K,V&gt; last = next; last != null; last = last.next) &#123;
+                    int k = last.hash &amp; sizeMask;
+                    if (k != lastIdx) &#123;
+                        lastIdx = k;
+                        lastRun = last;
+                    &#125;
+                &#125;
+                newTable[lastIdx] = lastRun;
+               
+                for (HashEntry&lt;K,V&gt; p = e; p != lastRun; p = p.next) &#123;
+                    V v = p.value;
+                    int h = p.hash;
+                    int k = h &amp; sizeMask;
+                    HashEntry&lt;K,V&gt; n = newTable[k];
+                    newTable[k] = new HashEntry&lt;K,V&gt;(h, p.key, v, n);
+                &#125;
+            &#125;
+        &#125;
+    &#125;
+    int nodeIndex = node.hash &amp; sizeMask; // 将新的节点加入
+    node.setNext(newTable[nodeIndex]);
+    newTable[nodeIndex] = node;
+    table = newTable;
+&#125;
+</code></pre>
+<p>可以看出，与 HashMap 扩容机制类似，采取了<strong>2次幂的方式</strong>来决定新数组的大小。但是，Segment 没有扩容机制，在初始化时，就指定好了 Segment 数组的大小，也既该 ConcurrentHashMap 的并发数。</p>
+<h3 id="size"><a href="#size" class="headerlink" title="size()"></a><code>size()</code></h3><p>既然要考虑线程安全，在获取 ConcurrentHashMap 的大小时，也要特殊处理一下。这里采用的是<strong>多次对比机制</strong>，我们来看看它的代码：</p>
+<pre><code class="java">public int size() &#123;
+    final Segment&lt;K,V&gt;[] segments = this.segments;
+    int size;
+    boolean overflow; // true if size overflows 32 bits
+    long sum;         // sum of modCounts
+    long last = 0L;   // previous sum
+    int retries = -1; // first iteration isn&#39;t retry
+    try &#123;
+        for (;;) &#123;
+            if (retries++ == RETRIES_BEFORE_LOCK) &#123;  // 重试次数达到2
+                for (int j = 0; j &lt; segments.length; ++j)
+                    ensureSegment(j).lock(); // 强制让所有 Segment 获得阻塞锁
+            &#125;
+            sum = 0L;
+            size = 0;
+            overflow = false;
+            for (int j = 0; j &lt; segments.length; ++j) &#123;
+                Segment&lt;K,V&gt; seg = segmentAt(segments, j);
+                if (seg != null) &#123;
+                    sum += seg.modCount;
+                    int c = seg.count;
+                    if (c &lt; 0 || (size += c) &lt; 0)
+                        overflow = true;
+                &#125;
+            &#125;
+            // 如果此次获取的大小与上次一致，则认为这就是当前大小
+            if (sum == last)
+                break;
+            last = sum;
+        &#125;
+    &#125; finally &#123;
+        if (retries &gt; RETRIES_BEFORE_LOCK) &#123;
+            for (int j = 0; j &lt; segments.length; ++j)
+                segmentAt(segments, j).unlock();  // 比对完成后让所有 Segment 解锁
+        &#125;
+    &#125;
+    return overflow ? Integer.MAX_VALUE : size;
+&#125;
+</code></pre>
+<p>可以看到，至少要进行两次遍历，如果<strong>相邻的两次遍历计算出的 key-value 的数量是相等</strong>的，那就认为这个数量是当前的正确数量。如果一直对比不上，这说明数据在不断地更改，此时要让<strong>所有 Segment 获取阻塞锁</strong>，然后再进行对比，对比成功后，解锁，返回数量。</p>
+<h2 id="JDK-1-8"><a href="#JDK-1-8" class="headerlink" title="JDK 1.8"></a>JDK 1.8</h2><h3 id="数据结构-1"><a href="#数据结构-1" class="headerlink" title="数据结构"></a>数据结构</h3><p>在 JDK1.8 中，ConcurrentHashMap 抛弃了原有的 Segment 分段锁，而采用了 CAS + synchronized 来保证并发安全性。</p>
+<p>虽然它的源码中还是会包含 Segment 类，但是也只用在 Serializable 的<strong>序列化和反序列化</strong>中，而且多亏了 Serializable 的<code>serialVersionUID</code>特性，只要版本号保持一致，Segment 可以在 JDK1.7 和 JDK1.8 甚至 JDKX.X 之间自由转换，JVM 会认为是同一个类。</p>
+<p>跟 HashMap 的1.7 → 1.8很像，ConcurrentHashMap 也把之前 JDK1.7 中的 HashEntry 改成了 Node，但是作用不变，把<code>value</code>和<code>next</code>采用了<code>volatile</code>去修饰，保证了可见性，并且也引入了<strong>红黑树</strong>，在链表大于一定值的时候会转换（默认是8）。</p>
+<p>它的数据结构如下图所示：</p>
+<p><img src="/img/concurrent-hashmap-1589262515.png"></p>
+<p>对于每一个链表，ConcurrentHashMap 将其称之 <strong>『桶』（bin）</strong>。</p>
+<h3 id="put-1"><a href="#put-1" class="headerlink" title="put()"></a><code>put()</code></h3><p>先看一下它的 put 方法：</p>
+<pre><code class="java">public V put(K key, V value) &#123;
+    return putVal(key, value, false);
+&#125;
+
+final V putVal(K key, V value, boolean onlyIfAbsent) &#123;
+    if (key == null || value == null) throw new NullPointerException();
+    // 计算 hashCode
+    int hash = spread(key.hashCode());
+    int binCount = 0;
+    for (Node&lt;K,V&gt;[] tab = table;;) &#123;  // 死循环确保可以插入数据
+        Node&lt;K,V&gt; f; 
+        int n, i, fh;
+        // 如果 Node 数组为 null，则需要初始化，只有在第一次进行 put 时才会进行这个操作
+        if (tab == null || (n = tab.length) == 0)
+            tab = initTable();
+        else if ((f = tabAt(tab, i = (n - 1) &amp; hash)) == null) &#123; // 利用 (n - 1) &amp; hash 计算 index，得出要插入的 Node 数组的 index
+            // 如果节点为空，则利用 CAS 机制写入数据
+            if (casTabAt(tab, i, null, new Node&lt;K,V&gt;(hash, key, value, null))) // 向空桶中插入数据
+                break;  // 向空的桶中添加数据时，不需要加锁
+        &#125;
+        // 要扩容了
+        else if ((fh = f.hash) == MOVED)
+            tab = helpTransfer(tab, f);
+        else &#123;
+            // 尝试使用 synchronized 写入数据
+            V oldVal = null;
+            synchronized (f) &#123;
+                if (tabAt(tab, i) == f) &#123;
+                    if (fh &gt;= 0) &#123;
+                        binCount = 1;
+                        for (Node&lt;K,V&gt; e = f;; ++binCount) &#123;
+                            K ek;
+                            if (e.hash == hash &amp;&amp;
+                                ((ek = e.key) == key ||
+                                    (ek != null &amp;&amp; key.equals(ek)))) &#123;
+                                oldVal = e.val;
+                                if (!onlyIfAbsent)
+                                    e.val = value;
+                                break;
+                            &#125;
+                            Node&lt;K,V&gt; pred = e;
+                            if ((e = e.next) == null) &#123;
+                                pred.next = new Node&lt;K,V&gt;(hash, key,
+                                                            value, null);
+                                break;
+                            &#125;
+                        &#125;
+                    &#125;
+                    // 已经被转换为红黑树节点了，需要用 putTreeVal 来进行插入
+                    else if (f instanceof TreeBin) &#123;
+                        Node&lt;K,V&gt; p;
+                        binCount = 2;
+                        if ((p = ((TreeBin&lt;K,V&gt;)f).putTreeVal(hash, key,
+                                                        value)) != null) &#123;
+                            oldVal = p.val;
+                            if (!onlyIfAbsent)
+                                p.val = value;
+                        &#125;
+                    &#125;
+                    else if (f instanceof ReservationNode)
+                        throw new IllegalStateException(&quot;Recursive update&quot;);
+                &#125;
+            &#125;
+            if (binCount != 0) &#123;
+                // 桶中节点的数量大于 TREEIFY_THRESHOLD，值为8，转换红黑树
+                if (binCount &gt;= TREEIFY_THRESHOLD)
+                    treeifyBin(tab, i);
+                if (oldVal != null)
+                    return oldVal;
+                break;
+            &#125;
+        &#125;
+    &#125;
+    addCount(1L, binCount);
+    return null;
+&#125;
+</code></pre>
+<p>ConcurrentHashMap 在进行<code>put()</code>操作的还是比较复杂的，大致可以分为以下步骤：</p>
+<ol>
+<li>如果是第一次插入数据，则需要调用<code>initTable()</code>初始化 Node 数组；</li>
+<li>利用<code>(n - 1) &amp; hash</code>得出要插入的数组 index；</li>
+<li>如果数组的 index 位置为 null，则直接利用 CAS 机制插入，不需要加锁；</li>
+<li>如果数组的 index 位置不为 null，则要使用 synchronized 方式插入到桶（链表）中；</li>
+<li>如果插入完成后，桶的节点数量大于等于8了，就要转换为红黑树（红黑桶🛢）；</li>
+<li>如果节点的 hash 值为 -1，则需要扩容。</li>
+</ol>
+<blockquote>
+<p><strong>CAS（Compare And Swap）</strong></p>
+<p>CAS 是乐观锁的一种实现方式，是一种轻量级锁，JUC 中很多工具类的实现就是基于 CAS 的。<br>CAS 的中心思想是线程<strong>在读取数据时不进行加锁</strong>，在准备写回数据时，<strong>比较原值是否修改</strong>，若未被其他线程修改则写回，若已被修改，则&gt; 重新执行读取流程。<br>这是一种<strong>乐观策略</strong>，认为并发操作并不总会发生。</p>
+<p>但是经典的 ABA 问题，它就无法判断了。就是数据从 A 变为 B 又变成 A，看似没修改过，但实际上是修改过的。<br>想要解决 ABA 问题，要么使用版本号，要么使用时间戳标识，都可以。</p>
+</blockquote>
+<h3 id="get-1"><a href="#get-1" class="headerlink" title="get()"></a><code>get()</code></h3><p>再来看它的<code>get()</code>：</p>
+<pre><code class="java">public V get(Object key) &#123;
+    Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; e, p; int n, eh; K ek;
+    int h = spread(key.hashCode());
+    // 根据计算出来的 hashcode 寻址，如果就在链表上那么直接返回值。
+    if ((tab = table) != null &amp;&amp; (n = tab.length) &gt; 0 &amp;&amp;
+        (e = tabAt(tab, (n - 1) &amp; h)) != null) &#123;
+        // 如果是红黑树那就按照树的方式获取值。
+        if ((eh = e.hash) == h) &#123;
+            if ((ek = e.key) == key || (ek != null &amp;&amp; key.equals(ek)))
+                return e.val;
+        &#125;
+        // 都不满足那就按照链表的方式遍历获取值。
+        else if (eh &lt; 0)
+            return (p = e.find(h, key)) != null ? p.val : null;
+        while ((e = e.next) != null) &#123;
+            if (e.hash == h &amp;&amp;
+                ((ek = e.key) == key || (ek != null &amp;&amp; key.equals(ek))))
+                return e.val;
+        &#125;
+    &#125;
+    return null;
+&#125;
+</code></pre>
+<p>比较简单，也不需要加锁，因为节点的值都是 volatile 的。</p>
+<h3 id="扩容机制-1"><a href="#扩容机制-1" class="headerlink" title="扩容机制"></a>扩容机制</h3><p>我们直接来看它的代码：</p>
+<pre><code class="java">private final void transfer(Node&lt;K,V&gt;[] tab, Node&lt;K,V&gt;[] nextTab) &#123;
+    int n = tab.length, stride;
+    if ((stride = (NCPU &gt; 1) ? (n &gt;&gt;&gt; 3) / NCPU : n) &lt; MIN_TRANSFER_STRIDE)
+        stride = MIN_TRANSFER_STRIDE; // subdivide range
+    if (nextTab == null) &#123;            // initiating
+        try &#123;
+            @SuppressWarnings(&quot;unchecked&quot;)
+            Node&lt;K,V&gt;[] nt = (Node&lt;K,V&gt;[])new Node&lt;?,?&gt;[n &lt;&lt; 1];
+            nextTab = nt;
+        &#125; catch (Throwable ex) &#123;      // try to cope with OOME
+            sizeCtl = Integer.MAX_VALUE;
+            return;
+        &#125;
+        nextTable = nextTab;
+        transferIndex = n;
+    &#125;
+    int nextn = nextTab.length;
+    ForwardingNode&lt;K,V&gt; fwd = new ForwardingNode&lt;K,V&gt;(nextTab);
+    boolean advance = true;
+    boolean finishing = false; // to ensure sweep before committing nextTab
+    for (int i = 0, bound = 0;;) &#123;
+        Node&lt;K,V&gt; f; int fh;
+        while (advance) &#123;
+            int nextIndex, nextBound;
+            if (--i &gt;= bound || finishing)
+                advance = false;
+            else if ((nextIndex = transferIndex) &lt;= 0) &#123;
+                i = -1;
+                advance = false;
+            &#125;
+            else if (U.compareAndSwapInt
+                        (this, TRANSFERINDEX, nextIndex,
+                        nextBound = (nextIndex &gt; stride ?
+                                    nextIndex - stride : 0))) &#123;
+                bound = nextBound;
+                i = nextIndex - 1;
+                advance = false;
+            &#125;
+        &#125;
+        if (i &lt; 0 || i &gt;= n || i + n &gt;= nextn) &#123;
+            int sc;
+            if (finishing) &#123;
+                nextTable = null;
+                table = nextTab;
+                sizeCtl = (n &lt;&lt; 1) - (n &gt;&gt;&gt; 1);
+                return;
+            &#125;
+            if (U.compareAndSwapInt(this, SIZECTL, sc = sizeCtl, sc - 1)) &#123;
+                if ((sc - 2) != resizeStamp(n) &lt;&lt; RESIZE_STAMP_SHIFT)
+                    return;
+                finishing = advance = true;
+                i = n; // recheck before commit
+            &#125;
+        &#125;
+        else if ((f = tabAt(tab, i)) == null)
+            advance = casTabAt(tab, i, null, fwd);
+        else if ((fh = f.hash) == MOVED)
+            advance = true; // already processed
+        else &#123;
+            synchronized (f) &#123;
+                if (tabAt(tab, i) == f) &#123;
+                    Node&lt;K,V&gt; ln, hn;
+                    if (fh &gt;= 0) &#123;
+                        int runBit = fh &amp; n;
+                        Node&lt;K,V&gt; lastRun = f;
+                        for (Node&lt;K,V&gt; p = f.next; p != null; p = p.next) &#123;
+                            int b = p.hash &amp; n;
+                            if (b != runBit) &#123;
+                                runBit = b;
+                                lastRun = p;
+                            &#125;
+                        &#125;
+                        if (runBit == 0) &#123;
+                            ln = lastRun;
+                            hn = null;
+                        &#125;
+                        else &#123;
+                            hn = lastRun;
+                            ln = null;
+                        &#125;
+                        for (Node&lt;K,V&gt; p = f; p != lastRun; p = p.next) &#123;
+                            int ph = p.hash; K pk = p.key; V pv = p.val;
+                            if ((ph &amp; n) == 0)
+                                ln = new Node&lt;K,V&gt;(ph, pk, pv, ln);
+                            else
+                                hn = new Node&lt;K,V&gt;(ph, pk, pv, hn);
+                        &#125;
+                        setTabAt(nextTab, i, ln);
+                        setTabAt(nextTab, i + n, hn);
+                        setTabAt(tab, i, fwd);
+                        advance = true;
+                    &#125;
+                    else if (f instanceof TreeBin) &#123;
+                        TreeBin&lt;K,V&gt; t = (TreeBin&lt;K,V&gt;)f;
+                        TreeNode&lt;K,V&gt; lo = null, loTail = null;
+                        TreeNode&lt;K,V&gt; hi = null, hiTail = null;
+                        int lc = 0, hc = 0;
+                        for (Node&lt;K,V&gt; e = t.first; e != null; e = e.next) &#123;
+                            int h = e.hash;
+                            TreeNode&lt;K,V&gt; p = new TreeNode&lt;K,V&gt;
+                                (h, e.key, e.val, null, null);
+                            if ((h &amp; n) == 0) &#123;
+                                if ((p.prev = loTail) == null)
+                                    lo = p;
+                                else
+                                    loTail.next = p;
+                                loTail = p;
+                                ++lc;
+                            &#125;
+                            else &#123;
+                                if ((p.prev = hiTail) == null)
+                                    hi = p;
+                                else
+                                    hiTail.next = p;
+                                hiTail = p;
+                                ++hc;
+                            &#125;
+                        &#125;
+                        ln = (lc &lt;= UNTREEIFY_THRESHOLD) ? untreeify(lo) :
+                            (hc != 0) ? new TreeBin&lt;K,V&gt;(lo) : t;
+                        hn = (hc &lt;= UNTREEIFY_THRESHOLD) ? untreeify(hi) :
+                            (lc != 0) ? new TreeBin&lt;K,V&gt;(hi) : t;
+                        setTabAt(nextTab, i, ln);
+                        setTabAt(nextTab, i + n, hn);
+                        setTabAt(tab, i, fwd);
+                        advance = true;
+                    &#125;
+                &#125;
+            &#125;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>ConcurrentHashMap 的 JDK1.8 与 JDK1.7 版本的并发实现相比，最大的区别在于 JDK1.8 的<strong>锁的粒度更细</strong>。</p>
+<p>理想情况下 table 数组元素的大小就是其支持并发的最大个数，在 JDK1.7 里面最大并发个数就是 Segment 的个数，默认值是16，可以通过构造函数改变一经创建不可更改，这个值就是并发的粒度，每一个 Segment 下面管理一个 table 数组，加锁的时候其实锁住的是整个 Segment，这样设计的好处在于数组的扩容是不会影响其他的 Segment，简化了并发设计，不足之处在于并发的粒度稍粗，所以在 JDK1.8 里面，去掉了分段锁，将锁的级别控制在了更细粒度的 table 元素级别，也就是说只需要<strong>锁住这个链表的 head 节点，并不会影响其他的 table 元素的读写</strong>，好处在于<strong>并发的粒度更细，影响更小</strong>，从而并发效率更好，但不足之处在于并发扩容的时候，由于操作的 table 都是同一个，不像 JDK1.7 中分段控制，所以这里<strong>需要等扩容完之后，所有的读写操作才能进行</strong>，所以扩容的效率就成为了整个并发的一个瓶颈点。好在 Doug lea 大神对扩容做了优化，本来在一个线程扩容的时候，如果影响了其他线程的数据，那么其他的线程的读写操作都<strong>应该阻塞</strong>，但是他们闲着也是闲着，不如来一起参与扩容任务，这样人多力量大，办完事你们该干啥干啥，别浪费时间，于是在 JDK1.8 的源码里面就引入了一个 ForwardingNode 类，在一个线程发起扩容的时候，就会改变 <code>sizeCtl</code> 这个值，其含义如下：</p>
+<blockquote>
+<p><strong>sizeCtl</strong> ：默认为0，用来控制table的初始化和扩容操作，具体应用在后续会体现出来。<br>值为 -1 时代表 table 正在初始化<br>值为 -(1 + n) 时，表示正在有 n 个线程正在扩容<br>如果 table 未初始化，值表示 table 需要初始化的大小<br>如果 table 初始化完成，表示 table 的容量，值是 <code>table 的大小 x 负载因子</code></p>
+</blockquote>
+<p>扩容时候会判断这个值，如果超过阈值就要扩容，首先根据运算得到需要遍历的次数i，然后利用<code>tabAt()</code>方法获得<code>i</code>位置的元素<code>f</code>，初始化一个ForwardingNode 实例<code>fwd</code>，如果<code>f == null</code>，则在table中的<code>i</code>位置放入<code>fwd</code>，否则采用头插法的方式把当前旧 table 数组的指定任务范围的数据给迁移到新的数组中，然后 给旧 table 原位置赋值<code>fwd</code>。直到遍历过所有的节点以后就完成了复制工作，把 table 指向 nextTable，并更新<code>sizeCtl</code>为新数组大小的0.75倍 ，扩容完成。在此期间如果其他线程的有读写操作都会判断<code>head</code>节点是否为 ForwardingNode 节点 ，如果是就帮助扩容。</p>
+<p>我们来看看 ForwadingNode 的代码：</p>
+<pre><code class="java">
+static final int MOVED     = -1; // hash for forwarding nodes
+
+/**
+ * A node inserted at head of bins during transfer operations.
+ */
+static final class ForwardingNode&lt;K,V&gt; extends Node&lt;K,V&gt; &#123;
+    final Node&lt;K,V&gt;[] nextTable;
+    ForwardingNode(Node&lt;K,V&gt;[] tab) &#123;
+        super(MOVED, null, null, null);
+        this.nextTable = tab;
+    &#125;
+
+    Node&lt;K,V&gt; find(int h, Object k) &#123;
+        // 使用循环，避免多次碰到 ForwardingNode 导致递归过深
+        outer: for (Node&lt;K,V&gt;[] tab = nextTable;;) &#123;
+            Node&lt;K,V&gt; e; int n;
+            if (k == null || tab == null || (n = tab.length) == 0 ||
+                (e = tabAt(tab, (n - 1) &amp; h)) == null)
+                return null;
+            for (;;) &#123;
+                int eh; K ek;
+                if ((eh = e.hash) == h &amp;&amp;
+                    ((ek = e.key) == k || (ek != null &amp;&amp; k.equals(ek))))  // 第一个节点就是要找的节点，直接返回
+                    return e;
+                if (eh &lt; 0) &#123;
+                    if (e instanceof ForwardingNode) &#123;
+                        tab = ((ForwardingNode&lt;K,V&gt;)e).nextTable;
+                        continue outer;
+                    &#125;
+                    else
+                        return e.find(h, k);  // 特殊节点，调用其find方法进行查找
+                &#125;
+                if ((e = e.next) == null)  // 普通节点直接循环遍历链表
+                    return null;
+            &#125;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>ForwardingNode 是一种临时节点，在<strong>扩容进行中</strong>才会出现，hash 值固定为 -1，并且它不存储实际的数据数据。如果旧数组的一个 hash 桶中全部的节点都迁移到新数组中，旧数组就在这个 hash 桶中放置一个 ForwardingNode。读操作或者迭代读时碰到 ForwardingNode 时，将操作转发到扩容后的新的 table 数组上去执行，写操作碰见它时，则尝试帮助扩容。</p>
+<h3 id="size-1"><a href="#size-1" class="headerlink" title="size()"></a><code>size()</code></h3><p>与 jdk1.7 中的计数方式不同，jdk1.8 中的 ConcurrentHashMap 引入了一个 CounterCell 类，用于记录每一个桶中的节点数量，在<code>put()</code>值时，最后调用的<code>addCount()</code>中，就会对这个值做出修改，所以在<code>size()</code>时，直接使用循环方式累加所有的 CounterCell 的值即可得出当前的 key-value 的数量。</p>
+<pre><code class="java">public int size() &#123;
+    long n = sumCount();
+    return ((n &lt; 0L) ? 0 :
+            (n &gt; (long)Integer.MAX_VALUE) ? Integer.MAX_VALUE :
+            (int)n);
+&#125;
+
+static final class CounterCell &#123;
+    volatile long value;
+    CounterCell(long x) &#123; value = x; &#125;
+&#125;
+
+final long sumCount() &#123;
+    CounterCell[] as = counterCells; CounterCell a;
+    long sum = baseCount;
+    if (as != null) &#123;
+        for (int i = 0; i &lt; as.length; ++i) &#123;
+            if ((a = as[i]) != null)
+                sum += a.value;
+        &#125;
+    &#125;
+    return sum;
+&#125;
+</code></pre>
+<blockquote>
+<p>红黑树（Red Black Tree） 是一种自平衡二叉查找树。它是一种特化的平衡二叉树，都是在进行插入和删除操作时通过特定操作保持二叉查找&gt; 树的平衡，从而获得较高的查找性能。它的查找时间复杂度是O(log n)。</p>
+<p>红黑树是每个节点都带有颜色属性的二叉查找树，颜色或红色或黑色。在二叉查找树强制一般要求以外，对于任何有效的红黑树我们增加了如下的&gt; 额外要求:</p>
+<ol>
+<li>节点是红色或黑色</li>
+<li>根节点是黑色 </li>
+<li>所有叶子都是黑色。（叶子是NUIL节点）</li>
+<li>每个红色节点的两个子节点都是黑色。（从每个叶子到根的所有路径上不能有两个连续的红色节点）</li>
+<li>从任一节点到其每个叶子的所有路径都包含相同数目的黑色节点</li>
+</ol>
+</blockquote>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em><a class="button is-default" href="/Android/Fragment%20+%20ViewPager%20%E6%87%92%E5%8A%A0%E8%BD%BD/" title="关于懒加载"><span class="has-text-weight-semibold">Next: 关于懒加载</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

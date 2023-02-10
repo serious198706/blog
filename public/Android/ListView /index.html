@@ -1,0 +1,1064 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="ListView 优化是老生常谈的事情，虽然现在有 RycyclerView 可以完美替代 ListView，但是了解 ListView 的渲染、缓存及优化，也并不是什么坏事。
+
+
+ListView 与它的朋友们ListView 继承自 AbsListView，AbsListView 继承自 AdapterView，AdapterView 继承自 ViewGroup，它们也有各自的派生类。它们的关系如下图所示：
+
+AdapterView 是一个抽象类，它一个可以由内部元素来决定如何展现的 ViewGroup。它内部包含了对内部 View 的管理和基本事件处理，比如addView()、removeView()、setOnItemClickListener()等等。
+AbsListView 也是一个抽象类，它是.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">关于 ListView 的渲染、缓存及优化</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ListView-%E4%B8%8E%E5%AE%83%E7%9A%84%E6%9C%8B%E5%8F%8B%E4%BB%AC"><span class="toc-text">ListView 与它的朋友们</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AbsListView"><span class="toc-text">AbsListView</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#AbsListView-%E7%9A%84onMesaure"><span class="toc-text">AbsListView 的onMesaure()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AbsListView-%E7%9A%84onLayout"><span class="toc-text">AbsListView 的onLayout()</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ListView"><span class="toc-text">ListView</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ListView-%E7%9A%84onMesaure"><span class="toc-text">ListView 的onMesaure()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ListView-%E7%9A%84layoutChildren"><span class="toc-text">ListView 的layoutChildren()</span></a></li></ol></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><i class="tag post-item-tag">性能优化</i></a><a href="/tags/ListView"><i class="tag post-item-tag">ListView</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">关于 ListView 的渲染、缓存及优化</h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.691Z">2023-01-31</time><article class="mt-2 post-content"><p>ListView 优化是老生常谈的事情，虽然现在有 RycyclerView 可以完美替代 ListView，但是了解 ListView 的渲染、缓存及优化，也并不是什么坏事。</p>
+<span id="more"></span>
+
+<h2 id="ListView-与它的朋友们"><a href="#ListView-与它的朋友们" class="headerlink" title="ListView 与它的朋友们"></a>ListView 与它的朋友们</h2><p>ListView 继承自 AbsListView，AbsListView 继承自 AdapterView，AdapterView 继承自 ViewGroup，它们也有各自的派生类。它们的关系如下图所示：</p>
+<p><img src="/img/listview-1589441712.png"></p>
+<p>AdapterView 是一个抽象类，它一个可以由内部元素来决定如何展现的 ViewGroup。它内部包含了对内部 View 的管理和基本事件处理，比如<code>addView()</code>、<code>removeView()</code>、<code>setOnItemClickListener()</code>等等。</p>
+<p>AbsListView 也是一个抽象类，它是被用来展示大量数据的一个基类，而且它并没有指定展示的样式，完全由派生类来实现，比如网格、列表、瀑布流等，完全由子类来决定展示的样式。它负责处理内部 View 的渲染、缓存、回收等。</p>
+<h2 id="AbsListView"><a href="#AbsListView" class="headerlink" title="AbsListView"></a>AbsListView</h2><p>AbsListView 中有一个类，叫做 RecycleBin，意为回收站。我们看看它的注释：</p>
+<blockquote>
+<p>The RecycleBin facilitates reuse of views across layouts. The RecycleBin has two levels of storage: ActiveViews and ScrapViews. ActiveViews are those views which were onscreen at the start of a layout. By construction, they are displaying current information. At the end of layout, all views in ActiveViews are demoted to ScrapViews. ScrapViews are old views that could potentially be used by the adapter to avoid allocating views unnecessarily.</p>
+</blockquote>
+<p>机翻一下：回收站机制可以实现 View 的重用。回收站有两个级别的存储：活动的 View （ActiveViews）和废弃的 View（ScrapViews）。ActiveViews 是指在 layout 过程的开始时显示在屏幕上的 View。刚开始构建时，它们会显示当前的信息，在 layout 结束时，所有的 ActiveViews 会被降级为 ScrapViews。<strong>ScrapViews 是将来有可能会被 adater 重复利用的</strong>，所以为了避免被不必要的 View 重建，将它们缓存起来。</p>
+<p>我们来简单看看它的代码：</p>
+<pre><code class="java">class RecycleBin &#123;
+    @UnsupportedAppUsage
+    private RecyclerListener mRecyclerListener;
+    private int mFirstActivePosition;
+    private View[] mActiveViews = new View[0];
+
+    // 未排序的 View，可以被 adapter 当作 converter view 来使用
+    // 这里是一个包含 ArrayList 的数组，不同的 ViewType 会存储到不同的 ArrayList 中
+    private ArrayList&lt;View&gt;[] mScrapViews;
+    private int mViewTypeCount;
+    private ArrayList&lt;View&gt; mCurrentScrap;
+    private ArrayList&lt;View&gt; mSkippedScrap;
+
+    private SparseArray&lt;View&gt; mTransientStateViews;
+    private LongSparseArray&lt;View&gt; mTransientStateViewsById;
+
+    public void markChildrenDirty() &#123;
+        if (mViewTypeCount == 1) &#123;
+            final ArrayList&lt;View&gt; scrap = mCurrentScrap;
+            final int scrapCount = scrap.size();
+            for (int i = 0; i &lt; scrapCount; i++) &#123;
+                scrap.get(i).forceLayout();
+            &#125;
+        &#125; else &#123;
+            final int typeCount = mViewTypeCount;
+            for (int i = 0; i &lt; typeCount; i++) &#123;
+                final ArrayList&lt;View&gt; scrap = mScrapViews[i];
+                final int scrapCount = scrap.size();
+                for (int j = 0; j &lt; scrapCount; j++) &#123;
+                    scrap.get(j).forceLayout();
+                &#125;
+            &#125;
+        &#125;
+        if (mTransientStateViews != null) &#123;
+            final int count = mTransientStateViews.size();
+            for (int i = 0; i &lt; count; i++) &#123;
+                mTransientStateViews.valueAt(i).forceLayout();
+            &#125;
+        &#125;
+        if (mTransientStateViewsById != null) &#123;
+            final int count = mTransientStateViewsById.size();
+            for (int i = 0; i &lt; count; i++) &#123;
+                mTransientStateViewsById.valueAt(i).forceLayout();
+            &#125;
+        &#125;
+    &#125;
+
+    ...
+
+    // 清除 ScrapViews
+    @UnsupportedAppUsage
+    void clear() &#123;
+        ...
+    &#125;
+
+    // 将 AbsListView 中所有的 children 填充到 ActiveViews
+    // firstActivePosition 指的是第一个可见 view 被添加时在 mActiveView 数组中的 position
+    void fillActiveViews(int childCount, int firstActivePosition) &#123;
+        // 如果当前数组过小，则要新建一个数组
+        if (mActiveViews.length &lt; childCount) &#123;
+            mActiveViews = new View[childCount];
+        &#125;
+        // 记录外部（由 AbsListView 的派生类，如 ListView）传入的 firstActivePosition
+        mFirstActivePosition = firstActivePosition;
+
+        // 我没弄明白这里为什么要再新建一个数组变量指向 mActiveViews 内存
+        // 有明白的同学可以留言告诉我
+        final View[] activeViews = mActiveViews;
+        for (int i = 0; i &lt; childCount; i++) &#123;
+            View child = getChildAt(i);
+            AbsListView.LayoutParams lp = (AbsListView.LayoutParams) child.getLayoutParams();
+            // 莫要将 footer 和 header view 添加到 ScrapViews 中
+            if (lp != null &amp;&amp; lp.viewType != ITEM_VIEW_TYPE_HEADER_OR_FOOTER) &#123;
+                activeViews[i] = child;
+                // 记录位置，setupChild() 方法就不会将它的状态重置了，具体看下面的 setupChild() 方法
+                lp.scrappedFromPosition = firstActivePosition + i;
+            &#125;
+        &#125;
+    &#125;
+
+    // 获取 ActiveView，某个 ActiveView 被获取后，就会从 mActiveViews 中被移除
+    View getActiveView(int position) &#123;
+        int index = position - mFirstActivePosition;
+        final View[] activeViews = mActiveViews;
+        if (index &gt;=0 &amp;&amp; index &lt; activeViews.length) &#123;
+            final View match = activeViews[index];
+            activeViews[index] = null;
+            return match;
+        &#125;
+        return null;
+    &#125;
+
+    // 获取正在转变状态的 View
+    View getTransientStateView(int position) &#123;
+        if (mAdapter != null &amp;&amp; mAdapterHasStableIds &amp;&amp; mTransientStateViewsById != null) &#123;
+            long id = mAdapter.getItemId(position);
+            View result = mTransientStateViewsById.get(id);
+            mTransientStateViewsById.remove(id);
+            return result;
+        &#125;
+        if (mTransientStateViews != null) &#123;
+            final int index = mTransientStateViews.indexOfKey(position);
+            if (index &gt;= 0) &#123;
+                View result = mTransientStateViews.valueAt(index);
+                mTransientStateViews.removeAt(index);
+                return result;
+            &#125;
+        &#125;
+        return null;
+    &#125;
+
+    ...
+
+    // 获取 ScrapView，这些 View 们是未排序的
+    View getScrapView(int position) &#123;
+        // 根据位置获取 ViewType
+        final int whichScrap = mAdapter.getItemViewType(position);
+        if (whichScrap &lt; 0) &#123;
+            return null;
+        &#125;
+        // 如果只有一种 ViewType，那就直接获取
+        if (mViewTypeCount == 1) &#123;
+            return retrieveFromScrap(mCurrentScrap, position);
+        // 如果有多种 ViewType，那要从对应的 ScrapViews 列表中获取
+        &#125; else if (whichScrap &lt; mScrapViews.length) &#123;
+            return retrieveFromScrap(mScrapViews[whichScrap], position);
+        &#125;
+        return null;
+    &#125;
+
+    // 如果列表中的数据没有变化或者 adapter 有稳定的 ID，变化状态的 view 将会保留它们的状态以便后面获取
+    void addScrapView(View scrap, int position) &#123;
+        final AbsListView.LayoutParams lp = (AbsListView.LayoutParams) scrap.getLayoutParams();
+        // 无法回收，连个 LayoutParams 都没有
+        if (lp == null) &#123;
+            return;
+        &#125;
+
+        lp.scrappedFromPosition = position;
+
+        // 移除但不要将 header 或者 footer 废弃掉
+        final int viewType = lp.viewType;
+        if (!shouldRecycleViewType(viewType)) &#123;
+            // 无法回收。如果它不是 header 或者 footer 的话（它们有特殊的处理方式，应该被忽略），
+            // 就给它跳过，等回头把它 detach 掉。
+            if (viewType != ITEM_VIEW_TYPE_HEADER_OR_FOOTER) &#123;
+                // 加入 detach 列表
+                getSkippedScrap().add(scrap);
+            &#125;
+            return;
+        &#125;
+
+        // View 中的方法，用于将 View 中的 callback 等移除
+        scrap.dispatchStartTemporaryDetach();
+
+
+        notifyViewAccessibilityStateChangedIfNeeded(
+                AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE);
+
+        // 不要废弃掉瞬态的 View
+        final boolean scrapHasTransientState = scrap.hasTransientState();
+        if (scrapHasTransientState) &#123;
+            if (mAdapter != null &amp;&amp; mAdapterHasStableIds) &#123;
+                // If the adapter has stable IDs, we can reuse the view for
+                // the same data.
+                if (mTransientStateViewsById == null) &#123;
+                    mTransientStateViewsById = new LongSparseArray&lt;&gt;();
+                &#125;
+                mTransientStateViewsById.put(lp.itemId, scrap);
+            &#125; else if (!mDataChanged) &#123;
+                // If the data hasn&#39;t changed, we can reuse the views at
+                // their old positions.
+                if (mTransientStateViews == null) &#123;
+                    mTransientStateViews = new SparseArray&lt;&gt;();
+                &#125;
+                mTransientStateViews.put(position, scrap);
+            &#125; else &#123;
+                // Otherwise, we&#39;ll have to remove the view and start over.
+                clearScrapForRebind(scrap);
+                getSkippedScrap().add(scrap);
+            &#125;
+        &#125; else &#123;
+            clearScrapForRebind(scrap);
+            if (mViewTypeCount == 1) &#123;
+                mCurrentScrap.add(scrap);
+            &#125; else &#123;
+                mScrapViews[viewType].add(scrap);
+            &#125;
+
+            if (mRecyclerListener != null) &#123;
+                mRecyclerListener.onMovedToScrapHeap(scrap);
+            &#125;
+        &#125;
+    &#125;
+
+    private ArrayList&lt;View&gt; getSkippedScrap() &#123;
+        if (mSkippedScrap == null) &#123;
+            mSkippedScrap = new ArrayList&lt;&gt;();
+        &#125;
+        return mSkippedScrap;
+    &#125;
+
+    void removeSkippedScrap() &#123;
+        if (mSkippedScrap == null) &#123;
+            return;
+        &#125;
+        final int count = mSkippedScrap.size();
+        for (int i = 0; i &lt; count; i++) &#123;
+            removeDetachedView(mSkippedScrap.get(i), false);
+        &#125;
+        mSkippedScrap.clear();
+    &#125;
+
+    // 将 mActiveViews 中剩余的 View 移到 mScrapViews 中
+    void scrapActiveViews() &#123;
+        final View[] activeViews = mActiveViews;
+        final boolean hasListener = mRecyclerListener != null;
+        final boolean multipleScraps = mViewTypeCount &gt; 1;
+
+        ArrayList&lt;View&gt; scrapViews = mCurrentScrap;
+        final int count = activeViews.length;
+        for (int i = count - 1; i &gt;= 0; i--) &#123;
+            final View victim = activeViews[i];
+            if (victim != null) &#123;
+                final AbsListView.LayoutParams lp
+                        = (AbsListView.LayoutParams) victim.getLayoutParams();
+                final int whichScrap = lp.viewType;
+
+                activeViews[i] = null;
+
+                if (victim.hasTransientState()) &#123;
+                    // Store views with transient state for later use.
+                    victim.dispatchStartTemporaryDetach();
+
+                    if (mAdapter != null &amp;&amp; mAdapterHasStableIds) &#123;
+                        if (mTransientStateViewsById == null) &#123;
+                            mTransientStateViewsById = new LongSparseArray&lt;View&gt;();
+                        &#125;
+                        long id = mAdapter.getItemId(mFirstActivePosition + i);
+                        mTransientStateViewsById.put(id, victim);
+                    &#125; else if (!mDataChanged) &#123;
+                        if (mTransientStateViews == null) &#123;
+                            mTransientStateViews = new SparseArray&lt;View&gt;();
+                        &#125;
+                        mTransientStateViews.put(mFirstActivePosition + i, victim);
+                    &#125; else if (whichScrap != ITEM_VIEW_TYPE_HEADER_OR_FOOTER) &#123;
+                        // The data has changed, we can&#39;t keep this view.
+                        removeDetachedView(victim, false);
+                    &#125;
+                &#125; else if (!shouldRecycleViewType(whichScrap)) &#123;
+                    // Discard non-recyclable views except headers/footers.
+                    if (whichScrap != ITEM_VIEW_TYPE_HEADER_OR_FOOTER) &#123;
+                        removeDetachedView(victim, false);
+                    &#125;
+                &#125; else &#123;
+                    // Store everything else on the appropriate scrap heap.
+                    if (multipleScraps) &#123;
+                        scrapViews = mScrapViews[whichScrap];
+                    &#125;
+
+                    lp.scrappedFromPosition = mFirstActivePosition + i;
+                    removeDetachedView(victim, false);
+                    scrapViews.add(victim);
+
+                    if (hasListener) &#123;
+                        mRecyclerListener.onMovedToScrapHeap(victim);
+                    &#125;
+                &#125;
+            &#125;
+        &#125;
+        pruneScrapViews();
+    &#125;
+
+    // layout 过程的最后，所有暂时被 detach 掉的 View 要么应该被重新 attach，或者完全被 detach。这个方法能保证在
+    // scrap 列表中的所有 View 都被 detach 掉
+    void fullyDetachScrapViews() &#123;
+        final int viewTypeCount = mViewTypeCount;
+        final ArrayList&lt;View&gt;[] scrapViews = mScrapViews;
+        for (int i = 0; i &lt; viewTypeCount; ++i) &#123;
+            final ArrayList&lt;View&gt; scrapPile = scrapViews[i];
+            for (int j = scrapPile.size() - 1; j &gt;= 0; j--) &#123;
+                final View view = scrapPile.get(j);
+                if (view.isTemporarilyDetached()) &#123;
+                    removeDetachedView(view, false);
+                &#125;
+            &#125;
+        &#125;
+    &#125;
+
+    // 确保 scrap 列表的大小不要超过 active 列表的大小，因为有时 adapter 可能会不回收 view。
+    // 同时移除所有缓存的已经不再拥有瞬态的瞬态 view
+    private void pruneScrapViews() &#123;
+        final int maxViews = mActiveViews.length;
+        final int viewTypeCount = mViewTypeCount;
+        final ArrayList&lt;View&gt;[] scrapViews = mScrapViews;
+        for (int i = 0; i &lt; viewTypeCount; ++i) &#123;
+            final ArrayList&lt;View&gt; scrapPile = scrapViews[i];
+            int size = scrapPile.size();
+            while (size &gt; maxViews) &#123;
+                scrapPile.remove(--size);
+            &#125;
+        &#125;
+
+        final SparseArray&lt;View&gt; transViewsByPos = mTransientStateViews;
+        if (transViewsByPos != null) &#123;
+            for (int i = 0; i &lt; transViewsByPos.size(); i++) &#123;
+                final View v = transViewsByPos.valueAt(i);
+                if (!v.hasTransientState()) &#123;
+                    removeDetachedView(v, false);
+                    transViewsByPos.removeAt(i);
+                    i--;
+                &#125;
+            &#125;
+        &#125;
+
+        final LongSparseArray&lt;View&gt; transViewsById = mTransientStateViewsById;
+        if (transViewsById != null) &#123;
+            for (int i = 0; i &lt; transViewsById.size(); i++) &#123;
+                final View v = transViewsById.valueAt(i);
+                if (!v.hasTransientState()) &#123;
+                    removeDetachedView(v, false);
+                    transViewsById.removeAt(i);
+                    i--;
+                &#125;
+            &#125;
+        &#125;
+    &#125;
+
+    void reclaimScrapViews(List&lt;View&gt; views) &#123;
+        if (mViewTypeCount == 1) &#123;
+            views.addAll(mCurrentScrap);
+        &#125; else &#123;
+            final int viewTypeCount = mViewTypeCount;
+            final ArrayList&lt;View&gt;[] scrapViews = mScrapViews;
+            for (int i = 0; i &lt; viewTypeCount; ++i) &#123;
+                final ArrayList&lt;View&gt; scrapPile = scrapViews[i];
+                views.addAll(scrapPile);
+            &#125;
+        &#125;
+    &#125;
+
+    /**
+        * Updates the cache color hint of all known views.
+        *
+        * @param color The new cache color hint.
+        */
+    void setCacheColorHint(int color) &#123;
+        if (mViewTypeCount == 1) &#123;
+            final ArrayList&lt;View&gt; scrap = mCurrentScrap;
+            final int scrapCount = scrap.size();
+            for (int i = 0; i &lt; scrapCount; i++) &#123;
+                scrap.get(i).setDrawingCacheBackgroundColor(color);
+            &#125;
+        &#125; else &#123;
+            final int typeCount = mViewTypeCount;
+            for (int i = 0; i &lt; typeCount; i++) &#123;
+                final ArrayList&lt;View&gt; scrap = mScrapViews[i];
+                final int scrapCount = scrap.size();
+                for (int j = 0; j &lt; scrapCount; j++) &#123;
+                    scrap.get(j).setDrawingCacheBackgroundColor(color);
+                &#125;
+            &#125;
+        &#125;
+        // Just in case this is called during a layout pass
+        final View[] activeViews = mActiveViews;
+        final int count = activeViews.length;
+        for (int i = 0; i &lt; count; ++i) &#123;
+            final View victim = activeViews[i];
+            if (victim != null) &#123;
+                victim.setDrawingCacheBackgroundColor(color);
+            &#125;
+        &#125;
+    &#125;
+
+    private View retrieveFromScrap(ArrayList&lt;View&gt; scrapViews, int position) &#123;
+        final int size = scrapViews.size();
+        if (size &gt; 0) &#123;
+            // See if we still have a view for this position or ID.
+            // Traverse backwards to find the most recently used scrap view
+            for (int i = size - 1; i &gt;= 0; i--) &#123;
+                final View view = scrapViews.get(i);
+                final AbsListView.LayoutParams params =
+                        (AbsListView.LayoutParams) view.getLayoutParams();
+
+                if (mAdapterHasStableIds) &#123;
+                    final long id = mAdapter.getItemId(position);
+                    if (id == params.itemId) &#123;
+                        return scrapViews.remove(i);
+                    &#125;
+                &#125; else if (params.scrappedFromPosition == position) &#123;
+                    final View scrap = scrapViews.remove(i);
+                    clearScrapForRebind(scrap);
+                    return scrap;
+                &#125;
+            &#125;
+            final View scrap = scrapViews.remove(size - 1);
+            clearScrapForRebind(scrap);
+            return scrap;
+        &#125; else &#123;
+            return null;
+        &#125;
+    &#125;
+
+    private void clearScrap(final ArrayList&lt;View&gt; scrap) &#123;
+        final int scrapCount = scrap.size();
+        for (int j = 0; j &lt; scrapCount; j++) &#123;
+            removeDetachedView(scrap.remove(scrapCount - 1 - j), false);
+        &#125;
+    &#125;
+
+    private void clearScrapForRebind(View view) &#123;
+        view.clearAccessibilityFocus();
+        view.setAccessibilityDelegate(null);
+    &#125;
+
+    private void removeDetachedView(View child, boolean animate) &#123;
+        child.setAccessibilityDelegate(null);
+        AbsListView.this.removeDetachedView(child, animate);
+    &#125;
+&#125; 
+</code></pre>
+<p>这个类中比较重要的方法就是对于 View 当前状态的管理方法，有下面几个：</p>
+<ul>
+<li><code>fillActiveViews(int childCount, int firstActivePosition)</code>：这个方法会将 AbsListView 中所有的子 View 添加到 mActiveViews 数组中。<code>childCount</code>指子 View 的个数，<code>firstActivePosition</code>指第一个可见元素的 position。</li>
+<li><code>getActiveView(int position)</code>：从<code>mActiveViews</code>中获取 View。当 View 被获取后，就会从<code>mActiveViews</code>中移除，再次访问就会返回<code>null</code>，这意味着 ActiveView 无法复用。</li>
+<li><code>addScrapView(View view, int position)</code>：将 ScrapView 缓存到<code>mScrapViews</code>中。mScrapViews 是一个 ArrayList 数组，这个数组中按 ViewType 分类并存储，如果有3种 ViewType，数组中就会有3个 ArrayList。这些缓存都是无序的。</li>
+<li><code>getScrapView(int position)</code>：从缓存中取出一个 View。</li>
+</ul>
+<p>AbsListView 也会有自己的 measure、layout、draw 过程，但是 draw 过程在 AbsListView 中没有实现，在 ListView 中也没有实现，也即它的绘制全部交给子 View 来做，我们只看它的<code>onMeasure()</code>和<code>onLayout</code>。</p>
+<h3 id="AbsListView-的onMesaure"><a href="#AbsListView-的onMesaure" class="headerlink" title="AbsListView 的onMesaure()"></a>AbsListView 的<code>onMesaure()</code></h3><p>话不多说，我们直接看看它的代码：</p>
+<pre><code class="java">@Override
+protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;
+    // mSelector 是一个 Drawable，用来绘制 selector
+    if (mSelector == null) &#123;
+        useDefaultSelector();
+    &#125;
+    final Rect listPadding = mListPadding;
+    listPadding.left = mSelectionLeftPadding + mPaddingLeft;
+    listPadding.top = mSelectionTopPadding + mPaddingTop;
+    listPadding.right = mSelectionRightPadding + mPaddingRight;
+    listPadding.bottom = mSelectionBottomPadding + mPaddingBottom;
+
+    // Check if our previous measured size was at a point where we should scroll later.
+    if (mTranscriptMode == TRANSCRIPT_MODE_NORMAL) &#123;
+        final int childCount = getChildCount();
+        final int listBottom = getHeight() - getPaddingBottom();
+        final View lastChild = getChildAt(childCount - 1);
+        final int lastBottom = lastChild != null ? lastChild.getBottom() : listBottom;
+        mForceTranscriptScroll = mFirstPosition + childCount &gt;= mLastHandledItemCount &amp;&amp;
+                lastBottom &lt;= listBottom;
+    &#125;
+&#125;
+</code></pre>
+<p>可见 measure 过程没什么特殊的，只是确定了一些 padding 值。</p>
+<h3 id="AbsListView-的onLayout"><a href="#AbsListView-的onLayout" class="headerlink" title="AbsListView 的onLayout()"></a>AbsListView 的<code>onLayout()</code></h3><p>这个是 AbsListView 的重头戏。下面我们即将会讲到的 <strong>ListView 中是没有<code>onLayout</code>方法的</strong>，也就是说，它的 layout 过程，完全由父类 AbsListView 来实现。</p>
+<pre><code class="java">/**
+    * Subclasses should NOT override this method but
+    *  &#123;@link #layoutChildren()&#125; instead.
+    */
+@Override
+protected void onLayout(boolean changed, int l, int t, int r, int b) &#123;
+    super.onLayout(changed, l, t, r, b);
+
+    mInLayout = true;
+
+    final int childCount = getChildCount();
+
+    // 如果 AbsListView 的大小或 position 发生了变化，则要强制所有的子 View 重新 layout
+    if (changed) &#123;
+        for (int i = 0; i &lt; childCount; i++) &#123;
+            getChildAt(i).forceLayout();
+        &#125;
+        // 回收站将 ScrapViews 也全部执行 forceLayout
+        mRecycler.markChildrenDirty();
+    &#125;
+
+    // 让所有子 View 进行 layout 过程
+    layoutChildren();
+
+    mOverscrollMax = (b - t) / OVERSCROLL_LIMIT_DIVISOR;
+
+    // TODO: Move somewhere sane. This doesn&#39;t belong in onLayout().
+    if (mFastScroll != null) &#123;
+        mFastScroll.onItemCountChanged(getChildCount(), mItemCount);
+    &#125;
+    mInLayout = false;
+&#125;
+</code></pre>
+<p>注释中我们看到：<strong>子类不要覆写这个方法，应该覆写<code>layoutChildren()</code>方法</strong>。待会我们会详解 ListView 对这个方法的覆写。</p>
+<h2 id="ListView"><a href="#ListView" class="headerlink" title="ListView"></a>ListView</h2><p>ListView 继承了 AbsListView，并实现了自己的 measure、layout 过程</p>
+<h3 id="ListView-的onMesaure"><a href="#ListView-的onMesaure" class="headerlink" title="ListView 的onMesaure()"></a>ListView 的<code>onMesaure()</code></h3><pre><code class="java">@Override
+protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;
+    // Sets up mListPadding
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+    final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+    final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+    int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+    int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+
+    int childWidth = 0;
+    int childHeight = 0;
+    int childState = 0;
+
+    mItemCount = mAdapter == null ? 0 : mAdapter.getCount();
+    if (mItemCount &gt; 0 &amp;&amp; (widthMode == MeasureSpec.UNSPECIFIED
+            || heightMode == MeasureSpec.UNSPECIFIED)) &#123;
+        final View child = obtainView(0, mIsScrap);
+
+        // Lay out child directly against the parent measure spec so that
+        // we can obtain exected minimum width and height.
+        measureScrapChild(child, 0, widthMeasureSpec, heightSize);
+
+        childWidth = child.getMeasuredWidth();
+        childHeight = child.getMeasuredHeight();
+        childState = combineMeasuredStates(childState, child.getMeasuredState());
+
+        if (recycleOnMeasure() &amp;&amp; mRecycler.shouldRecycleViewType(
+                ((LayoutParams) child.getLayoutParams()).viewType)) &#123;
+            mRecycler.addScrapView(child, 0);
+        &#125;
+    &#125;
+
+    if (widthMode == MeasureSpec.UNSPECIFIED) &#123;
+        widthSize = mListPadding.left + mListPadding.right + childWidth +
+                getVerticalScrollbarWidth();
+    &#125; else &#123;
+        widthSize |= (childState &amp; MEASURED_STATE_MASK);
+    &#125;
+
+    if (heightMode == MeasureSpec.UNSPECIFIED) &#123;
+        heightSize = mListPadding.top + mListPadding.bottom + childHeight +
+                getVerticalFadingEdgeLength() * 2;
+    &#125;
+
+    if (heightMode == MeasureSpec.AT_MOST) &#123;
+        // TODO: after first layout we should maybe start at the first visible position, not 0
+        heightSize = measureHeightOfChildren(widthMeasureSpec, 0, NO_POSITION, heightSize, -1);
+    &#125;
+
+    // 调用 View 的 setMeasuredDimension 来保存测量结果
+    setMeasuredDimension(widthSize, heightSize);
+
+    mWidthMeasureSpec = widthMeasureSpec;
+&#125;
+</code></pre>
+<p>由上面的代码可以看到，measure 过程比较简单，只是判断了一下目前自身设置的 MeasureSpec，来决定自身的大小。</p>
+<h3 id="ListView-的layoutChildren"><a href="#ListView-的layoutChildren" class="headerlink" title="ListView 的layoutChildren()"></a>ListView 的<code>layoutChildren()</code></h3><p>上面说过了，ListView 不能覆写<code>onLayout()</code>方法，而是覆写<code>layoutChildren()</code>方法来对自身进行 layout 过程，我们来看看它的代码：</p>
+<pre><code class="java">@Override
+protected void layoutChildren() &#123;
+    // mBlockLayoutRequests 是 AdapterView 中的成员变量，用来标识当前是否正在 layout 过程中
+    final boolean blockLayoutRequests = mBlockLayoutRequests;
+    if (blockLayoutRequests) &#123;
+        return;
+    &#125;
+
+    mBlockLayoutRequests = true;
+
+    try &#123;
+        // 先调用 AbsListView 的 layoutChildren() 方法（虽然是未实现）
+        super.layoutChildren();
+
+        // 刷新，在 layout 完成之后调用 draw 过程
+        invalidate();
+
+        if (mAdapter == null) &#123;
+            resetList();
+            invokeOnItemScrollListener();
+            return;
+        &#125;
+
+        final int childrenTop = mListPadding.top;
+        final int childrenBottom = mBottom - mTop - mListPadding.bottom;
+        final int childCount = getChildCount();
+
+        int index = 0;
+        int delta = 0;
+
+        View sel;
+        View oldSel = null;
+        View oldFirst = null;
+        View newSel = null;
+
+        // 记录处于 select mode 的 item
+        switch (mLayoutMode) &#123;
+            case LAYOUT_SET_SELECTION:
+                index = mNextSelectedPosition - mFirstPosition;
+                if (index &gt;= 0 &amp;&amp; index &lt; childCount) &#123;
+                    newSel = getChildAt(index);
+                &#125;
+                break;
+            case LAYOUT_FORCE_TOP:
+            case LAYOUT_FORCE_BOTTOM:
+            case LAYOUT_SPECIFIC:
+            case LAYOUT_SYNC:
+                break;
+            case LAYOUT_MOVE_SELECTION:
+            default:
+                // Remember the previously selected view
+                index = mSelectedPosition - mFirstPosition;
+                if (index &gt;= 0 &amp;&amp; index &lt; childCount) &#123;
+                    oldSel = getChildAt(index);
+                &#125;
+
+                // Remember the previous first child
+                oldFirst = getChildAt(0);
+
+                if (mNextSelectedPosition &gt;= 0) &#123;
+                    delta = mNextSelectedPosition - mSelectedPosition;
+                &#125;
+
+                // Caution: newSel might be null
+                newSel = getChildAt(index + delta);
+        &#125;
+
+        // 如果在 layout 过程中 adapter 中的数据发生了变化
+        boolean dataChanged = mDataChanged;
+        if (dataChanged) &#123;
+            // AbsListView 中的方法，用来确定是哪条数据发生了改变
+            handleDataChanged();
+        &#125;
+
+        // 如果是空数据，就清除所有可见的 view，将各种数据全部重置，然后返回
+        if (mItemCount == 0) &#123;
+            resetList();
+            invokeOnItemScrollListener();
+            return;
+        &#125; else if (mItemCount != mAdapter.getCount()) &#123;
+            throw new IllegalStateException(&quot;The content of the adapter has changed but &quot;
+                    + &quot;ListView did not receive a notification. Make sure the content of &quot;
+                    + &quot;your adapter is not modified from a background thread, but only from &quot;
+                    + &quot;the UI thread. Make sure your adapter calls notifyDataSetChanged() &quot;
+                    + &quot;when its content changes. [in ListView(&quot; + getId() + &quot;, &quot; + getClass()
+                    + &quot;) with Adapter(&quot; + mAdapter.getClass() + &quot;)]&quot;);
+        &#125;
+
+        setSelectedPositionInt(mNextSelectedPosition);
+
+        // 处理一些 accessibility 相关的
+        AccessibilityNodeInfo accessibilityFocusLayoutRestoreNode = null;
+        View accessibilityFocusLayoutRestoreView = null;
+        int accessibilityFocusPosition = INVALID_POSITION;
+
+        // Remember which child, if any, had accessibility focus. This must
+        // occur before recycling any views, since that will clear
+        // accessibility focus.
+        final ViewRootImpl viewRootImpl = getViewRootImpl();
+        if (viewRootImpl != null) &#123;
+            final View focusHost = viewRootImpl.getAccessibilityFocusedHost();
+            if (focusHost != null) &#123;
+                final View focusChild = getAccessibilityFocusedChild(focusHost);
+                if (focusChild != null) &#123;
+                    if (!dataChanged || isDirectChildHeaderOrFooter(focusChild)
+                            || (focusChild.hasTransientState() &amp;&amp; mAdapterHasStableIds)) &#123;
+                        // The views won&#39;t be changing, so try to maintain
+                        // focus on the current host and virtual view.
+                        accessibilityFocusLayoutRestoreView = focusHost;
+                        accessibilityFocusLayoutRestoreNode = viewRootImpl
+                                .getAccessibilityFocusedVirtualView();
+                    &#125;
+
+                    // If all else fails, maintain focus at the same
+                    // position.
+                    accessibilityFocusPosition = getPositionForView(focusChild);
+                &#125;
+            &#125;
+        &#125;
+
+        // 处理焦点相关
+        View focusLayoutRestoreDirectChild = null;
+        View focusLayoutRestoreView = null;
+
+        // Take focus back to us temporarily to avoid the eventual call to
+        // clear focus when removing the focused child below from messing
+        // things up when ViewAncestor assigns focus back to someone else.
+        final View focusedChild = getFocusedChild();
+        if (focusedChild != null) &#123;
+            // TODO: in some cases focusedChild.getParent() == null
+
+            // We can remember the focused view to restore after re-layout
+            // if the data hasn&#39;t changed, or if the focused position is a
+            // header or footer.
+            if (!dataChanged || isDirectChildHeaderOrFooter(focusedChild)
+                    || focusedChild.hasTransientState() || mAdapterHasStableIds) &#123;
+                focusLayoutRestoreDirectChild = focusedChild;
+                // Remember the specific view that had focus.
+                focusLayoutRestoreView = findFocus();
+                if (focusLayoutRestoreView != null) &#123;
+                    // Tell it we are going to mess with it.
+                    focusLayoutRestoreView.dispatchStartTemporaryDetach();
+                &#125;
+            &#125;
+            requestFocus();
+        &#125;
+
+        // 将所有 View 扔到回收站，这些 View 有可能会被重用
+        final int firstPosition = mFirstPosition;
+        final RecycleBin recycleBin = mRecycler;
+        if (dataChanged) &#123;
+            for (int i = 0; i &lt; childCount; i++) &#123;
+                recycleBin.addScrapView(getChildAt(i), firstPosition+i);
+            &#125;
+        &#125; else &#123;
+            recycleBin.fillActiveViews(childCount, firstPosition);
+        &#125;
+
+        // 将所有的子 View 的 parent 置为 null，并将 View 置为 null
+        detachAllViewsFromParent();
+        recycleBin.removeSkippedScrap();
+
+        switch (mLayoutMode) &#123;
+            case LAYOUT_SET_SELECTION:
+                if (newSel != null) &#123;
+                    sel = fillFromSelection(newSel.getTop(), childrenTop, childrenBottom);
+                &#125; else &#123;
+                    sel = fillFromMiddle(childrenTop, childrenBottom);
+                &#125;
+                break;
+            case LAYOUT_SYNC:
+                sel = fillSpecific(mSyncPosition, mSpecificTop);
+                break;
+            case LAYOUT_FORCE_BOTTOM:
+                sel = fillUp(mItemCount - 1, childrenBottom);
+                adjustViewsUpOrDown();
+                break;
+            case LAYOUT_FORCE_TOP:
+                mFirstPosition = 0;
+                sel = fillFromTop(childrenTop);
+                adjustViewsUpOrDown();
+                break;
+            case LAYOUT_SPECIFIC:
+                final int selectedPosition = reconcileSelectedPosition();
+                sel = fillSpecific(selectedPosition, mSpecificTop);
+                /**
+                    * When ListView is resized, FocusSelector requests an async selection for the
+                    * previously focused item to make sure it is still visible. If the item is not
+                    * selectable, it won&#39;t regain focus so instead we call FocusSelector
+                    * to directly request focus on the view after it is visible.
+                    */
+                if (sel == null &amp;&amp; mFocusSelector != null) &#123;
+                    final Runnable focusRunnable = mFocusSelector
+                            .setupFocusIfValid(selectedPosition);
+                    if (focusRunnable != null) &#123;
+                        post(focusRunnable);
+                    &#125;
+                &#125;
+                break;
+            case LAYOUT_MOVE_SELECTION:
+                sel = moveSelection(oldSel, newSel, delta, childrenTop, childrenBottom);
+                break;
+            // 在 ListView 的第一次 layout 过程中，childCount = 0
+            default:
+                if (childCount == 0) &#123;
+                    // mStackFromBottom 为 true 时，表示整个 ListView 是倒着填充的
+                    if (!mStackFromBottom) &#123;
+                        final int position = lookForSelectablePosition(0, true);
+                        setSelectedPositionInt(position);
+                        // 主要的填充方法
+                        sel = fillFromTop(childrenTop);
+                    &#125; else &#123;
+                        final int position = lookForSelectablePosition(mItemCount - 1, false);
+                        setSelectedPositionInt(position);
+                        sel = fillUp(mItemCount - 1, childrenBottom);
+                    &#125;
+                &#125; else &#123;
+                    // 如果已经有 View 了，那就只填充特定位置的 View
+                    if (mSelectedPosition &gt;= 0 &amp;&amp; mSelectedPosition &lt; mItemCount) &#123;
+                        sel = fillSpecific(mSelectedPosition,
+                                oldSel == null ? childrenTop : oldSel.getTop());
+                    &#125; else if (mFirstPosition &lt; mItemCount) &#123;
+                        sel = fillSpecific(mFirstPosition,
+                                oldFirst == null ? childrenTop : oldFirst.getTop());
+                    &#125; else &#123;
+                        sel = fillSpecific(0, childrenTop);
+                    &#125;
+                &#125;
+                break;
+        &#125;
+
+        ...
+    &#125; finally &#123;
+        ...
+        // 允许进行下一次 layout
+        if (!blockLayoutRequests) &#123;
+            mBlockLayoutRequests = false;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>可见，在 layout 过程中，会处理一些 Accessibility 和焦点方面的事情，最后开始判断 ListView 的类型和子 View 数量。在初次 layout 时，ListView 中必然不会添加进子 View，所以此时 childCount 为 0，在填充时会调用<code>fillFromTop()</code>方法：</p>
+<pre><code class="java">private View fillFromTop(int nextTop) &#123;
+    mFirstPosition = Math.min(mFirstPosition, mSelectedPosition);
+    mFirstPosition = Math.min(mFirstPosition, mItemCount - 1);
+    if (mFirstPosition &lt; 0) &#123;
+        mFirstPosition = 0;
+    &#125;
+    return fillDown(mFirstPosition, nextTop);
+&#125;
+
+private View fillDown(int pos, int nextTop) &#123;
+    View selectedView = null;
+
+    int end = (mBottom - mTop);
+    if ((mGroupFlags &amp; CLIP_TO_PADDING_MASK) == CLIP_TO_PADDING_MASK) &#123;
+        end -= mListPadding.bottom;
+    &#125;
+
+    while (nextTop &lt; end &amp;&amp; pos &lt; mItemCount) &#123;
+        // is this the selected item?
+        boolean selected = pos == mSelectedPosition;
+        View child = makeAndAddView(pos, nextTop, true, mListPadding.left, selected);
+
+        nextTop = child.getBottom() + mDividerHeight;
+        if (selected) &#123;
+            selectedView = child;
+        &#125;
+        pos++;
+    &#125;
+
+    setVisibleRangeHint(mFirstPosition, mFirstPosition + getChildCount() - 1);
+    return selectedView;
+&#125;
+</code></pre>
+<p>可见在<code>fillDown()</code>方法中，使用了循环的方式将子 View 都创建出来，具体的操作还是交给了<code>makeAndAddView()</code>方法：</p>
+<pre><code class="java">private View makeAndAddView(int position, int y, boolean flow, int childrenLeft,
+        boolean selected) &#123;
+    if (!mDataChanged) &#123;
+        // 这里尝试从回收站中拿出已经渲染过的 View，初次获取时，必为 null
+        final View activeView = mRecycler.getActiveView(position);
+        if (activeView != null) &#123;
+            // 如果在回收站中找到了对应的 View，就直接给它放到对应的位置上
+            setupChild(activeView, position, y, flow, childrenLeft, selected, true);
+            return activeView;
+        &#125;
+    &#125;
+
+    // 新建一个 View，或者是将一个未使用的 View convert 一下（如果可能的话）
+    final View child = obtainView(position, mIsScrap);
+
+    // 放到对应的位置上
+    setupChild(child, position, y, flow, childrenLeft, selected, mIsScrap[0]);
+
+    return child;
+&#125;
+</code></pre>
+<p>这里会尝试先获取回收站中对应的 View，在首次 layout 时肯定获取到的是<code>null</code>，就会调用<code>obtainView()</code>来创建一个 View，这个方法由 AbsListView 来实现：</p>
+<pre><code class="java">// AbsListView.java
+
+View obtainView(int position, boolean[] outMetadata) &#123;
+    Trace.traceBegin(Trace.TRACE_TAG_VIEW, &quot;obtainView&quot;);
+
+    outMetadata[0] = false;
+
+    final View transientView = mRecycler.getTransientStateView(position);  // 1
+    if (transientView != null) &#123;
+        final LayoutParams params = (LayoutParams) transientView.getLayoutParams();
+
+        // If the view type hasn&#39;t changed, attempt to re-bind the data.
+        if (params.viewType == mAdapter.getItemViewType(position)) &#123;
+            final View updatedView = mAdapter.getView(position, transientView, this); //2
+
+            // If we failed to re-bind the data, scrap the obtained view.
+            if (updatedView != transientView) &#123;
+                setItemViewLayoutParams(updatedView, position);
+                mRecycler.addScrapView(updatedView, position);
+            &#125;
+        &#125;
+
+        outMetadata[0] = true;
+
+        // Finish the temporary detach started in addScrapView().
+        transientView.dispatchFinishTemporaryDetach();
+        return transientView;
+    &#125;
+
+    final View scrapView = mRecycler.getScrapView(position);  // 3
+    final View child = mAdapter.getView(position, scrapView, this);  // 4
+    if (scrapView != null) &#123;
+        if (child != scrapView) &#123;
+            // Failed to re-bind the data, return scrap to the heap.
+            mRecycler.addScrapView(scrapView, position);  // 5
+        &#125; else if (child.isTemporarilyDetached()) &#123;
+            outMetadata[0] = true;
+
+            // Finish the temporary detach started in addScrapView().
+            child.dispatchFinishTemporaryDetach();
+        &#125;
+    &#125;
+
+    if (mCacheColorHint != 0) &#123;
+        child.setDrawingCacheBackgroundColor(mCacheColorHint);
+    &#125;
+
+    if (child.getImportantForAccessibility() == IMPORTANT_FOR_ACCESSIBILITY_AUTO) &#123;
+        child.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
+    &#125;
+
+    setItemViewLayoutParams(child, position);
+
+    if (AccessibilityManager.getInstance(mContext).isEnabled()) &#123;
+        if (mAccessibilityDelegate == null) &#123;
+            mAccessibilityDelegate = new ListItemAccessibilityDelegate();
+        &#125;
+        if (child.getAccessibilityDelegate() == null) &#123;
+            child.setAccessibilityDelegate(mAccessibilityDelegate);
+        &#125;
+    &#125;
+
+    Trace.traceEnd(Trace.TRACE_TAG_VIEW);
+
+    return child;
+&#125;
+</code></pre>
+<p>这个方法是各种 ListView 及其派生类中最重要的方法了，我们来详细解释一下。</p>
+<ol>
+<li>检查回收站中是否有瞬态的 View，如果有的话，尝试重新绑定数据；如果没有的话，就直接扔掉，重新创建。</li>
+<li>如果在上一步中获取到了瞬态 View，并且之前存储的 ViewType 与 Adapter 中存储的 ViewType 相同的话，就直接把瞬态 View 交给 Adapter，重新绑定数据。</li>
+<li>如果在第1步中没有获取到瞬态 View，则尝试从 ScrapViews 中获取，看有没有被废弃的 View。</li>
+<li>拿着上一步获取的 ScrapView，交给 Adapter 绑定数据。</li>
+<li>如果获取的 ScrapView 和 Adapter 绑定数据后的 View 是同一个实例（复用），则将这个 View 添加到 ScrapViews 中。</li>
+<li>返回 Adapter 绑定数据后的 View。</li>
+</ol>
+<p>这里还有个比较重要的方法：<code>mAdapter.getView()</code>，眼熟吗？这不就是我们平时在开发时要覆写的方法之一吗，我们平时会这样写：</p>
+<pre><code class="java">@Override
+public View getView(int position, View convertView, ViewGroup parent) &#123;
+    Person person = getItem(position);
+    View view;
+    if (convertView == null) &#123;
+        view = LayoutInflater.from(getContext()).inflate(resourceId, null);
+    &#125; else &#123;
+        view = convertView;
+    &#125;
+    ImageView avatar = (ImageView) view.findViewById(R.id.iv_avatar);
+    TextView name = (TextView) view.findViewById(R.id.tv_name);
+    avatar.setImageResource(person.getImageId());
+    name.setText(person.getName());
+    return view;
+&#125;
+</code></pre>
+<p>这下能明白复用的<code>convertView</code>是哪儿来的了吗？它如果是<code>null</code>的话，说明是初次 layout 过程，如果不是<code>null</code>的话，说明它是瞬态 View 或者是 ScrapView。这也是 ListView 优化处之一——复用<code>convertView</code>，节省掉用 LayoutInflater 重新渲染的过程。</p>
+<p>当然，在初次 layout 过程中，所有的<code>convertView</code>必然为<code>null</code>，也即全部为 LayoutInflater 渲染，会比较耗时。</p>
+<p>我们继续回到<code>makeAndAddView()</code>方法中，下面还有个比较重要的方法是<code>setupChild()</code>：</p>
+<pre><code class="java">  private void setupChild(View child, int position, int y, boolean flowDown, int childrenLeft,
+            boolean selected, boolean isAttachedToWindow) &#123;
+    Trace.traceBegin(Trace.TRACE_TAG_VIEW, &quot;setupListItem&quot;);
+
+    final boolean isSelected = selected &amp;&amp; shouldShowSelector();
+    final boolean updateChildSelected = isSelected != child.isSelected();
+    final int mode = mTouchMode;
+    final boolean isPressed = mode &gt; TOUCH_MODE_DOWN &amp;&amp; mode &lt; TOUCH_MODE_SCROLL
+            &amp;&amp; mMotionPosition == position;
+    final boolean updateChildPressed = isPressed != child.isPressed();
+    final boolean needToMeasure = !isAttachedToWindow || updateChildSelected
+            || child.isLayoutRequested();
+
+    // Respect layout params that are already in the view. Otherwise make
+    // some up...
+    AbsListView.LayoutParams p = (AbsListView.LayoutParams) child.getLayoutParams();
+    if (p == null) &#123;
+        p = (AbsListView.LayoutParams) generateDefaultLayoutParams();
+    &#125;
+    p.viewType = mAdapter.getItemViewType(position);
+    p.isEnabled = mAdapter.isEnabled(position);
+
+    // Set up view state before attaching the view, since we may need to
+    // rely on the jumpDrawablesToCurrentState() call that occurs as part
+    // of view attachment.
+    if (updateChildSelected) &#123;
+        child.setSelected(isSelected);
+    &#125;
+
+    if (updateChildPressed) &#123;
+        child.setPressed(isPressed);
+    &#125;
+
+    if (mChoiceMode != CHOICE_MODE_NONE &amp;&amp; mCheckStates != null) &#123;
+        if (child instanceof Checkable) &#123;
+            ((Checkable) child).setChecked(mCheckStates.get(position));
+        &#125; else if (getContext().getApplicationInfo().targetSdkVersion
+                &gt;= android.os.Build.VERSION_CODES.HONEYCOMB) &#123;
+            child.setActivated(mCheckStates.get(position));
+        &#125;
+    &#125;
+
+    if ((isAttachedToWindow &amp;&amp; !p.forceAdd) || (p.recycledHeaderFooter
+            &amp;&amp; p.viewType == AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER)) &#123;
+        attachViewToParent(child, flowDown ? -1 : 0, p);
+
+        // If the view was previously attached for a different position,
+        // then manually jump the drawables.
+        if (isAttachedToWindow
+                &amp;&amp; (((AbsListView.LayoutParams) child.getLayoutParams()).scrappedFromPosition)
+                        != position) &#123;
+            child.jumpDrawablesToCurrentState();
+        &#125;
+    &#125; else &#123;
+        p.forceAdd = false;
+        if (p.viewType == AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER) &#123;
+            p.recycledHeaderFooter = true;
+        &#125;
+        addViewInLayout(child, flowDown ? -1 : 0, p, true);
+        // add view in layout will reset the RTL properties. We have to re-resolve them
+        child.resolveRtlPropertiesIfNeeded();
+    &#125;
+
+    if (needToMeasure) &#123;
+        final int childWidthSpec = ViewGroup.getChildMeasureSpec(mWidthMeasureSpec,
+                mListPadding.left + mListPadding.right, p.width);
+        final int lpHeight = p.height;
+        final int childHeightSpec;
+        if (lpHeight &gt; 0) &#123;
+            childHeightSpec = MeasureSpec.makeMeasureSpec(lpHeight, MeasureSpec.EXACTLY);
+        &#125; else &#123;
+            childHeightSpec = MeasureSpec.makeSafeMeasureSpec(getMeasuredHeight(),
+                    MeasureSpec.UNSPECIFIED);
+        &#125;
+        child.measure(childWidthSpec, childHeightSpec);
+    &#125; else &#123;
+        cleanupLayoutState(child);
+    &#125;
+
+    final int w = child.getMeasuredWidth();
+    final int h = child.getMeasuredHeight();
+    final int childTop = flowDown ? y : y - h;
+
+    if (needToMeasure) &#123;
+        final int childRight = childrenLeft + w;
+        final int childBottom = childTop + h;
+        child.layout(childrenLeft, childTop, childRight, childBottom);
+    &#125; else &#123;
+        child.offsetLeftAndRight(childrenLeft - child.getLeft());
+        child.offsetTopAndBottom(childTop - child.getTop());
+    &#125;
+
+    if (mCachingStarted &amp;&amp; !child.isDrawingCacheEnabled()) &#123;
+        child.setDrawingCacheEnabled(true);
+    &#125;
+
+    Trace.traceEnd(Trace.TRACE_TAG_VIEW);
+&#125;
+</code></pre>
+<p>这部分代码的核心是<code>attachViewToParent()</code>和<code>addViewInLayout()</code>方法，代表着将 View 正式加入 ListView 中。</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/guolin_blog/article/details/44996879">看看这个，日后继续写吧</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/01f161cb498c">看看这个</a></p>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/Android/Instrumentation%20%E8%A7%A3%E6%9E%90/" title="关于 Instrumentation"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: 关于 Instrumentation</span></a><a class="button is-default" href="/Android/Retrofit/" title="Retrofit 实现原理解析"><span class="has-text-weight-semibold">Next: Retrofit 实现原理解析</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com//"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com//"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><!-- 领英--><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com//"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> cy198706 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>
