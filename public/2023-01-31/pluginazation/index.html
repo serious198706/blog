@@ -1,0 +1,407 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="插件化几乎是现在 Android 开发工程师的必备技能之一了。在前几年，Android 的安全机制不是很完善的时候，插件化的确大放异彩了一段时间，但是随着 Android 变得越来越安全，插件化的风头也有所收敛。从最初只支持 Activity 的动态加载发展到可以完全模拟 app 运行时的沙箱系统，插件化的技术也一步步趋于成熟。
+
+
+一、发展历史插件化技术最初源于免安装运行apk的想法，这个免安装的 apk 可以理解为插件。支持插件化的 app 可以在运行时加载和运行插件，这样便可以将 app 中一些不常用的功能模块做成插件，一方面减小了安装包的大小，另一方面可以实现 app 功能的动态扩展。想要实现插件化，主要是解决下面三个问题：
+
+插件中代码的加载和与主工程的互相调用
+插件中资源的加载和与主工程的互相访.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">关于插件化</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%8F%91%E5%B1%95%E5%8E%86%E5%8F%B2"><span class="toc-text">一、发展历史</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-text">二、基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%B1%BB%E5%8A%A0%E8%BD%BD"><span class="toc-text">1. 类加载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%B5%84%E6%BA%90%E5%8A%A0%E8%BD%BD"><span class="toc-text">2. 资源加载</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%BB%84%E4%BB%B6%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E7%9A%84%E7%AE%A1%E7%90%86"><span class="toc-text">三、组件生命周期的管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ProxyActivity"><span class="toc-text">ProxyActivity</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Hook-Activity"><span class="toc-text">Hook Activity</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%AF%94%E8%BE%83%E7%9F%A5%E5%90%8D%E7%9A%84%E6%8F%92%E4%BB%B6%E5%8C%96%E5%BA%93"><span class="toc-text">四、比较知名的插件化库</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-DynamicLoadApk"><span class="toc-text">1. DynamicLoadApk</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Small"><span class="toc-text">2. Small</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-rePlugin"><span class="toc-text">3. rePlugin</span></a></li></ol></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/%E6%8F%92%E4%BB%B6%E5%8C%96"><i class="tag post-item-tag">插件化</i></a><a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"><i class="tag post-item-tag">设计模式</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">关于插件化</h1><time class="has-text-grey" datetime="2023-01-31T06:58:14.000Z">2023-01-31</time><article class="mt-2 post-content"><p>插件化几乎是现在 Android 开发工程师的必备技能之一了。在前几年，Android 的安全机制不是很完善的时候，插件化的确大放异彩了一段时间，但是随着 Android 变得越来越安全，插件化的风头也有所收敛。从最初只支持 Activity 的动态加载发展到可以完全模拟 app 运行时的沙箱系统，插件化的技术也一步步趋于成熟。</p>
+<span id="more"></span>
+
+<h2 id="一、发展历史"><a href="#一、发展历史" class="headerlink" title="一、发展历史"></a>一、发展历史</h2><p>插件化技术最初源于免安装运行apk的想法，这个免安装的 apk 可以理解为插件。支持插件化的 app 可以在运行时加载和运行插件，这样便可以将 app 中一些不常用的功能模块做成插件，一方面减小了安装包的大小，另一方面可以实现 app 功能的动态扩展。想要实现插件化，主要是解决下面三个问题：</p>
+<ul>
+<li>插件中代码的加载和与主工程的互相调用</li>
+<li>插件中资源的加载和与主工程的互相访问</li>
+<li>四大组件生命周期的管理</li>
+</ul>
+<p>下面是比较出名的几个开源的插件化框架，按照出现的时间排序。研究它们的实现原理，可以大致看出插件化技术的发展，根据实现原理我把这几个框架划分成了三代。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_png/tnZGrhTk4dfxmHLtbLMzmQMjmjhjWq2XeJ1qLUic0kGzLIzr2n3pv5Emich2bYibQLrCic1oibAUWUEwibP1sePxyeUQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1"></p>
+<p>第一代：dynamic-load-apk最早使用 ProxyActivity 这种静态代理技术，由 ProxyActivity 去控制插件中 PluginActivity 的生命周期。该种方式缺点明显，插件中的 activity 必须继承 PluginActivity，开发时要小心处理 context。而 DroidPlugin 通过 Hook 系统服务的方式启动插件中的 Activity，使得开发插件的过程和开发普通的 app 没有什么区别，但是由于 hook 过多系统服务，异常复杂且不够稳定。</p>
+<p>第二代：为了同时达到插件开发的低侵入性（像开发普通 app 一样开发插件）和框架的稳定性，在实现原理上都是趋近于选择尽量少的 hook，并通过在 manifest 中预埋一些组件实现对四大组件的插件化。另外各个框架根据其设计思想都做了不同程度的扩展，其中 Small 更是做成了一个跨平台，组件化的开发框架。</p>
+<p>第三代：VirtualApp 比较厉害，能够完全模拟 app 的运行环境，能够实现 app 的免安装运行和双开技术。Atlas 是阿里开源出来的一个结合组件化和热修复技术的一个 app 基础框架，其广泛的应用与阿里系的各个 app，其号称是一个容器化框架。</p>
+<p>下面详细介绍插件化框架的原理，分别对应着实现插件化的三个核心问题。</p>
+<h2 id="二、基本原理"><a href="#二、基本原理" class="headerlink" title="二、基本原理"></a>二、基本原理</h2><p>在探索基本原理之前，我们先看一张 Android Apk 打包的流程图：</p>
+<p><img src="/img/682616-20191129131701331-804618503.png"></p>
+<p>基本分为7个阶段：</p>
+<ol>
+<li><p>打包资源文件，生成R.java文件</p>
+<p>打包资源的工具是aapt，在这个过程中，项目中的AndroidManifest.xml文件和布局文件XML都会编译，然后生成相应的R.java，另外AndroidManifest.xml会被aapt编译成二进制。存放在APP的res目录下的资源，该类资源在APP打包前大多会被编译，变成二进制文件，并会为每个该类文件赋予一个resource id。对于该类资源的访问，应用层代码则是通过resource id进行访问的。Android应用在编译过程中aapt工具会对资源文件进行编译，并生成一个resource.arsc文件，resource.arsc文件相当于一个文件索引表，记录了很多跟资源相关的信息。</p>
+</li>
+<li><p>处理aidl文件，生成相应的Java文件</p>
+<p>aidl工具解析接口定义文件然后生成相应的Java代码接口供程序调用。如果在项目没有使用到aidl文件，则可以跳过这一步。</p>
+</li>
+<li><p>编译项目源代码，生成class文件</p>
+<p>项目中所有的Java代码，包括R.java和.aidl文件，都会变Java编译器（javac）编译成.class文件，生成的class文件位于工程中的bin/classes目录下。</p>
+</li>
+<li><p>转换所有的class文件，生成classes.dex文件</p>
+<p>dex工具生成可供Android系统Dalvik虚拟机执行的classes.dex文件，任何第三方的libraries和.class文件都会被转换成.dex文件。dx工具的主要工作是将Java字节码转成成Dalvik字节码、压缩常量池、消除冗余信息等。</p>
+</li>
+<li><p>打包生成APK文件</p>
+<p>所有没有编译的资源，如images、assets目录下资源（该类文件是一些原始文件，APP打包时并不会对其进行编译，而是直接打包到APP中，对于这一类资源文件的访问，应用层代码需要通过文件名对其进行访问）；编译过的资源和.dex文件都会被apkbuilder工具打包到最终的.apk文件中。</p>
+</li>
+<li><p>对APK文件进行签名</p>
+<p>一旦APK文件生成，它必须被签名才能被安装在设备上。在开发过程中，主要用到的就是两种签名的keystore。一种是用于调试的debug.keystore，它主要用于调试，在Eclipse或者Android Studio中直接run以后跑在手机上的就是使用的debug.keystore。另一种就是用于发布正式版本的keystore。</p>
+</li>
+<li><p>对签名后的APK文件进行对齐处理</p>
+<p>如果你发布的apk是正式版的话，就必须对APK进行对齐处理，用到的工具是 zipalign。对齐的主要过程是将APK包中所有的资源文件距离文件起始偏移为4字节整数倍，这样通过内存映射访问apk文件时的速度会更快。对齐的作用就是减少运行时内存的使用。</p>
+</li>
+</ol>
+<p>那么，其实插件化的突破口，就在生成的 .dex 文件和 Compiled Resources 文件里。</p>
+<h3 id="1-类加载"><a href="#1-类加载" class="headerlink" title="1. 类加载"></a>1. 类加载</h3><p>我们都知道，Java 中类的加载使用的是 ClassLoader，它负责将 <strong>*.class 加载为内存中的 Class 对象</strong>。它的加载机制为『<strong>双亲委派</strong>』，即能交给父类加载器去加载的，绝不自行加载。这一点我们可以从它的源码中看出：</p>
+<pre><code class="java">public abstract class ClassLoader &#123;
+    ...
+    // 父 class loader 的委托
+    // 注意：VM 将该变量的偏移量硬编码了，所以新的成员变量必须要声明在这个变量之后
+    private final ClassLoader parent;
+    ...
+        protected Class&lt;?&gt; loadClass(String name, boolean resolve) 
+                throws ClassNotFoundException &#123;
+            // 第一步，先检查是否已经被加载了
+            Class&lt;?&gt; c = findLoadedClass(name);
+            if (c == null) &#123;
+                try &#123;
+                    if (parent != null) &#123;
+                        // 这里使用了『双亲委托』机制，递归调用父类的 loadClass 方法
+                        c = parent.loadClass(name, false);
+                    &#125; else &#123;
+                        c = findBootstrapClassOrNull(name);
+                    &#125;
+                &#125; catch (ClassNotFoundException e) &#123;
+                &#125;
+
+                if (c == null) &#123;
+                    // 如果还没找到，就调用 findClass 方法来找到类
+                    c = findClass(name);
+                &#125;
+            &#125;
+            return c;
+    &#125;
+</code></pre>
+<p>双亲委派机制有两个作用：</p>
+<ol>
+<li>防止重复加载同一个 class 。通过委托去向上面问一问，加载过了，就不用再加载一遍。保证数据安全。</li>
+<li>保证核心 class 不能被篡改。通过委托方式，不会去篡改核心 class，即使篡改也不会去加载，即使加载了也不会是同一个 class 对象了。不同的加载器加载同一个 class 也不是同一个 Class 对象。这样保证了 Class 执行安全。</li>
+</ol>
+<p>在 Android 中 ClassLoader 有多个派生类，如下图所示：</p>
+<p><img src="/img/65.png"></p>
+<p>其中最常用也最重要的两个类，就是 DexClassLoader 和 PathClassLoader 了。它们都继承自 BaseDexClassLoader。我们先来看看 DexClassLoader 的代码：</p>
+<p>DexClassLoader：</p>
+<pre><code class="java">public class DexClassLoader extends BaseDexClassLoader &#123;
+    // 四个参数分别是：
+    // dexPath：包含 dex 文件的 jar 包或 apk 文件的路径
+    // optimizedDirectory：dex 文件释放目录/缓存目录，必须为应用的 private 目录，不能为空
+    // librarySearchPath：native 库的路径，可以为空
+    // parent： 父类加载器（用于双亲委派）
+    public DexClassLoader(String dexPath, String optimizedDirectory,
+            String librarySearchPath, ClassLoader parent) &#123;
+        super(dexPath, null, librarySearchPath, parent);
+    &#125;
+&#125;
+</code></pre>
+<p>DexClassLoader 的主要功能如下：</p>
+<ul>
+<li>用于加载包含 *.dex 文件的 jar 包或 apk 文件</li>
+<li>要求一个<strong>应用私有可写的目录去缓存编译的 class 文件</strong></li>
+<li><strong>不允许加载外部存储空间的文件</strong>，以防注入攻击</li>
+</ul>
+<p>从 API 26 开始，<code>optimizedDirectory</code>将不再起作用，这个字段将会被废除掉。</p>
+<p>PathClassLoader：</p>
+<pre><code class="java">public class PathClassLoader extends BaseDexClassLoader &#123;
+    public PathClassLoader(String dexPath, ClassLoader parent) &#123;
+        super((String)null, (File)null, (String)null, (ClassLoader)null);
+        throw new RuntimeException(&quot;Stub!&quot;);
+    &#125;
+
+    // 三个参数分别是：
+    // dexPath：包含 dex 文件的 jar 包或 apk 文件的路径
+    // librarySearchPath：native 库的路径，可以为空
+    // parent： 父类加载器（用于双亲委派）
+    public PathClassLoader(String dexPath, String librarySearchPath, ClassLoader parent) &#123;
+        super((String)null, (File)null, (String)null, (ClassLoader)null);
+    &#125;
+&#125;
+</code></pre>
+<p>无论哪种动态加载，加载的<strong>可执行文件一定要存放在内部存储</strong>。DexClassLoader 可以指定自己的<code>optimizedDirectory</code>，所以它可以加载外部的 dex ，最终这个 dex 会被<strong>复制到内部路径</strong>的<code>optimizedDirectory</code>中；而 PathClassLoader 没有<code>optimizedDirectory</code>，所以它只能加载内部的 dex，这些大都是存在系统中已经安装过的 apk 里面的。PathClassLoader 在 ART 虚拟机上可以加载未安装的 apk 的 dex ，在 Dalvik 则不行。</p>
+<h3 id="2-资源加载"><a href="#2-资源加载" class="headerlink" title="2. 资源加载"></a>2. 资源加载</h3><p>Android 中的资源分为两类：</p>
+<p>第一类是 res 目录下存放的可编辑的资源文件，这类文件在编译时系统会自动在R文件中生成资源文件的16进制值。例如：</p>
+<pre><code class="java">public final class R &#123;
+    public static final class anim &#123;
+　　　　  public static final int abc_fade_in=0x7f050000;
+ 　　　　 public static final int abc_fade_in=0x7f050000;
+　　　　  ... 
+    &#125; 
+&#125;
+</code></pre>
+<p>平时开发时，访问这类资源比较简单，只要用<code>Context.getResource()</code>方法即可。</p>
+<p>第二类是 assets 目录下存放的资源文件。APK 打包时并不会处理这些资源，而是直接将其打包，所以我们不能直接访问，只能用<code>AssetManager.open()</code>方法来实现对 assets 目录下资源文件的访问。如下：</p>
+<pre><code class="java">Resource resource = getResource();
+AssetsManager am = getResource().getAssets();
+InputStream is  = getResource().getAssets().open(&quot;filename&quot;);
+</code></pre>
+<p>通过对这两类资源的分析，我们可以初步做出一个结论：我们能使用的 Resources 类是一个很重要的类，通过此类提供的相关 API ，我们能操作资源的加载。</p>
+<p>谈及资源插件化，我们不得不对 AssetsManager 的 API 多说一些。</p>
+<p>AssetsManager 中有一个<code>addAssetsPath(String Path)</code>方法，App 启动的时候就会将当前的 apk 路径传进去，接下来 AssetsManager 和 Resources 就能访问当前 apk 的所有资源了。</p>
+<p>AssetsManager 的<code>addAssetsPath</code>方法不对外，但是我们可以通过反射的方式，把插件 apk 的路径传到这个方法，这样就把插件的资源添加到一个资源池中了。App 有几个插件，我们就调用几次<code>addAssetsPath</code>方法，把插件的资源都塞到池子里。</p>
+<p>举个栗子，比如在插件的 apk 里存在一个名为<code>plugin_s_1</code>的字符串，我们看看如何在宿主中访问它。</p>
+<p>先理顺一下思路：</p>
+<ol>
+<li>先要创建 AssetManager 对象，读取插件中的资源</li>
+<li>用 DexClassLoader 加载插件，并生成该插件对应的 ClassLoader</li>
+<li>反射获取插件中的类，并将其实例化，就可以让插件类读取插件资源了</li>
+</ol>
+<p>写成代码可以如下：</p>
+<pre><code class="java">public class MainActivity extends Activity &#123;
+    private AssetManager mAssetManager;
+    private Resources mResources;
+    private Resources.Theme mTheme;
+    private String dexPath = null;    //apk文件地址
+    private File fileRelease = null;  //释放目录
+    protected DexClassLoader classLoader = null;
+    private String pluginName = &quot;plugin1.apk&quot;;
+    TextView mTextView;
+
+    @Override
+    protected void attachBaseContext(Context newBase) &#123;
+        super.attachBaseContext(newBase);
+        // 在attachBaseContext时就拷贝插件文件，以便后面进行操作
+        extractAssets(newBase, pluginName);
+    &#125;
+
+    @SuppressLint(&quot;NewApi&quot;)
+    @Override
+    protected void onCreate(Bundle savedInstanceState) &#123;
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        File extractFile = this.getFileStreamPath(pluginName);
+        dexPath = extractFile.getPath();
+
+        fileRelease = getDir(&quot;dex&quot;, 0);
+
+        // 新建 DexClassLoader
+        classLoader = new DexClassLoader(dexPath, fileRelease.getAbsolutePath(), null, getClassLoader());
+
+        mTextView = findViewById(R.id.tv);
+
+        // 对资源文件的调用
+        findViewById(R.id.btn).setOnClickListener(new View.OnClickListener() &#123;
+            @Override
+            public void onClick(View v) &#123;
+                loadResources();
+                try &#123;
+                    Class mLoadClassDynamic = classLoader.loadClass(&quot;com.plugin1.Dynamic&quot;);
+                    Object dynamicObject = mLoadClassDynamic.newInstance();
+                    IDynamic dynamic = (IDynamic) dynamicObject;
+                    String content = dynamic.getStringForResId(MainActivity.this);
+                    mTextView.setText(content);
+                    Toast.makeText(getApplicationContext(), content + &quot;&quot;, Toast.LENGTH_LONG).show();
+                &#125; catch (Exception e) &#123;
+                    e.printStackTrace();
+                &#125;
+            &#125;
+        &#125;);
+    &#125;
+
+    protected void loadResources() &#123;
+        try &#123;
+            AssetManager assetManager = AssetManager.class.newInstance();
+            Method addAssetPath = assetManager.getClass().getMethod(&quot;addAssetPath&quot;, String.class);
+            addAssetPath.invoke(assetManager, dexPath);
+            mAssetManager = assetManager;
+        &#125; catch (Exception e) &#123;
+            e.printStackTrace();
+        &#125;
+        Resources superRes = super.getResources();
+        superRes.getDisplayMetrics();
+        superRes.getConfiguration();
+        mResources = new Resources(mAssetManager, superRes.getDisplayMetrics(), superRes.getConfiguration());
+        mTheme = mResources.newTheme();
+        mTheme.setTo(super.getTheme());
+    &#125;
+
+    @Override
+    public AssetManager getAssets() &#123;
+        return mAssetManager == null ? super.getAssets() : mAssetManager;
+    &#125;
+
+    @Override
+    public Resources getResources() &#123;
+        return mResources == null ? super.getResources() : mResources;
+    &#125;
+
+    @Override
+    public Resources.Theme getTheme() &#123;
+        return mTheme == null ? super.getTheme() : mTheme;
+    &#125;
+
+
+    /**
+     * 把Assets里面得文件复制到 /data/data/files 目录下
+     *
+     * @param context
+     * @param sourceName
+     */
+    public static void extractAssets(Context context, String sourceName) &#123;
+        AssetManager am = context.getAssets();
+        InputStream is = null;
+        FileOutputStream fos = null;
+        try &#123;
+            is = am.open(sourceName);
+            File extractFile = context.getFileStreamPath(sourceName);
+            fos = new FileOutputStream(extractFile);
+            byte[] buffer = new byte[1024];
+            int count = 0;
+            while ((count = is.read(buffer)) &gt; 0) &#123;
+                fos.write(buffer, 0, count);
+            &#125;
+            fos.flush();
+        &#125; catch (IOException e) &#123;
+            e.printStackTrace();
+        &#125; finally &#123;
+            closeSilently(is);
+            closeSilently(fos);
+        &#125;
+    &#125;
+
+    private static void closeSilently(Closeable closeable) &#123;
+        if (closeable == null) &#123;
+            return;
+        &#125;
+        try &#123;
+            closeable.close();
+        &#125; catch (Throwable e) &#123;
+            e.printStackTrace();
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>基于这个思路，我们可以尝试使用插件资源替换当前显示的内容，实现换肤效果，核心思想是一样的，这里就不过多赘述了。</p>
+<h2 id="三、组件生命周期的管理"><a href="#三、组件生命周期的管理" class="headerlink" title="三、组件生命周期的管理"></a>三、组件生命周期的管理</h2><p>Android 中的四大组件的生命周期是由系统管理的，我们可以不去理会，但是在插件中，我们仅仅是构造出一个实例是没用的，我们还需要接管它的生命周期。其中 Activity 的生命周期最为复杂，使用的也最多，我们来以此为例讲一下插件化如何管理组件的生命周期。</p>
+<p>插件化管理组件生命周期大致分为下面两种方式：</p>
+<h3 id="ProxyActivity"><a href="#ProxyActivity" class="headerlink" title="ProxyActivity"></a>ProxyActivity</h3><p>通过<strong>代理方式</strong>来管理插件中组件的生命周期。这种方式最早由 dynamic-load-apk 提出，它的思路是在主工程中做一个 ProxyActivity，启动插件中的 Activity 时会先启动 ProxyActivity，并在其中创建 Activity，并同步生命周期，如下图：</p>
+<p><img src="https://pic1.zhimg.com/80/v2-9cb17820f51c69637de66afc0105b664_720w.jpg"></p>
+<p>具体过程如下：</p>
+<ol>
+<li>首先需要通过<strong>统一的入口（如上图中的 PluginManager）启动插件 Activity</strong>，其内部会将启动的插件Activity信息保存下来，并将 intent 替换为启动 ProxyActivity 的intent。</li>
+<li>ProxyActivity 根据插件的信息拿到该插件的 ClassLoader 和 Resource，通过反射创建 PluginActivity 并调用其<code>onCreate()</code>方法。</li>
+<li>PluginActivty 调用的<code>setContentView()</code>被重写了，会去调用 ProxyActivty 的<code>setContentView()</code>。由于 ProxyActivity 重写了<code>getResource()</code>返回的是插件的 Resource，所以<code>setContentView()</code>能够访问到插件中的资源。同样<code>findViewById()</code>也是调用ProxyActivity 的。</li>
+<li>在 ProxyActivity 中执行生命周期方法时，会调用 PluginActivity 相应的生命周期方法。</li>
+</ol>
+<p>在实现这种方式时，ProxyActivity 中需要重写<code>getResouces()</code>、<code>getAssets()</code>、<code>getClassLoader()</code>方法返回插件的相应对象。生命周期函数以及和用户交互相关函数，如<code>onResume()</code>、<code>onStop()</code>、<code>onBackPressed()</code>等需要转发给插件 Activity。同时，PluginActivity 中所有与 Context 的相关的方法，如<code>setContentView()</code>、<code>getLayoutInflater()</code>、<code>getSystemService()</code>等都需要调用 ProxyActivity 中的相应方法。</p>
+<p>缺点：这种方式，插件中的所有 Activity 必须继承自 PluginActivity，开发的侵入性强。如果某个 Activity 还需要特别的启动模式，那还需要自己管理 Activity 栈，实现起来很复杂。插件中如果要用到 Context，必须由宿主来实现。</p>
+<p>在 dynamic-load-apk 之后，很少有插件化方案会这么做了。</p>
+<h3 id="Hook-Activity"><a href="#Hook-Activity" class="headerlink" title="Hook Activity"></a>Hook Activity</h3><p>我们先看看系统是如何启动 Activity 的：</p>
+<p><img src="https://pic3.zhimg.com/80/v2-99654057a348ceea14bb63b9f789795a_720w.jpg"></p>
+<p>简单描述一下步骤。</p>
+<ol>
+<li>某处调用<code>startActivity()</code>方法，实际会调用<code>Instrumentation.execStartActivity()</code>方法。</li>
+<li>通过跨进程的 binder 调用，进入到 ActivityManagerService 中，其内部会处理 Activity 栈。之后又通过跨进程调用进入到 Activity2所在的进程中。</li>
+<li>ApplicationThread 是一个 binder 对象，其运行在 binder 线程池中，内部包含一个 H 类，该类继承于类 Handler。ApplicationThread 将启动 Activity2 的信息通过 H 对象发送给主线程。</li>
+<li>主线程拿到 Activity2 的信息后，执行<code>Instrumentation.newActivity()</code>方法，其内通过 ClassLoader 反射创建 Activity2 实例。</li>
+</ol>
+<p>如果是这种方案，我们需要关心两个问题：</p>
+<ul>
+<li>插件中的 Activity没有在 AndroidManifest 中注册，如何绕过检测；</li>
+<li>如何构造Activity实例，同步生命周期。</li>
+</ul>
+<p>解决方案有很多种，我们以 VirtualApk 为例，思路如下：</p>
+<ol>
+<li>先在 Manifest 中<strong>预埋 StubActivity</strong>，启动时 hook 上图第1步，将 Intent 的目标 Activity 替换成 StubActivity。</li>
+<li>hook 第10步，通过插件的 ClassLoader 反射创建插件 Activity</li>
+<li>之后 Activity 的所有生命周期回调都会通知给插件 Activity</li>
+</ol>
+<p>VirtualAPK 在初始化时会调用<code>hookInstrumentationAndHandler()</code>，该方法hook了系统的 Instrumentaiton 类，由上文可知该类和Activity的启动息息相关：</p>
+<pre><code class="java">protected void hookInstrumentationAndHandler() &#123;
+    try &#123;
+        ActivityThread activityThread = ActivityThread.currentActivityThread();
+        Instrumentation baseInstrumentation = activityThread.getInstrumentation();
+
+        final VAInstrumentation instrumentation = createInstrumentation(baseInstrumentation);
+        
+        Reflector.with(activityThread).field(&quot;mInstrumentation&quot;).set(instrumentation);
+        Handler mainHandler = Reflector.with(activityThread).method(&quot;getHandler&quot;).call();
+        Reflector.with(mainHandler).field(&quot;mCallback&quot;).set(instrumentation);
+        this.mInstrumentation = instrumentation;
+        Log.d(TAG, &quot;hookInstrumentationAndHandler succeed : &quot; + mInstrumentation);
+    &#125; catch (Exception e) &#123;
+        Log.w(TAG, e);
+    &#125;
+&#125;
+</code></pre>
+<p>该段代码将主线程中的<code>mInstrumentation</code>对象替换成了自定义的 VAInstrumentation 类。在启动和创建插件 Activity 时，VAInstrumentation 都会偷偷做一些手脚，我们简单看看：</p>
+<pre><code class="java">@Override
+public ActivityResult execStartActivity(Context who, IBinder contextThread, IBinder token, Activity target, Intent intent, int requestCode) &#123;
+    injectIntent(intent);
+    return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
+&#125;
+...
+@Override
+public void callActivityOnCreate(Activity activity, Bundle icicle, PersistableBundle persistentState) &#123;
+    injectActivity(activity);
+    mBase.callActivityOnCreate(activity, icicle, persistentState);
+&#125;
+</code></pre>
+<p>偷梁换柱的工作如下：</p>
+<pre><code class="java">protected void injectIntent(Intent intent) &#123;
+    // 将 Intent 转换为显式 Intent
+    mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);
+    // 如果 Component 为 null，说明是隐式 Intent
+    if (intent.getComponent() != null) &#123;
+        Log.i(TAG, String.format(&quot;execStartActivity[%s : %s]&quot;, intent.getComponent().getPackageName(), intent.getComponent().getClassName()));
+        // resolve intent with Stub Activity if needed
+        this.mPluginManager.getComponentsHandler().markIntentIfNeeded(intent);
+    &#125;
+&#125;
+...
+protected void injectActivity(Activity activity) &#123;
+    final Intent intent = activity.getIntent();
+    if (PluginUtil.isIntentFromPlugin(intent)) &#123;
+        Context base = activity.getBaseContext();
+        try &#123;
+            LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(intent);
+            Reflector.with(base).field(&quot;mResources&quot;).set(plugin.getResources());
+            Reflector reflector = Reflector.with(activity);
+            reflector.field(&quot;mBase&quot;).set(plugin.createPluginContext(activity.getBaseContext()));
+            reflector.field(&quot;mApplication&quot;).set(plugin.getApplication());
+
+            // set screenOrientation
+            ActivityInfo activityInfo = plugin.getActivityInfo(PluginUtil.getComponent(intent));
+            if (activityInfo.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) &#123;
+                activity.setRequestedOrientation(activityInfo.screenOrientation);
+            &#125;
+
+            // for native activity
+            ComponentName component = PluginUtil.getComponent(intent);
+            Intent wrapperIntent = new Intent(intent);
+            wrapperIntent.setClassName(component.getPackageName(), component.getClassName());
+            activity.setIntent(wrapperIntent);
+            
+        &#125; catch (Exception e) &#123;
+            Log.w(TAG, e);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>用这种方式欺骗了系统，让系统误以为这是个正常的 Activity，在 Activity 栈中也会出现这个插件 Activity。同时，为了让这个插件 Activity 能够正常运行，还需要做一些替换工作，如 Resource、Context、Application 等。之后，生命周期事件会由 AMS 传递给插件 Activity 的实例。</p>
+<h2 id="四、比较知名的插件化库"><a href="#四、比较知名的插件化库" class="headerlink" title="四、比较知名的插件化库"></a>四、比较知名的插件化库</h2><p>现在已经有很多成熟的插件化库了，简单介绍几个。</p>
+<h3 id="1-DynamicLoadApk"><a href="#1-DynamicLoadApk" class="headerlink" title="1. DynamicLoadApk"></a>1. DynamicLoadApk</h3><p>这是一个非常著名的动态加载库。作者是比较有名的 Android 专家任玉刚。它的设计思路如下图：</p>
+<p><img src="/img/66.png"></p>
+<p>它总体上分为四个模块：</p>
+<ol>
+<li>DLPluginManager。插件管理模块，负责插件的加载、管理以及启动插件组件。</li>
+<li>Proxy。代理组件模块，目前包括 DLProxyActivity(代理 Activity)、DLProxyFragmentActivity(代理 FragmentActivity)、DLProxyService(代理 Service)。</li>
+<li>ProxyImpl。代理组件公用逻辑模块，与 Proxy 不同的是，这部分并不是一个组件，而是负责构建、加载插件组件的管理器。这些 ProxyImpl 通过反射得到插件组件，然后将插件与 Proxy 组件建立关联，最后调用插件组件的 onCreate 函数进行启动。</li>
+<li>Base Plugin。插件组件的基类模块，目前包括 DLBasePluginActivity(插件 Activity 的基类)、DLBasePluginFragmentActivity(插件 FragmentActivity 的基类)、DLBasePluginService(插件 Service 的基类)。</li>
+</ol>
+<p>它的调用流程如下：</p>
+<p><img src="/img/67.png"></p>
+<p>上面是调用插件 Activity 的流程图，其他组件调用流程类似。</p>
+<ol>
+<li>首先通过 DLPluginManager 的<code>loadApk()</code>方法加载插件，这步每个插件只需调用一次。</li>
+<li>通过 DLPluginManager 的<code>startPluginActivity()</code>方法启动代理 Activity。</li>
+<li>代理 Activity 启动过程中构建、启动插件 Activity。</li>
+</ol>
+<p>但是由于 Android P 之后，系统禁止调用私有 API（经过 @hide 修饰的方法），这个库也就渐渐的失去了它的能力。</p>
+<h3 id="2-Small"><a href="#2-Small" class="headerlink" title="2. Small"></a>2. Small</h3><p>它采取的方式与 Virtual 类似，也是先在 AndroidManifest 中埋下一个特殊命名的 Activity 来欺骗 Instrumentation，用以获得生命周期。然后通过替换 Instrumentation 的方式来创建新 Activity 的实例。</p>
+<h3 id="3-rePlugin"><a href="#3-rePlugin" class="headerlink" title="3. rePlugin"></a>3. rePlugin</h3><p>这是 360 公司研发的插件化系统。它选择了 hook 系统的 ClassLoader，当启动 Activity 时，如果判断要启动的 Activity 是插件 Activity，会通过插件中的 ClassLoader 来创建相应的对象。同时，它为了保证系统的稳定性，选择了少 hook，并没有 hook <code>startActivity()</code>方法，而是重写了<code>startActivity()</code>。所以，插件 Activity 也必须要继承自一个类似 PluginActivity 的基类。</p>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/2023-01-31/android-screen-adaptation/" title="Android 屏幕适配"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: Android 屏幕适配</span></a><a class="button is-default" href="/2023-01-31/componentization/" title="关于组件化"><span class="has-text-weight-semibold">Next: 关于组件化</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

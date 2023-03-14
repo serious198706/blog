@@ -13,15 +13,15 @@ widgets:
 
 # social config
 social:
-  zhihu:
-  twitter: /
-  facebook: /
-  linkedin:
-  instagram: /
+  zhihu: people/cy198706
+  twitter: serious008/
+  facebook: serious008/
+  linkedin: serious_chen/
+  instagram: serious008/
   github: serious198706
 
 user:
-  name: cy198706
+  name: Notex
   avatar: img/avatar.jpg
   location: In the void
   description: Keep low profile, he said.

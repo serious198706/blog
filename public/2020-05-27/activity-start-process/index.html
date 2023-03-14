@@ -1,0 +1,1025 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="很多人对 Activity 启动过程不甚了解，我们来捋一下它的启动流程。
+
+
+启动 Activity 无非是下面几种场景：
+
+从应用中启动自身 Activity
+从应用中启动其他应用中的 Activity
+从桌面点击应用图标启动 Activity
+
+理论上来说，桌面是一个单独进程，点击应用图标打开新的 Activity 属于上述第2种情况。所以，上面的3种情况，可以归结为两类：
+
+启动自身进程内的 Activity
+启动其他进程内的 Activity
+
+我们来看看 Android 系统是如何实现的。了解启动过程，需要理解 ActvitiyTaskManagerService 和 ActivityThread 的功能，以及 Binder 通讯机制，我们在下面会慢慢讲到。
+
+注：本文源代码基于 Android .."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Activity 启动流程分析</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BA%90%E8%BF%9B%E7%A8%8B%E4%B8%AD%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="toc-text">源进程中的流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ActivityTaskManagerService-%E4%B8%AD%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="toc-text">ActivityTaskManagerService 中的流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ActivityThread-%E4%B8%AD%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="toc-text">ActivityThread 中的流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-text">注意事项</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/Activity"><i class="tag post-item-tag">Activity</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">Activity 启动流程分析</h1><time class="has-text-grey" datetime="2020-05-26T16:00:00.000Z">2020-05-27</time><article class="mt-2 post-content"><p>很多人对 Activity 启动过程不甚了解，我们来捋一下它的启动流程。</p>
+<span id="more"></span>
+
+<p>启动 Activity 无非是下面几种场景：</p>
+<ol>
+<li>从应用中启动自身 Activity</li>
+<li>从应用中启动其他应用中的 Activity</li>
+<li>从桌面点击应用图标启动 Activity</li>
+</ol>
+<p>理论上来说，桌面是一个<strong>单独进程</strong>，点击应用图标打开新的 Activity 属于上述第2种情况。<br>所以，上面的3种情况，可以归结为两类：</p>
+<ol>
+<li>启动自身进程内的 Activity</li>
+<li>启动其他进程内的 Activity</li>
+</ol>
+<p>我们来看看 Android 系统是如何实现的。了解启动过程，需要理解 ActvitiyTaskManagerService 和 ActivityThread 的功能，以及 Binder 通讯机制，我们在下面会慢慢讲到。</p>
+<blockquote>
+<p>注：本文源代码基于 Android API 29</p>
+</blockquote>
+<h2 id="源进程中的流程"><a href="#源进程中的流程" class="headerlink" title="源进程中的流程"></a>源进程中的流程</h2><p>启动自身进程的的 Activity 就是在代码中调用<code>startActivity()</code>或<code>startActivityForResult()</code>来启动目标 Activity。我们来看看<code>startActivity()</code>和<code>startActivityForResult()</code>都做了什么。</p>
+<pre><code class="java">@Override
+public void startActivity(Intent intent, @Nullable Bundle options) &#123;
+    if (options != null) &#123;
+        startActivityForResult(intent, -1, options);
+    &#125; else &#123;
+        // Note we want to go through this call for compatibility with
+        // applications that may have overridden the method.
+        startActivityForResult(intent, -1);
+    &#125;
+&#125;
+</code></pre>
+<p>可以看到，它调用了<code>startActivityForResult()</code>方法，只不过传入了<code>requestCode</code>为<code>-1</code>，表示『我不要结果』。</p>
+<pre><code class="java">public void startActivityForResult(@RequiresPermission Intent intent, int requestCode,
+            @Nullable Bundle options) &#123;
+    if (mParent == null) &#123;
+        options = transferSpringboardActivityOptions(options);
+        Instrumentation.ActivityResult ar =
+            mInstrumentation.execStartActivity(
+                this, mMainThread.getApplicationThread(), mToken, this,
+                intent, requestCode, options);
+        if (ar != null) &#123;
+            mMainThread.sendActivityResult(
+                mToken, mEmbeddedID, requestCode, ar.getResultCode(),
+                ar.getResultData());
+        &#125;
+        if (requestCode &gt;= 0) &#123;
+            // If this start is requesting a result, we can avoid making
+            // the activity visible until the result is received.  Setting
+            // this code during onCreate(Bundle savedInstanceState) or onResume() will keep the
+            // activity hidden during this time, to avoid flickering.
+            // This can only be done when a result is requested because
+            // that guarantees we will get information back when the
+            // activity is finished, no matter what happens to it.
+            mStartedActivity = true;
+        &#125;
+
+        cancelInputsAndStartExitTransition(options);
+        // TODO Consider clearing/flushing other event sources and events for child windows.
+    &#125; else &#123;
+        if (options != null) &#123;
+            mParent.startActivityFromChild(this, intent, requestCode, options);
+        &#125; else &#123;
+            // Note we want to go through this method for compatibility with
+            // existing applications that may have overridden it.
+            mParent.startActivityFromChild(this, intent, requestCode);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p><code>startActivityForResult()</code>方法会先判断<code>mParent</code>的值是否为空，这个<code>mParent</code>也是一个 Activity 类型的变量，在<code>Activity.attach()</code>时被赋值，第一次启动 Activity 时必然为空。接下来就将任务转交给了<code>Instrumentation.execStartActivity()</code>方法。</p>
+<p>mInstrumentation 也是在<code>Activity.attach()</code>中被初始化，由 ActivityThread 传入。我们来看看它的<code>execStartActivity()</code>方法：</p>
+<pre><code class="java">public ActivityResult execStartActivity(
+        Context who, IBinder contextThread, IBinder token, Activity target,
+        Intent intent, int requestCode, Bundle options) &#123;
+    ...
+    try &#123;
+        ...
+        int result = ActivityTaskManager.getService()
+            .startActivity(whoThread, who.getBasePackageName(), intent,
+                    intent.resolveTypeIfNeeded(who.getContentResolver()),
+                    token, target != null ? target.mEmbeddedID : null,
+                    requestCode, 0, null, options);
+        checkStartActivityResult(result, intent);
+    &#125; catch (RemoteException e) &#123;
+        throw new RuntimeException(&quot;Failure from system&quot;, e);
+    &#125;
+    return null;
+&#125;
+</code></pre>
+<p>在这里，Instumentation 将任务通过 Binder 通信的方式交给了 ActivityTaskManagerService（下称ATMS）。盲猜这里是要先判断要启动的 Activity 是否已经有了相应任务栈，如果没有，就要创建新的任务栈，我们通过代码来看看它是否是这么做的。</p>
+<h2 id="ActivityTaskManagerService-中的流程"><a href="#ActivityTaskManagerService-中的流程" class="headerlink" title="ActivityTaskManagerService 中的流程"></a>ActivityTaskManagerService 中的流程</h2><pre><code class="java">// com.android.server.wm.ActivityTaskManagerService.java
+
+@Override
+public final int startActivity(IApplicationThread caller, String callingPackage,
+        Intent intent, String resolvedType, IBinder resultTo, String resultWho, int requestCode,
+        int startFlags, ProfilerInfo profilerInfo, Bundle bOptions) &#123;
+    return startActivityAsUser(caller, callingPackage, intent, resolvedType, resultTo,
+            resultWho, requestCode, startFlags, profilerInfo, bOptions,
+            UserHandle.getCallingUserId());
+&#125;
+
+@Override
+public int startActivityAsUser(IApplicationThread caller, String callingPackage,
+        Intent intent, String resolvedType, IBinder resultTo, String resultWho, int requestCode,
+        int startFlags, ProfilerInfo profilerInfo, Bundle bOptions, int userId) &#123;
+    return startActivityAsUser(caller, callingPackage, intent, resolvedType, resultTo,
+            resultWho, requestCode, startFlags, profilerInfo, bOptions, userId,
+            true /*validateIncomingUser*/);
+&#125;
+
+int startActivityAsUser(IApplicationThread caller, String callingPackage,
+        Intent intent, String resolvedType, IBinder resultTo, String resultWho, int requestCode,
+        int startFlags, ProfilerInfo profilerInfo, Bundle bOptions, int userId,
+        boolean validateIncomingUser) &#123;
+    enforceNotIsolatedCaller(&quot;startActivityAsUser&quot;);
+
+    userId = getActivityStartController().checkTargetUser(userId, validateIncomingUser,
+            Binder.getCallingPid(), Binder.getCallingUid(), &quot;startActivityAsUser&quot;);
+
+    // TODO: Switch to user app stacks here.
+    return getActivityStartController().obtainStarter(intent, &quot;startActivityAsUser&quot;)
+            .setCaller(caller)
+            .setCallingPackage(callingPackage)
+            .setResolvedType(resolvedType)
+            .setResultTo(resultTo)
+            .setResultWho(resultWho)
+            .setRequestCode(requestCode)
+            .setStartFlags(startFlags)
+            .setProfilerInfo(profilerInfo)
+            .setActivityOptions(bOptions)
+            .setMayWait(userId)
+            .execute();
+&#125;
+
+ActivityStartController getActivityStartController() &#123;
+    return mActivityStartController;
+&#125;
+</code></pre>
+<p>ActivityStartController 是一个控制器，用来代理的 Activity 启动。它的主要目的是把 Activity 的启动请求进行整理，并交给 ActivityStarter 类。它的<code>obtainStarter()</code>方法就是获取一个 ActivityStarter 的实例。可见 ActivityStarter 使用的是 Builder 模式，最终的执行在它的<code>execute()</code>方法中：</p>
+<pre><code class="java">int execute() &#123;
+    try &#123;
+        if (mRequest.mayWait) &#123;
+            return startActivityMayWait(mRequest.caller, mRequest.callingUid,
+                    mRequest.callingPackage, mRequest.realCallingPid, mRequest.realCallingUid,
+                    mRequest.intent, mRequest.resolvedType,
+                    mRequest.voiceSession, mRequest.voiceInteractor, mRequest.resultTo,
+                    mRequest.resultWho, mRequest.requestCode, mRequest.startFlags,
+                    mRequest.profilerInfo, mRequest.waitResult, mRequest.globalConfig,
+                    mRequest.activityOptions, mRequest.ignoreTargetSecurity, mRequest.userId,
+                    mRequest.inTask, mRequest.reason,
+                    mRequest.allowPendingRemoteAnimationRegistryLookup,
+                    mRequest.originatingPendingIntent, mRequest.allowBackgroundActivityStart);
+        &#125; else &#123;
+            return startActivity(mRequest.caller, mRequest.intent, mRequest.ephemeralIntent,
+                    mRequest.resolvedType, mRequest.activityInfo, mRequest.resolveInfo,
+                    mRequest.voiceSession, mRequest.voiceInteractor, mRequest.resultTo,
+                    mRequest.resultWho, mRequest.requestCode, mRequest.callingPid,
+                    mRequest.callingUid, mRequest.callingPackage, mRequest.realCallingPid,
+                    mRequest.realCallingUid, mRequest.startFlags, mRequest.activityOptions,
+                    mRequest.ignoreTargetSecurity, mRequest.componentSpecified,
+                    mRequest.outActivity, mRequest.inTask, mRequest.reason,
+                    mRequest.allowPendingRemoteAnimationRegistryLookup,
+                    mRequest.originatingPendingIntent, mRequest.allowBackgroundActivityStart);
+        &#125;
+    &#125; finally &#123;
+        onExecutionComplete();
+    &#125;
+&#125;
+</code></pre>
+<p>在 ActivityStarter 中有个内部类 Request，用来存储一次启动请求，包括传递的 Intent、请求者的身份、启动模式的 FLAG、requestCode 等等。这里单独讲一下<code>Request.mayWait</code>变量，这个变量表示是否要等待启动结果。当调用<code>Request.setMayWait()</code>方法时，这个值就会被置为<code>true</code>。在这个例子里面，我们在上面的代码里看到，它的值为<code>true</code>，所以会继续调用<code>startActivityMayWait()</code>方法：</p>
+<pre><code class="java">// com.android.server.wm.ActivityStarter.java
+
+private int startActivityMayWait(IApplicationThread caller, int callingUid,
+        String callingPackage, int requestRealCallingPid, int requestRealCallingUid,
+        Intent intent, String resolvedType, IVoiceInteractionSession voiceSession,
+        IVoiceInteractor voiceInteractor, IBinder resultTo, String resultWho, int requestCode,
+        int startFlags, ProfilerInfo profilerInfo, WaitResult outResult,
+        Configuration globalConfig, SafeActivityOptions options, boolean ignoreTargetSecurity,
+        int userId, TaskRecord inTask, String reason,
+        boolean allowPendingRemoteAnimationRegistryLookup,
+        PendingIntentRecord originatingPendingIntent, boolean allowBackgroundActivityStart) &#123;
+    // 一系列判断 + 初始化
+    ...
+    ActivityInfo aInfo = mSupervisor.resolveActivity(intent, rInfo, startFlags, profilerInfo);
+    ...
+    synchronized (mService.mGlobalLock) &#123;
+        ...
+        int res = startActivity(caller, intent, ephemeralIntent, resolvedType, aInfo, rInfo,
+                voiceSession, voiceInteractor, resultTo, resultWho, requestCode, callingPid,
+                callingUid, callingPackage, realCallingPid, realCallingUid, startFlags, options,
+                ignoreTargetSecurity, componentSpecified, outRecord, inTask, reason,
+                allowPendingRemoteAnimationRegistryLookup, originatingPendingIntent,
+                allowBackgroundActivityStart);
+        ...
+
+        return res;
+    &#125;
+&#125;
+</code></pre>
+<p><code>mSupervisor</code>是 ActivityStackSupervisor 类，从命名上看，是管理 Activity 栈的一个类，但其实这个类在不久的版本里，可能会被废除掉，把它的功能都移动到 ActivityLifeCycle、AMS 中。这里我们不用太在意，继续向下看<code>ActivityStarter.startActivity()</code>方法：</p>
+<pre><code class="java">private int startActivity(IApplicationThread caller, Intent intent, Intent ephemeralIntent,
+        String resolvedType, ActivityInfo aInfo, ResolveInfo rInfo,
+        IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
+        IBinder resultTo, String resultWho, int requestCode, int callingPid, int callingUid,
+        String callingPackage, int realCallingPid, int realCallingUid, int startFlags,
+        SafeActivityOptions options,
+        boolean ignoreTargetSecurity, boolean componentSpecified, ActivityRecord[] outActivity,
+        TaskRecord inTask, boolean allowPendingRemoteAnimationRegistryLookup,
+        PendingIntentRecord originatingPendingIntent, boolean allowBackgroundActivityStart) &#123;
+    ...
+    // 各种判断与初始化
+    ....
+    ActivityRecord r = new ActivityRecord(mService, callerApp, callingPid, callingUid,
+            callingPackage, intent, resolvedType, aInfo, mService.getGlobalConfiguration(),
+            resultRecord, resultWho, requestCode, componentSpecified, voiceSession != null,
+            mSupervisor, checkedOptions, sourceRecord);
+    if (outActivity != null) &#123;
+        outActivity[0] = r;
+    &#125;
+    ...
+    final int res = startActivity(r, sourceRecord, voiceSession, voiceInteractor, startFlags,
+            true /* doResume */, checkedOptions, inTask, outActivity, restrictedBgActivity);
+    mSupervisor.getActivityMetricsLogger().notifyActivityLaunched(res, outActivity[0]);
+    return res;
+&#125;
+
+private int startActivity(final ActivityRecord r, ActivityRecord sourceRecord,
+            IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
+            int startFlags, boolean doResume, ActivityOptions options, TaskRecord inTask,
+            ActivityRecord[] outActivity, boolean restrictedBgActivity) &#123;
+    int result = START_CANCELED;
+    final ActivityStack startedActivityStack;
+    try &#123;
+        mService.mWindowManager.deferSurfaceLayout();
+        result = startActivityUnchecked(r, sourceRecord, voiceSession, voiceInteractor,
+                startFlags, doResume, options, inTask, outActivity, restrictedBgActivity);
+    &#125; finally &#123;
+        ...
+    &#125;
+
+    return result;
+&#125;
+
+private int startActivityUnchecked(final ActivityRecord r, ActivityRecord sourceRecord,
+        IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
+        int startFlags, boolean doResume, ActivityOptions options, TaskRecord inTask,
+        ActivityRecord[] outActivity, boolean restrictedBgActivity) &#123;
+    ...
+    // 各种判断与初始化
+    reusedActivity = setTargetStackAndMoveToFrontIfNeeded(reusedActivity);
+    ...
+    mTargetStack.startActivityLocked(mStartActivity, topFocused, newTask, mKeepCurTransition,
+            mOptions);
+    ...
+    return START_SUCCESS;
+&#125;
+</code></pre>
+<p>上面最后的代码中，<code>mTargetStack</code>是 ActivityStack 类型的变量，是在<code>setTargetStackAndMoveToFrontIfNeeded()</code>方法中被赋值的。我们继续来看看<code>ActivityStack.startActivityLocked()</code>：</p>
+<pre><code class="java">void startActivityLocked(ActivityRecord r, ActivityRecord focusedTopActivity,
+        boolean newTask, boolean keepCurTransition, ActivityOptions options) &#123;
+    TaskRecord rTask = r.getTaskRecord();
+    final int taskId = rTask.taskId;
+    final boolean allowMoveToFront = options == null || !options.getAvoidMoveToFront();
+    // mLaunchTaskBehind tasks get placed at the back of the task stack.
+    if (!r.mLaunchTaskBehind &amp;&amp; allowMoveToFront
+            &amp;&amp; (taskForIdLocked(taskId) == null || newTask)) &#123;
+        // Last activity in task had been removed or ActivityManagerService is reusing task.
+        // Insert or replace.
+        // Might not even be in.
+        insertTaskAtTop(rTask, r);
+    &#125;
+    TaskRecord task = null;
+    if (!newTask) &#123;
+        // 如果不是新的任务栈，那就找到它所属的任务栈
+        boolean startIt = true;
+        for (int taskNdx = mTaskHistory.size() - 1; taskNdx &gt;= 0; --taskNdx) &#123;
+            task = mTaskHistory.get(taskNdx);
+            if (task.getTopActivity() == null) &#123;
+                // All activities in task are finishing.
+                continue;
+            &#125;
+            if (task == rTask) &#123;
+                // 找到了对应的 TaskRecord，如果当前任务栈还未对用户可见，那就只添加，不启动
+                if (!startIt) &#123;
+                    if (DEBUG_ADD_REMOVE) Slog.i(TAG, &quot;Adding activity &quot; + r + &quot; to task &quot;
+                            + task, new RuntimeException(&quot;here&quot;).fillInStackTrace());
+                    r.createAppWindowToken();
+                    ActivityOptions.abort(options);
+                    return;
+                &#125;
+                break;
+            &#125; else if (task.numFullscreen &gt; 0) &#123;
+                startIt = false;
+            &#125;
+        &#125;
+    &#125;
+
+    // 在栈顶放目标 Activity，下一个与用户交互的 Activity 就是它
+
+    // 如果不把目标 Activity 放到最前，就不要给实际的当前最前的 Activity 发送 onUserLeaving 消息
+    final TaskRecord activityTask = r.getTaskRecord();
+    if (task == activityTask &amp;&amp; mTaskHistory.indexOf(task) != (mTaskHistory.size() - 1)) &#123;
+        mStackSupervisor.mUserLeaving = false;
+        if (DEBUG_USER_LEAVING) Slog.v(TAG_USER_LEAVING,
+                &quot;startActivity() behind front, mUserLeaving=false&quot;);
+    &#125;
+
+    task = activityTask;
+
+    // Slot the activity into the history stack and proceed
+    if (DEBUG_ADD_REMOVE) Slog.i(TAG, &quot;Adding activity &quot; + r + &quot; to stack to task &quot; + task,
+            new RuntimeException(&quot;here&quot;).fillInStackTrace());
+    // TODO: Need to investigate if it is okay for the controller to already be created by the
+    // time we get to this point. I think it is, but need to double check.
+    // Use test in b/34179495 to trace the call path.
+    if (r.mAppWindowToken == null) &#123;
+        r.createAppWindowToken();
+    &#125;
+
+    // 将 Activity 移到 task 最前
+    task.setFrontOfTask();
+
+    // 如果 allowMoveToFront 为 false，则不需要切换动画，因为 Activity 不可见
+    if ((!isHomeOrRecentsStack() || numActivities() &gt; 0) &amp;&amp; allowMoveToFront) &#123;
+        final DisplayContent dc = getDisplay().mDisplayContent;
+        if (DEBUG_TRANSITION) Slog.v(TAG_TRANSITION,
+                &quot;Prepare open transition: starting &quot; + r);
+        if ((r.intent.getFlags() &amp; Intent.FLAG_ACTIVITY_NO_ANIMATION) != 0) &#123;
+            dc.prepareAppTransition(TRANSIT_NONE, keepCurTransition);
+            mStackSupervisor.mNoAnimActivities.add(r);
+        &#125; else &#123;
+            int transit = TRANSIT_ACTIVITY_OPEN;
+            if (newTask) &#123;
+                if (r.mLaunchTaskBehind) &#123;
+                    transit = TRANSIT_TASK_OPEN_BEHIND;
+                &#125; else if (getDisplay().isSingleTaskInstance()) &#123;
+                    transit = TRANSIT_SHOW_SINGLE_TASK_DISPLAY;
+                &#125; else &#123;
+                    // If a new task is being launched, then mark the existing top activity as
+                    // supporting picture-in-picture while pausing only if the starting activity
+                    // would not be considered an overlay on top of the current activity
+                    // (eg. not fullscreen, or the assistant)
+                    if (canEnterPipOnTaskSwitch(focusedTopActivity,
+                            null /* toFrontTask */, r, options)) &#123;
+                        focusedTopActivity.supportsEnterPipOnTaskSwitch = true;
+                    &#125;
+                    transit = TRANSIT_TASK_OPEN;
+                &#125;
+            &#125;
+            dc.prepareAppTransition(transit, keepCurTransition);
+            mStackSupervisor.mNoAnimActivities.remove(r);
+        &#125;
+        boolean doShow = true;
+        if (newTask) &#123;
+            // Even though this activity is starting fresh, we still need
+            // to reset it to make sure we apply affinities to move any
+            // existing activities from other tasks in to it.
+            // If the caller has requested that the target task be
+            // reset, then do so.
+            if ((r.intent.getFlags() &amp; Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED) != 0) &#123;
+                resetTaskIfNeededLocked(r, r);
+                doShow = topRunningNonDelayedActivityLocked(null) == r;
+            &#125;
+        &#125; else if (options != null &amp;&amp; options.getAnimationType()
+                == ActivityOptions.ANIM_SCENE_TRANSITION) &#123;
+            doShow = false;
+        &#125;
+        if (r.mLaunchTaskBehind) &#123;
+            // Don&#39;t do a starting window for mLaunchTaskBehind. More importantly make sure we
+            // tell WindowManager that r is visible even though it is at the back of the stack.
+            r.setVisibility(true);
+            // 这里继续深入
+            ensureActivitiesVisibleLocked(null, 0, !PRESERVE_WINDOWS);
+        &#125; else if (SHOW_APP_STARTING_PREVIEW &amp;&amp; doShow) &#123;
+            // Figure out if we are transitioning from another activity that is
+            // &quot;has the same starting icon&quot; as the next one.  This allows the
+            // window manager to keep the previous window it had previously
+            // created, if it still had one.
+            TaskRecord prevTask = r.getTaskRecord();
+            ActivityRecord prev = prevTask.topRunningActivityWithStartingWindowLocked();
+            if (prev != null) &#123;
+                // We don&#39;t want to reuse the previous starting preview if:
+                // (1) The current activity is in a different task.
+                if (prev.getTaskRecord() != prevTask) &#123;
+                    prev = null;
+                &#125;
+                // (2) The current activity is already displayed.
+                else if (prev.nowVisible) &#123;
+                    prev = null;
+                &#125;
+            &#125;
+            r.showStartingWindow(prev, newTask, isTaskSwitch(r, focusedTopActivity));
+        &#125;
+    &#125; else &#123;
+        // If this is the first activity, don&#39;t do any fancy animations,
+        // because there is nothing for it to animate on top of.
+        ActivityOptions.abort(options);
+    &#125;
+&#125;
+</code></pre>
+<p>这里的代码我没有精简，这段代码展示了对于 TaskRecord 及内部 Activity 顺序的处理。Activity 到现在还未进行创建，我们继续向下走，看<code>ensureActivitiesVisibleLocked()</code>方法：</p>
+<pre><code class="java">final void ensureActivitiesVisibleLocked(ActivityRecord starting, int configChanges,
+        boolean preserveWindows, boolean notifyClients) &#123;
+    ...
+    try &#123;
+        for (int taskNdx = mTaskHistory.size() - 1; taskNdx &gt;= 0; --taskNdx) &#123;
+            final TaskRecord task = mTaskHistory.get(taskNdx);
+            final ArrayList&lt;ActivityRecord&gt; activities = task.mActivities;
+            for (int activityNdx = activities.size() - 1; activityNdx &gt;= 0; --activityNdx) &#123;
+                ...
+                if (reallyVisible) &#123;
+                    ...
+                    if (!r.attachedToProcess()) &#123;
+                        if (makeVisibleAndRestartIfNeeded(starting, configChanges, isTop,
+                                resumeNextActivity, r)) &#123;
+                            if (activityNdx &gt;= activities.size()) &#123;
+                                // Record may be removed if its process needs to restart.
+                                activityNdx = activities.size() - 1;
+                            &#125; else &#123;
+                                resumeNextActivity = false;
+                            &#125;
+                        &#125;
+                    &#125; else if (r.visible) &#123;
+                        ...
+                    &#125; else &#123;
+                        ...
+                    &#125;
+                    // Aggregate current change flags.
+                    configChanges |= r.configChangeFlags;
+                &#125;
+                ...
+            &#125;
+            ...
+        &#125;
+        ...
+    &#125; finally &#123;
+        ...
+    &#125;
+&#125;
+
+private boolean makeVisibleAndRestartIfNeeded(ActivityRecord starting, int configChanges,
+        boolean isTop, boolean andResume, ActivityRecord r) &#123;
+    if (isTop || !r.visible) &#123;
+        ...
+        if (r != starting) &#123;
+            // We should not resume activities that being launched behind because these
+            // activities are actually behind other fullscreen activities, but still required
+            // to be visible (such as performing Recents animation).
+            mStackSupervisor.startSpecificActivityLocked(r, andResume &amp;&amp; !r.mLaunchTaskBehind,
+                    true /* checkConfig */);
+            return true;
+        &#125;
+    &#125;
+    return false;
+&#125;
+</code></pre>
+<p>这里又出现了一个<code>mStackSupervisor</code>的变量，它是 ActivityStackSupervisor 类型，上面我们介绍过，我们看它的<code>startSpecificActivityLocked()</code>方法：</p>
+<pre><code class="java">// com.android.server.wm.ActivityStackSupervisor.java
+
+void startSpecificActivityLocked(ActivityRecord r, boolean andResume, boolean checkConfig) &#123;
+    // Activity 所属的应用是否正在运行？
+    final WindowProcessController wpc =
+            mService.getProcessController(r.processName, r.info.applicationInfo.uid);
+
+    boolean knownToBeDead = false;
+    if (wpc != null &amp;&amp; wpc.hasThread()) &#123; // 判断它的 ActivityThread 是否为 null
+        // 如果已经在运行，则开始创建 Activity 实例
+        try &#123;
+            realStartActivityLocked(r, wpc, andResume, checkConfig);
+            return;
+        &#125; catch (RemoteException e) &#123;
+            Slog.w(TAG, &quot;Exception when starting activity &quot;
+                    + r.intent.getComponent().flattenToShortString(), e);
+        &#125;
+
+        // If a dead object exception was thrown -- fall through to
+        // restart the application.
+        knownToBeDead = true;
+    &#125;
+
+    // Suppress transition until the new activity becomes ready, otherwise the keyguard can
+    // appear for a short amount of time before the new process with the new activity had the
+    // ability to set its showWhenLocked flags.
+    if (getKeyguardController().isKeyguardLocked()) &#123;
+        r.notifyUnknownVisibilityLaunched();
+    &#125;
+
+    final boolean isTop = andResume &amp;&amp; r.isTopRunningActivity();
+    mService.startProcessAsync(r, knownToBeDead, isTop, isTop ? &quot;top-activity&quot; : &quot;activity&quot;);
+&#125;
+</code></pre>
+<p>好，接下来是重头戏，<code>realStartActivityLocked()</code>：</p>
+<pre><code class="java"> boolean realStartActivityLocked(ActivityRecord r, WindowProcessController proc,
+            boolean andResume, boolean checkConfig) throws RemoteException &#123;
+    ...
+    // 一系列检查
+    ...
+    try &#123;
+        ...
+        try &#123;
+            ...
+            // 检查是否要输出 Transaction too large 的日志，面熟吗？
+            logIfTransactionTooLarge(r.intent, r.icicle);
+
+            // 创建启动 Activity 的事务
+            final ClientTransaction clientTransaction = ClientTransaction.obtain(
+                    proc.getThread(), r.appToken);
+
+            final DisplayContent dc = r.getDisplay().mDisplayContent;
+            clientTransaction.addCallback(LaunchActivityItem.obtain(new Intent(r.intent),
+                    System.identityHashCode(r), r.info,
+                    // TODO: Have this take the merged configuration instead of separate global
+                    // and override configs.
+                    mergedConfiguration.getGlobalConfiguration(),
+                    mergedConfiguration.getOverrideConfiguration(), r.compat,
+                    r.launchedFromPackage, task.voiceInteractor, proc.getReportedProcState(),
+                    r.icicle, r.persistentState, results, newIntents,
+                    dc.isNextTransitionForward(), proc.createProfilerInfoIfNeeded(),
+                            r.assistToken));
+
+            // 设置最终的生命周期状态
+            final ActivityLifecycleItem lifecycleItem;
+            // 创建下一个生命周期事务
+            if (andResume) &#123;
+                lifecycleItem = ResumeActivityItem.obtain(dc.isNextTransitionForward());
+            &#125; else &#123;
+                lifecycleItem = PauseActivityItem.obtain();
+            &#125;
+            clientTransaction.setLifecycleStateRequest(lifecycleItem);
+
+            // 安排上了。
+            mService.getLifecycleManager().scheduleTransaction(clientTransaction);
+            ...
+        &#125; catch (RemoteException e) &#123;
+            ...
+        &#125;
+    &#125; finally &#123;
+        ...
+    &#125;
+    ...
+    return true;
+&#125;
+</code></pre>
+<p>从 Android 26 之后，引入了事务机制，并将 Activity 的生命周期管理都交给一个名为 ClientLifecycleManager 的工具类来进行辅助管理。ClientTransaction 指定要执行的任务类型（如 LaunchActivityItem）及所在进程，ClientLifecycleManager 负责传递消息。</p>
+<p>上面代码中，mService 是 ATMS 的实例，在构造 ActivityStackSupervisor 实例时由外部传入。<code>ActivityTaskManagerService.getLifecycleManager()</code>返回的即是 ATMS 中 ClientLifecycleManager 的实例，我们来看看<code>ClientLifecycleManager.scheduleTransaction()</code>都做了些什么：</p>
+<pre><code class="java">void scheduleTransaction(ClientTransaction transaction) throws RemoteException &#123;
+    final IApplicationThread client = transaction.getClient();
+    transaction.schedule();
+    if (!(client instanceof Binder)) &#123;
+        // If client is not an instance of Binder - it&#39;s a remote call and at this point it is
+        // safe to recycle the object. All objects used for local calls will be recycled after
+        // the transaction is executed on client in ActivityThread.
+        transaction.recycle();
+    &#125;
+&#125;
+</code></pre>
+<p>哦？又交还给 ClientTransaction 自己去 schedule 了：</p>
+<pre><code class="java">public void schedule() throws RemoteException &#123;
+    mClient.scheduleTransaction(this);
+&#125;
+</code></pre>
+<p><code>mClient</code> 自然就是 ApplicationThread 的实例，通过 Binder 方式远程调用了它的<code>scheduleTransaction()</code>方法。</p>
+<p>至此，Activity 启动的请求就交还给了目标进程的 ApplicationThread。</p>
+<h2 id="ActivityThread-中的流程"><a href="#ActivityThread-中的流程" class="headerlink" title="ActivityThread 中的流程"></a>ActivityThread 中的流程</h2><p>接下来的部分就比较好理解了，我们继续看看<code>ApplicationThread.scheduleTransaction()</code>：</p>
+<pre><code class="java">// android.app.ActivityThread.ApplicationThread.java
+
+private class ApplicationThread extends IApplicationThread.Stub &#123;
+    public void scheduleTransaction(ClientTransaction transaction) throws RemoteException &#123;
+        ActivityThread.this.scheduleTransaction(transaction);
+    &#125;
+&#125;
+
+// android.app.ActivityThread.java
+
+public final class ActivityThread extends ClientTransactionHandler &#123;
+    void scheduleTransaction(ClientTransaction transaction) &#123;
+        transaction.preExecute(this);
+        sendMessage(ActivityThread.H.EXECUTE_TRANSACTION, transaction);
+    &#125;
+&#125;
+</code></pre>
+<p>H 是 ActivityThread 中的一个内部类，它继承自 Handler。这里调用了<code>sendMessage()</code>方法，企图向这个 Handler 发送消息：</p>
+<pre><code class="java">void sendMessage(int what, Object obj) &#123;
+    sendMessage(what, obj, 0, 0, false);
+&#125;
+
+private void sendMessage(int what, Object obj, int arg1, int arg2, boolean async) &#123;
+    Message msg = Message.obtain();
+    msg.what = what;
+    msg.obj = obj;
+    msg.arg1 = arg1;
+    msg.arg2 = arg2;
+    if (async) &#123;
+        msg.setAsynchronous(true);
+    &#125;
+    mH.sendMessage(msg);
+&#125;
+</code></pre>
+<p><code>mH</code>自然就是 H 的实例。我们来看看它是如何处理<code>EXECUTE_TRANSACTION</code>消息的：</p>
+<pre><code class="java">case EXECUTE_TRANSACTION:
+    final ClientTransaction transaction = (ClientTransaction) msg.obj;
+    mTransactionExecutor.execute(transaction);
+    if (isSystem()) &#123;
+        // Client transactions inside system process are recycled on the client side
+        // instead of ClientLifecycleManager to avoid being cleared before this
+        // message is handled.
+        transaction.recycle();
+    &#125;
+    // TODO(lifecycler): Recycle locally scheduled transactions.
+    break;
+</code></pre>
+<p>又蹦出个东西叫 TransactionExecutor，它的功能是让事务能够按照正确的顺序执行。</p>
+<pre><code class="java">// android.app.servertransaction.TransactionExecutor.java
+
+public void execute(ClientTransaction transaction) &#123;
+    ...
+    executeCallbacks(transaction);
+    // 如果指定的最终的生命周期状态，那就再继续执行事务直到指定状态
+    executeLifecycleState(transaction);
+    ...
+&#125;
+
+public void executeCallbacks(ClientTransaction transaction) &#123;
+    final List&lt;ClientTransactionItem&gt; callbacks = transaction.getCallbacks();
+    ...
+    final IBinder token = transaction.getActivityToken();
+    ...
+    final int size = callbacks.size();
+    for (int i = 0; i &lt; size; ++i) &#123;
+        final ClientTransactionItem item = callbacks.get(i);
+        ...
+        item.execute(mTransactionHandler, token, mPendingActions);
+        item.postExecute(mTransactionHandler, token, mPendingActions);
+        if (r == null) &#123;
+            // Launch activity request will create an activity record.
+            r = mTransactionHandler.getActivityClient(token);
+        &#125;
+
+        if (postExecutionState != UNDEFINED &amp;&amp; r != null) &#123;
+            // Skip the very last transition and perform it by explicit state request instead.
+            final boolean shouldExcludeLastTransition =
+                    i == lastCallbackRequestingState &amp;&amp; finalState == postExecutionState;
+            cycleToPath(r, postExecutionState, shouldExcludeLastTransition, transaction);
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>这里看到了，是拿到事务的 callback，并进行回调。调用它的<code>execute()</code>方法来真正执行操作。</p>
+<p>那么这个 callback 是什么时候设置的呢？向上翻翻代码，在 ClientTransaction 创建时，有这样的一句代码：</p>
+<pre><code class="java">clientTransaction.addCallback(LaunchActivityItem.obtain(new Intent(r.intent),
+        System.identityHashCode(r), r.info,
+        // TODO: Have this take the merged configuration instead of separate global
+        // and override configs.
+        mergedConfiguration.getGlobalConfiguration(),
+        mergedConfiguration.getOverrideConfiguration(), r.compat,
+        r.launchedFromPackage, task.voiceInteractor, proc.getReportedProcState(),
+        r.icicle, r.persistentState, results, newIntents,
+        dc.isNextTransitionForward(), proc.createProfilerInfoIfNeeded(),
+                r.assistToken));
+</code></pre>
+<p>也就是说，在『启动 Activity』这个事务中，callback 是 LaunchActivityItem 的实例。我们来看看这个类：</p>
+<pre><code class="java">public class LaunchActivityItem extends ClientTransactionItem &#123;
+    private Intent mIntent;
+    ...
+    private ActivityInfo mInfo;
+    ...
+    private Bundle mState;
+    private PersistableBundle mPersistentState;
+    private List&lt;ResultInfo&gt; mPendingResults;
+    ...
+
+    @Override
+    public void execute(ClientTransactionHandler client, IBinder token,
+            PendingTransactionActions pendingActions) &#123;
+        ...
+        ActivityClientRecord r = new ActivityClientRecord(token, mIntent, mIdent, mInfo,
+                mOverrideConfig, mCompatInfo, mReferrer, mVoiceInteractor, mState, mPersistentState,
+                mPendingResults, mPendingNewIntents, mIsForward,
+                mProfilerInfo, client, mAssistToken);
+        client.handleLaunchActivity(r, pendingActions, null /* customIntent */);
+        ...
+    &#125;
+
+    @Override
+    public void postExecute(ClientTransactionHandler client, IBinder token,
+            PendingTransactionActions pendingActions) &#123;
+        client.countLaunchingActivities(-1);
+    &#125;
+&#125;
+</code></pre>
+<p>在<code>execute()</code>方法中，首先构造了一个 ActivityClientRecord 类型的变量<code>r</code>，然后将它交给了 ClientTransactionHandler。这个类是啥呢？它是 ActivityThread 的父类。这个<code>client</code>也即<code>TransactionExecutor.mTransactionHandler</code>，而<code>mTransactionHander</code>是在 TransactionExecutor 构造时传入的，我们看一眼：</p>
+<pre><code class="java">public final class ActivityThread extends ClientTransactionHandler &#123;
+    ...
+    private final TransactionExecutor mTransactionExecutor = new TransactionExecutor(this);
+    ...
+&#125;
+</code></pre>
+<p>转来转去，又回到了 ActivityThread 中。</p>
+<pre><code class="java">@Override
+public Activity handleLaunchActivity(ActivityClientRecord r,
+        PendingTransactionActions pendingActions, Intent customIntent) &#123;
+    ...
+    // 初始化 WindowManagerGlobal
+    // 这个类用来与 WindowManagerService 进行通讯
+    WindowManagerGlobal.initialize();
+    ...
+    final Activity a = performLaunchActivity(r, customIntent);
+    ...
+    return a;
+&#125;
+
+/**  Core implementation of activity launch. */
+private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) &#123;
+    ActivityInfo aInfo = r.activityInfo;
+    if (r.packageInfo == null) &#123;
+        r.packageInfo = getPackageInfo(aInfo.applicationInfo, r.compatInfo,
+                Context.CONTEXT_INCLUDE_CODE);
+    &#125;
+
+    ComponentName component = r.intent.getComponent();
+    if (component == null) &#123;
+        component = r.intent.resolveActivity(
+            mInitialApplication.getPackageManager());
+        r.intent.setComponent(component);
+    &#125;
+
+    if (r.activityInfo.targetActivity != null) &#123;
+        component = new ComponentName(r.activityInfo.packageName,
+                r.activityInfo.targetActivity);
+    &#125;
+
+    ContextImpl appContext = createBaseContextForActivity(r);
+    // 创建 Activity 实例
+    Activity activity = null;
+    try &#123;
+        ClassLoader cl = appContext.getClassLoader();
+        activity = mInstrumentation.newActivity(
+                cl, component.getClassName(), r.intent);
+        StrictMode.incrementExpectedActivityCount(activity.getClass());
+        r.intent.setExtrasClassLoader(cl);
+        r.intent.prepareToEnterProcess();
+        if (r.state != null) &#123;
+            r.state.setClassLoader(cl);
+        &#125;
+    &#125; catch (Exception e) &#123;
+        if (!mInstrumentation.onException(activity, e)) &#123;
+            throw new RuntimeException(
+                &quot;Unable to instantiate activity &quot; + component
+                + &quot;: &quot; + e.toString(), e);
+        &#125;
+    &#125;
+
+    try &#123;
+        // 如果应用未启动，则要创建应用的 Application
+        // 如果创建过了，则直接返回已创建的实例
+        Application app = r.packageInfo.makeApplication(false, mInstrumentation);
+
+        if (localLOGV) Slog.v(TAG, &quot;Performing launch of &quot; + r);
+        if (localLOGV) Slog.v(
+                TAG, r + &quot;: app=&quot; + app
+                + &quot;, appName=&quot; + app.getPackageName()
+                + &quot;, pkg=&quot; + r.packageInfo.getPackageName()
+                + &quot;, comp=&quot; + r.intent.getComponent().toShortString()
+                + &quot;, dir=&quot; + r.packageInfo.getAppDir());
+
+        if (activity != null) &#123;
+            CharSequence title = r.activityInfo.loadLabel(appContext.getPackageManager());
+            Configuration config = new Configuration(mCompatConfiguration);
+            if (r.overrideConfig != null) &#123;
+                config.updateFrom(r.overrideConfig);
+            &#125;
+            if (DEBUG_CONFIGURATION) Slog.v(TAG, &quot;Launching activity &quot;
+                    + r.activityInfo.name + &quot; with config &quot; + config);
+            Window window = null;
+            if (r.mPendingRemoveWindow != null &amp;&amp; r.mPreserveWindow) &#123;
+                window = r.mPendingRemoveWindow;
+                r.mPendingRemoveWindow = null;
+                r.mPendingRemoveWindowManager = null;
+            &#125;
+            appContext.setOuterContext(activity);
+            // 调用 Activity.attach() 方法，对 Activity 进行初始化，比如创建 PhoneWindow，绑定 ActivityThread 等
+            activity.attach(appContext, this, getInstrumentation(), r.token,
+                    r.ident, app, r.intent, r.activityInfo, title, r.parent,
+                    r.embeddedID, r.lastNonConfigurationInstances, config,
+                    r.referrer, r.voiceInteractor, window, r.configCallback,
+                    r.assistToken);
+
+            if (customIntent != null) &#123;
+                activity.mIntent = customIntent;
+            &#125;
+            r.lastNonConfigurationInstances = null;
+            checkAndBlockForNetworkAccess();
+            activity.mStartedActivity = false;
+            int theme = r.activityInfo.getThemeResource();
+            if (theme != 0) &#123;
+                activity.setTheme(theme);
+            &#125;
+
+            activity.mCalled = false;
+            // 调用 Activity 生命周期方法，完成创建
+            if (r.isPersistable()) &#123;
+                mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);
+            &#125; else &#123;
+                mInstrumentation.callActivityOnCreate(activity, r.state);
+            &#125;
+            if (!activity.mCalled) &#123;
+                throw new SuperNotCalledException(
+                    &quot;Activity &quot; + r.intent.getComponent().toShortString() +
+                    &quot; did not call through to super.onCreate()&quot;);
+            &#125;
+            r.activity = activity;
+        &#125;
+        r.setState(ON_CREATE);
+
+        // updatePendingActivityConfiguration() reads from mActivities to update
+        // ActivityClientRecord which runs in a different thread. Protect modifications to
+        // mActivities to avoid race.
+        synchronized (mResourcesManager) &#123;
+            mActivities.put(r.token, r);
+        &#125;
+
+    &#125; catch (SuperNotCalledException e) &#123;
+        throw e;
+
+    &#125; catch (Exception e) &#123;
+        if (!mInstrumentation.onException(activity, e)) &#123;
+            throw new RuntimeException(
+                &quot;Unable to start activity &quot; + component
+                + &quot;: &quot; + e.toString(), e);
+        &#125;
+    &#125;
+
+    return activity;
+&#125;
+</code></pre>
+<p>上面的代码分为三大步：</p>
+<ol>
+<li>利用 Instrumentation 反射创建 Activity 的实例；</li>
+<li>调用<code>Activity.attach()</code>对 Activity 进行 Context 绑定、创建 PhoneWindow 实例等；</li>
+<li>调用<code>Instrumentation.callActivityOnCreate()</code>从而调用到 Activity 的<code>onCreate()</code>生命周期方法。</li>
+</ol>
+<p>那么，Activity 的<code>onCreate()</code>被调用完成后，还会继续调用<code>onStart()</code>和<code>onResume()</code>呢，它们是在哪里被调用的呢？</p>
+<p>还记得上面有这样一段吗？</p>
+<pre><code class="java">// 如果指定的最终的生命周期状态，那就再继续执行事务直到指定状态
+executeLifecycleState(transaction);
+</code></pre>
+<p>这里就执行了创建 ClientTransactionItem 请求时，顺带创建的 ActivityLifecycleItem 请求。在这个例子里，<code>transaction</code>是 ResumeActivityItem 的实例。</p>
+<p>经过与上面相同的步骤，最终会来到 ActivityThread 的<code>handleResumeActivity()</code>方法中：</p>
+<pre><code class="java">public void handleResumeActivity(IBinder token, boolean finalStateRequest, boolean isForward,
+        String reason) &#123;
+    ...
+    final ActivityClientRecord r = performResumeActivity(token, finalStateRequest, reason);
+    ...
+    final Activity a = r.activity;
+    ...
+    // If the window hasn&#39;t yet been added to the window manager,
+    // and this guy didn&#39;t finish itself or start another activity,
+    // then go ahead and add the window.
+    boolean willBeVisible = !a.mStartedActivity;
+    if (!willBeVisible) &#123;
+        try &#123;
+            willBeVisible = ActivityTaskManager.getService().willActivityBeVisible(
+                    a.getActivityToken());
+        &#125; catch (RemoteException e) &#123;
+            throw e.rethrowFromSystemServer();
+        &#125;
+    &#125;
+    if (r.window == null &amp;&amp; !a.mFinished &amp;&amp; willBeVisible) &#123;
+        r.window = r.activity.getWindow();
+        View decor = r.window.getDecorView();
+        decor.setVisibility(View.INVISIBLE);
+        ViewManager wm = a.getWindowManager();
+        WindowManager.LayoutParams l = r.window.getAttributes();
+        a.mDecor = decor;
+        l.type = WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
+        l.softInputMode |= forwardBit;
+        if (r.mPreserveWindow) &#123;
+            a.mWindowAdded = true;
+            r.mPreserveWindow = false;
+            // Normally the ViewRoot sets up callbacks with the Activity
+            // in addView-&gt;ViewRootImpl#setView. If we are instead reusing
+            // the decor view we have to notify the view root that the
+            // callbacks may have changed.
+            ViewRootImpl impl = decor.getViewRootImpl();
+            if (impl != null) &#123;
+                impl.notifyChildRebuilt();
+            &#125;
+        &#125;
+        if (a.mVisibleFromClient) &#123;
+            if (!a.mWindowAdded) &#123;
+                a.mWindowAdded = true;
+                wm.addView(decor, l);
+            &#125; else &#123;
+                // The activity will get a callback for this &#123;@link LayoutParams&#125; change
+                // earlier. However, at that time the decor will not be set (this is set
+                // in this method), so no action will be taken. This call ensures the
+                // callback occurs with the decor set.
+                a.onWindowAttributesChanged(l);
+            &#125;
+        &#125;
+
+        // If the window has already been added, but during resume
+        // we started another activity, then don&#39;t yet make the
+        // window visible.
+    &#125; else if (!willBeVisible) &#123;
+        if (localLOGV) Slog.v(TAG, &quot;Launch &quot; + r + &quot; mStartedActivity set&quot;);
+        r.hideForNow = true;
+    &#125;
+
+    // Get rid of anything left hanging around.
+    cleanUpPendingRemoveWindows(r, false /* force */);
+
+    // The window is now visible if it has been added, we are not
+    // simply finishing, and we are not starting another activity.
+    if (!r.activity.mFinished &amp;&amp; willBeVisible &amp;&amp; r.activity.mDecor != null &amp;&amp; !r.hideForNow) &#123;
+        if (r.newConfig != null) &#123;
+            performConfigurationChangedForActivity(r, r.newConfig);
+            if (DEBUG_CONFIGURATION) &#123;
+                Slog.v(TAG, &quot;Resuming activity &quot; + r.activityInfo.name + &quot; with newConfig &quot;
+                        + r.activity.mCurrentConfig);
+            &#125;
+            r.newConfig = null;
+        &#125;
+        if (localLOGV) Slog.v(TAG, &quot;Resuming &quot; + r + &quot; with isForward=&quot; + isForward);
+        WindowManager.LayoutParams l = r.window.getAttributes();
+        if ((l.softInputMode
+                &amp; WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION)
+                != forwardBit) &#123;
+            l.softInputMode = (l.softInputMode
+                    &amp; (~WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION))
+                    | forwardBit;
+            if (r.activity.mVisibleFromClient) &#123;
+                ViewManager wm = a.getWindowManager();
+                View decor = r.window.getDecorView();
+                wm.updateViewLayout(decor, l);
+            &#125;
+        &#125;
+
+        r.activity.mVisibleFromServer = true;
+        mNumVisibleActivities++;
+        if (r.activity.mVisibleFromClient) &#123;
+            // 让 Activity 可见的重要方法
+            r.activity.makeVisible();
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>这个方法也是比较重要的一个方法，它会调用<code>performResumeActivity()</code>方法，然后初始化一些 Window 相关的数据，并最终通过调用 <code>Activity.makeVisible()</code>方法让 Activity 可见。</p>
+<pre><code class="java">public ActivityClientRecord performResumeActivity(IBinder token, boolean finalStateRequest,
+        String reason) &#123;
+    final ActivityClientRecord r = mActivities.get(token);
+    ...
+    try &#123;
+        ...
+        r.activity.performResume(r.startsNotResumed, reason);
+    &#125; catch (Exception e) &#123;
+        ...
+    &#125;
+&#125;
+</code></pre>
+<p>Activity 的<code>performResume()</code>如下：</p>
+<pre><code class="java">final void performResume(boolean followedByPause, String reason) &#123;
+    ...
+    performRestart(true /* start */, reason); // 
+    ...
+    // mResumed is set by the instrumentation
+    mInstrumentation.callActivityOnResume(this);
+    ...
+    onPostResume();
+    ...
+    dispatchActivityPostResumed();
+&#125;
+
+final void performRestart(boolean start, String reason) &#123;
+    ...
+    if (mStopped) &#123;
+        ...
+        mInstrumentation.callActivityOnRestart(this);
+        ...
+        if (start) &#123;
+            performStart(reason);
+        &#125;
+    &#125;
+&#125;
+
+final void performStart(String reason) &#123;
+    ...
+    mInstrumentation.callActivityOnStart(this);
+    ...
+    dispatchActivityPostStarted();
+&#125;
+</code></pre>
+<p>Activity 生命周期流程得到了佐证，会由<code>onCreate()</code>→<code>onRestart()</code>→<code>onStart()</code>→<code>onResume()</code></p>
+<p>真的是很长的一个流程。我们简单总结一下：</p>
+<ol>
+<li>源进程调用<code>startActivity()</code>，最终会调用到<code>Instrumentation.execStartActivity()</code>方法；</li>
+<li>通过 Binder 调用 ActivityTaskManagerService 的<code>startActivity()</code>方法；</li>
+<li>ATMS 会使用 ActivityStack 类和 ActivityStackSupervisor 类来处理 Task 与 Activity 的入栈操作；</li>
+<li>接着在<code>ActivityStackSupervisor.realStartActivityLocked()</code>方法中，使用提交事务的方法，创建一个启动 Activity 的事务，并提交给 ClientLifecycleManager；</li>
+<li>ClientLifecycleManager 会通过 Binder 调用 ActivityThread 的<code>scheduleTransaction()</code>方法，该方法会向 ActivityThread 中的 Handler 发送一个消息；</li>
+<li>Handler 接收消息后，利用 TransactionExecutor 按顺序执行事务；</li>
+<li>在这个『启动 Activity』的事务回调中，又调用了 ActivityThread 的<code>handleLaunchActivity()</code>方法，进而又调用了<code>performLaunchActivity()</code>方法；</li>
+<li>在这个方法中，利用反射创建了 Activity 的实例，如果需要的话，还利用反射创建了 Application 的实例，并调用<code>Activity.attach()</code>方法，创建 PhoneWindow、绑定 Context；</li>
+<li>最后调用了<code>Instrumentation.callActivityOnCreate()</code>方法，执行了 Activity 的<code>onCreate()</code>生命周期方法；</li>
+<li>接着 TransactionExecutor 又开始执行生命周期事务，最后依次调用到<code>onStart()</code>、<code>onResume()</code>。</li>
+</ol>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><p>本文代码分析基于 Android 10.0，在 10.0 中，出现了 ATMS，AMS 中原来的<code>startActivity()</code>全部由 ATMS 来执行。</p>
+<p>可以从下面链接中观察两者的不同：<br><a target="_blank" rel="noopener" href="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java;l=3521;bpv=0;bpt=1">10.0.0_r30 中的 ActivityManagerService</a><br><a target="_blank" rel="noopener" href="https://cs.android.com/android/platform/superproject/+/android-9.0.0_r34:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java;l=5088;bpv=0;bpt=1">9.0.0_r34 中的 ActivityManagerService</a></p>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/2020-06-04/the-managers-path/" title="The Manager's Path"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: The Manager's Path</span></a><a class="button is-default" href="/2020-05-21/gc/" title="关于 GC"><span class="has-text-weight-semibold">Next: 关于 GC</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

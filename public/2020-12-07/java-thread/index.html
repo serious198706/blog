@@ -1,0 +1,182 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="线程是操作系统中能够进行运算调度的最小单位了。它被包含在进程中，是进程在运行过程中，真正的『打工人』。每一个进程有且至少有一个线程存在，默认的线程我们可以把它叫作『主线程』。
+在 Java 中，进行线程的切换是一件比较浪费资料的事情，这意味着代码的执行需要从用户态切换到内核态，然后再从内核态切换回用户态。但这也不是说我们不能用线程，合理的使用可以提高程序执行的吞吐率。
+既然上面提到了『线程切换』，那我们就来聊聊，线程的几种状态。
+
+
+线程的六种状态根据官方文档来看，Java 中线程有六种状态，分别是 NEW、RUNNABLE、BLOCKED、WAITING、TIMED_WAITING 和 TERMINATED。
+NEW刚创建线程对象时，线程就处在这个状态。该状态只能向下一个状态 RUNNABLE 发生转换，.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Java 中线程的状态及转换</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%85%AD%E7%A7%8D%E7%8A%B6%E6%80%81"><span class="toc-text">线程的六种状态</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#NEW"><span class="toc-text">NEW</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RUNNABLE"><span class="toc-text">RUNNABLE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BLOCKED"><span class="toc-text">BLOCKED</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#WAITING"><span class="toc-text">WAITING</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TIMED-WAITING"><span class="toc-text">TIMED_WAITING</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TERMINATED"><span class="toc-text">TERMINATED</span></a></li></ol></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Java"><i class="tag post-item-tag">Java</i></a><a href="/tags/Thread"><i class="tag post-item-tag">Thread</i></a><a href="/tags/Thread-Safe"><i class="tag post-item-tag">Thread-Safe</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">Java 中线程的状态及转换</h1><time class="has-text-grey" datetime="2020-12-06T16:00:00.000Z">2020-12-07</time><article class="mt-2 post-content"><p>线程是操作系统中能够进行运算调度的最小单位了。它被包含在进程中，是进程在运行过程中，真正的『打工人』。每一个进程有且至少有一个线程存在，默认的线程我们可以把它叫作『主线程』。</p>
+<p>在 Java 中，进行线程的切换是一件比较浪费资料的事情，这意味着代码的执行需要从用户态切换到内核态，然后再从内核态切换回用户态。但这也不是说我们不能用线程，合理的使用可以提高程序执行的吞吐率。</p>
+<p>既然上面提到了『线程切换』，那我们就来聊聊，线程的几种状态。</p>
+<span id="more"></span>
+
+<h2 id="线程的六种状态"><a href="#线程的六种状态" class="headerlink" title="线程的六种状态"></a>线程的六种状态</h2><p>根据<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.State.html">官方文档</a>来看，Java 中线程有六种状态，分别是 <code>NEW</code>、<code>RUNNABLE</code>、<code>BLOCKED</code>、<code>WAITING</code>、<code>TIMED_WAITING</code> 和 <code>TERMINATED</code>。</p>
+<h3 id="NEW"><a href="#NEW" class="headerlink" title="NEW"></a><strong>NEW</strong></h3><p>刚创建线程对象时，线程就处在这个状态。该状态只能向下一个状态 <code>RUNNABLE</code> 发生转换，一旦发生转换，则无法再回到 <code>NEW</code> 状态。</p>
+<p>比如下方代码：</p>
+<pre><code class="java">Runnable runnable = new Runnable() &#123;
+    @Override
+    public void run() &#123; &#125;
+&#125;;
+Thread thread = new Thread(runnable);
+System.out.println(&quot;t1 state: &quot; + thread.getState());
+</code></pre>
+<p>则会看到输出：</p>
+<pre><code>t1 state: NEW
+</code></pre>
+<h3 id="RUNNABLE"><a href="#RUNNABLE" class="headerlink" title="RUNNABLE"></a><strong>RUNNABLE</strong></h3><p>当应用程序调用了线程对象的 <code>start()</code> 方法之后，该线程就会进入 <code>RUNNABLE</code> 状态。此时，该线程会被置于可运行的线程池中，等待被线程调度选中，获取 CPU 的使用权。一旦线程获取到 CPU 的使用权，则开始真正执行程序代码。我们还可以将这个状态细分为 <code>READY</code> 和 <code>RUNNING</code> 两种状态，用于区分线程是否抢占到 CPU，已经开始运行代码了。</p>
+<pre><code class="java">Runnable runnable = new Runnable() &#123;
+    @Override
+    public void run() &#123; &#125;
+&#125;;
+Thread thread = new Thread(runnable);
+thread.start();
+System.out.println(&quot;t1 state: &quot; + thread.getState());
+</code></pre>
+<p>则会输出：</p>
+<pre><code>t1 state: RUNNABLE
+</code></pre>
+<h3 id="BLOCKED"><a href="#BLOCKED" class="headerlink" title="BLOCKED"></a><strong>BLOCKED</strong></h3><p>在这种状态下，线程一般是在等待 monitor 的锁。一般我们管这种状态叫『阻塞状态』。进入阻塞状态是因为某种原因下，线程放弃了 CPU 的使用权，线程暂停执行代码，进入阻塞状态。</p>
+<p>用下面的例子来说明：</p>
+<pre><code class="java">public class Main &#123;
+
+    public static void main(String[] args) throws InterruptedException &#123;
+        Thread t1 = new Thread(new DemoThreadB());
+        Thread t2 = new Thread(new DemoThreadB());
+
+        t1.start();
+        t2.start();
+
+        Thread.sleep(1000);
+
+        System.out.println(&quot;t2 state: &quot; + t2.getState());
+        System.exit(0);
+    &#125;
+
+    static class DemoThreadB implements Runnable &#123;
+        @Override
+        public void run() &#123;
+            process();
+        &#125;
+
+        public static synchronized void process() &#123;
+            while(true) &#123;
+                // 模拟重量级的过程处理，t1 如果正在运行该代码块，则 t2 就会进入 BLOCKED 状态
+            &#125;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>这个例子中创建了 t1 和 t2 两个线程。t1 在调用 <code>start()</code> 方法后进入 <code>process()</code> 方法。因为这里使用了 <code>while(true)</code> 来保证线程不会轻易狗带，所以 t2 就甭想抢占到 CPU 并执行 <code>process()</code> 方法。但 t2 也调用了 <code>start()</code> 方法进入了 <code>RUNNABLE</code> 状态，又由于比 t1 晚了一步，所以只能进入 <code>BLOCKED</code> 状态，等待 t1 释放锁。</p>
+<p>该例子会输出：</p>
+<pre><code>t2 state: BLOCKED
+</code></pre>
+<h3 id="WAITING"><a href="#WAITING" class="headerlink" title="WAITING"></a><strong>WAITING</strong></h3><p>在这种状态下，线程就是在<strong>无限期</strong>等待其他线程完成某个操作。比如说，某个线程在一个对象上调用了 <code>Object.wait()</code>，就是在等待另一个线程对该对象调用 <code>Object.notifiy()</code> 或者 <code>Object.nofityAll()</code>。有可能引起线程进入 <code>WATING</code> 状态的方法有下面几种：<br>    - <code>Object.wait()</code> 无超时的等待<br>    - <code>Thread.join()</code> 无超时的等待<br>    - <code>LockSupport.park()</code></p>
+<p>我们使用下面的例子来模拟这个状态：</p>
+<pre><code class="java">public class Main &#123;
+
+    static Thread t1;
+
+    public static void main(String[] args) throws InterruptedException &#123;
+
+        Thread t2 = new Thread(new DemoThreadB());
+        t1 = new Thread(new DemoThreadA(t2));
+        t1.start();
+    &#125;
+
+    static class DemoThreadA implements Runnable &#123;
+        Thread t2;
+
+        DemoThreadA(Thread thread) &#123;
+            this.t2 = thread;
+        &#125;
+
+        @Override
+        public void run() &#123;
+            this.t2.start();
+
+            try &#123;
+                this.t2.join();
+                System.out.println(&quot;t1 state: &quot; + t1.getState());
+            &#125; catch (InterruptedException e) &#123;
+                e.printStackTrace();
+            &#125;
+        &#125;
+    &#125;
+
+    static class DemoThreadB implements Runnable &#123;
+        @Override
+        public void run() &#123;
+            try &#123;
+                Thread.sleep(1000);
+            &#125; catch (InterruptedException e) &#123;
+                e.printStackTrace();
+            &#125;
+
+            System.out.println(&quot;t1 state: &quot; + t1.getState());
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>上面的例子中，创建了两个线程 t1 和 t2，并且在 t1 的 <code>run()</code> 方法中启动了 t2，并且调用了 t2 的 <code>join()</code> 方法。此时，t1 就进入了 <code>WAITING</code> 状态，当 t2 的 <code>run()</code> 方法执行完毕后，t1 就会从 <code>WAIT</code> 状态回到 <code>RUNNABLE</code> 状态。</p>
+<p>所以上述代码的执行结果如下：</p>
+<pre><code>t1 state: WAITING
+t1 state: RUNNABLE
+</code></pre>
+<h3 id="TIMED-WAITING"><a href="#TIMED-WAITING" class="headerlink" title="TIMED_WAITING"></a><strong>TIMED_WAITING</strong></h3><p>顾名思义，这种状态也是 <code>WAITNG</code> 状态，只不过这种状态是<strong>有等待时限</strong>的。有可能引起线程进入 <code>TIMED_WAITING</code> 状态的方法有下面几种：<br>    - <code>Thread.sleep(long millis)</code> 不必介绍<br>    - <code>Object.wait(long timeout)</code> 带有时限的 <code>Object.wait()</code><br>    - <code>Thread.join(long millis)</code> 带有时限的 <code>Thread.join()</code><br>    - <code>LockSupport.parkNanos(Object blocker, long nanos)</code><br>    - <code>LockSupport.parkUntil(Object blocker, long deadline)</code></p>
+<p>同样地，我们使用一个例子来演示这个状态：</p>
+<pre><code class="java">public class Main &#123;
+
+    public static void main(String[] args) throws InterruptedException &#123;
+        Thread t1 = new Thread(new DemoThreadC());
+        t1.start();
+
+        Thread.sleep(1000);
+        System.out.println(&quot;t1 state: &quot; + t1.getState());
+    &#125;
+
+    static class DemoThreadC implements Runnable &#123;
+        @Override
+        public void run() &#123;
+            try &#123;
+                Thread.sleep(3000);
+                // Thread.join(3000);
+                // LockSupport.parkNanos(this, 3000000000);
+                // LockSupport.parkUntil(this, 3000);
+            &#125; catch (InterruptedException e) &#123;
+                e.printStackTrace();
+            &#125;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>主线程 sleep 1 秒就结束了，而子线程 t1 则由于『业务量巨大』导致 sleep 3 秒后才能退出，在 1 秒之后观察 t1 的状态，则输出如下：</p>
+<pre><code>t1 state: TIMED_WAITING
+</code></pre>
+<h3 id="TERMINATED"><a href="#TERMINATED" class="headerlink" title="TERMINATED"></a><strong>TERMINATED</strong></h3><p>线程的 <code>run()</code> 方法执行完毕，或者因为异常导致退出了 <code>run()</code> 方法，则该线程的生命周期就结束了，进入 <code>TERMINATED</code> 状态。进入 <code>TERMINATED</code> 状态的线程不可再次重生。</p>
+<p>这个例子就简单多了：</p>
+<pre><code class="java">Runnable runnable = new Runnable() &#123;
+    @Override
+    public void run() &#123; &#125;
+&#125;;
+Thread t1 = new Thread(runnable);
+t1.start();
+
+Thread.sleep(1000);
+System.out.println(&quot;t1 state: &quot; + t1.getState());
+</code></pre>
+<p>线程瞬间运行完毕（因为 run() 方法为空），1秒后观察 t1 的状态，就会有如下输出：</p>
+<pre><code>t1 state: TERMINATED
+</code></pre>
+<p>下面用一张图来展示这六种状态之间的关系：</p>
+<p><img src="https://s3.ax1x.com/2020/12/07/DxHtAO.png" alt="线程的六种状态转换"></p>
+<p>按时间顺序来解释一下：</p>
+<ul>
+<li><code>NEW</code> 状态下的线程，在调用 <code>start()</code> 方法之后，进入 <code>RUNNABLE</code> 状态。此时可以细分为 <code>READY</code> 和 <code>RUNNING</code> 两种状态，<code>READY</code> 状态下还未抢占到 CPU，代码无法执行；抢占到 CPU，则进入 <code>RUNNING</code> 状态，开始执行代码；</li>
+<li>如果在 <code>RUNNABLE</code> 状态下调用了 <code>Object.wait()</code> 或者 <code>Thread.join()</code> 或者 <code>LockSupport.park()</code>，则进入 <code>WAIT</code> 状态；</li>
+<li>如果在 <code>RUNNABLE</code> 状态下调用了 <code>Thread.sleep(long millis)</code> 或者 <code>Object.wait(long timeout)</code> 或者 <code>Thread.join(long millis)</code> 或者 <code>LockSupport.parkNanos(Object locker, long nanos)</code> 或者 <code>LockSupport.parkUntil(Object blocker, long deadline)</code>，则进入 <code>TIMED_WAITING</code> 状态；</li>
+<li>如果在 <code>RUNNABLE</code> 状态下还需要等待 monitor 锁进入同步代码块或者重入同步代码块，则进入 <code>BLOCKED</code> 状态；</li>
+<li>在 <code>WAITING</code> 或者 <code>TIMED_WAITING</code> 状态下，如果其他线程调用了 <code>Object.notify()</code> 或者 <code>Object.nofityAll()</code> 方法，则进入 <code>RUNNABLE</code> 状态，</li>
+<li>在 <code>BLOCKED</code> 状态下，一旦获取 monitor 锁，则回到 <code>RUNNABLE</code> 状态；</li>
+<li>在 <code>WAITING</code> 或者 <code>TIMED_WAITING</code> 或者 <code>BLOCKED</code> 状态下，线程代码执行结束，或因为异常提前结束，都会进入 <code>TERMINATED</code> 状态。</li>
+</ul>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/2021-01-09/" title="其他扩展面试题"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: 其他扩展面试题</span></a><a class="button is-default" href="/2020-09-09/design-pattern-must/" title="开发者必须掌握的设计模式"><span class="has-text-weight-semibold">Next: 开发者必须掌握的设计模式</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

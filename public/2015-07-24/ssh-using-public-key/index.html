@@ -1,0 +1,213 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="
+
+
+总览
+在Linux或OS X上设置SSH使用公钥
+在Windows上使用PuTTY设置SSH使用公钥
+
+
+###总览
+在使用SSH时，利用公钥来进行认证后的链接，是比只利用密码来进行验证要安全得多的。SSH公钥认证是基于非对称加密算法的，这种加密算法会生成一对key，一个“私有”key，也就是私钥，和一个“公有”key，即公钥。你在你的电脑上只保存一个私钥，用来进行远程连接。同时你也可以把公钥分享给任何人（不要给他私钥哟），或者存储在远程主机的某个目录上，比如 .ssh/autorized_keys。
+使用SSH公钥认证：
+远程主机必须要安装了SSH（任意版本）。本文假设远程主机使用了OpenSSH（对，就是上一篇文说的印第安那大学的UTIS中心系统使用的那个）。如果远程主机正在使用一个奇怪的SSH版.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">如何设置SSH使用公钥认证登录主机</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile is-hidden"></div><div class="column is-9"><header class="my-4"><a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86"><i class="tag post-item-tag">计算机基础知识</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">如何设置SSH使用公钥认证登录主机</h1><time class="has-text-grey" datetime="2015-07-24T11:20:43.000Z">2015-07-24</time><article class="mt-2 post-content"><div id="menu">
+</div>
+
+<p><a href="#Overview">总览</a></p>
+<p><a href="#Linux">在Linux或OS X上设置SSH使用公钥</a></p>
+<p><a href="#Windows">在Windows上使用PuTTY设置SSH使用公钥</a></p>
+<span id="more"></span>
+
+<p>###总览</p>
+<p>在使用SSH时，利用公钥来进行认证后的链接，是比只利用密码来进行验证要安全得多的。SSH公钥认证是基于非对称加密算法的，这种加密算法会生成一对key，一个“私有”key，也就是私钥，和一个“公有”key，即公钥。你在你的电脑上只保存一个私钥，用来进行远程连接。同时你也可以把公钥分享给任何人（不要给他私钥哟），或者存储在远程主机的某个目录上，比如 <code>.ssh/autorized_keys</code>。</p>
+<p>使用SSH公钥认证：</p>
+<p>远程主机必须要安装了SSH（任意版本）。本文假设远程主机使用了OpenSSH（对，就是上一篇文说的印第安那大学的UTIS中心系统使用的那个）。如果远程主机正在使用一个奇怪的SSH版本（比如Tectia SSH），下文即将使用的方法可能不正确。</p>
+<p>你的电脑也必须安装某种版本的SSH工具。本文假设你在Linux或Mac OS X下使用命令行中的SSH，在Windows下使用PuTTY。</p>
+<p>还有个前提是你能够把公钥想办法传输到远程主机上。使用用户名密码登录到远程主机或者有网络管理员来帮你做这件事。</p>
+<p>公钥可以存储到 <code>~/.ssh/authorized_keys</code>目录下。</p>
+<p><a href="#menu">Back to top</a></p>
+<div id="Linux">
+</div>
+
+<p>###在Linux或OS X上设置SSH使用公钥</p>
+<ol>
+<li>使用命令行的SSH创建一对Key，加密算法可以是DSA或者RSA：</li>
+</ol>
+<ul>
+<li>创建DSA Key，在命令行中输入：</li>
+</ul>
+<pre><code class="bash">ssh-keygen -t dsa
+</code></pre>
+<ul>
+<li>创建RSA Key，在命令行中输入：</li>
+</ul>
+<pre><code class="bash">ssh-keygen -t rsa
+</code></pre>
+<ol start="2">
+<li><p>接下来ssh-keygen会提醒你提供一个文件名来储存key文件，同时提供一个密码来保护你的私钥。</p>
+<ul>
+<li><p>文件名：如果你要使用默认的文件名（和路径）的话，直接回车就好了。如果你想指定文件名（和路径）的话，就输入路径并回车。<br>  但是很多远程主机设置为只接受使用默认路径和默认文件名的私钥，在这种情况下，如果要使用其他文件名的私钥，就要做一点点设置了，下文会有介绍。</p>
+</li>
+<li><p>密码：输入不少于5个字符的密码，然后回车。如果不想使用密码，则可以直接回车。<br>  <em>UITS强烈建议使用密码来保护你的私钥。如果不使用密码的话，任何能访问你电脑的人都可以使用这个私钥来进行远程主机的登录。</em></p>
+</li>
+</ul>
+<p> 你的私钥按照你的输入保存在相应的位置（<code>~/.ssh/id_rsa</code>或者 <code>~/.ssh/my_ssh_key</code>）。<br> 而相对应的公钥也会保存在与私钥相同的位置，并且会在私钥的文件名后面加一个.pub的后缀（<code>~/.ssh/id_rsa.pub</code>或者 <code>~/.ssh/my_ssh_key.pub</code>）。</p>
+</li>
+<li><p>使用SFTP或者SCP将公钥拷贝到远程主机上。例如：</p>
+<pre><code class="bash">scp ~/.ssh/id_rsa.pub serious@cy198706.com:  // 不要忘记后面这个&quot;`:`&quot;
+</code></pre>
+<p> 接着输入你在该远程主机上的用户密码，认证通过之后，公钥就会被拷贝到远程主机你的home目录下。</p>
+</li>
+<li><p>使用用户名密码登录远程主机。<br> <em>如果你没有权限登录远程主机，那么你需要联系网络管理员来帮你创建</em><code>~/.ssh/authorized_keys</code><em>文件。</em></p>
+</li>
+<li><p>如果你的远程主机中没有<code>~/.ssh/authorized_keys</code>文件，则需要手动创建一个：</p>
+<pre><code class="bash">mkdir -p ~/.ssh
+  touch ~/.ssh/authorized_keys
+</code></pre>
+<p> <em>如果已有这个文件，则上面的命令并没有什么卵用</em></p>
+</li>
+<li><p>将步骤3中拷贝过来的公钥文件（<code>~/id_rsa.pub</code>）的内容写入 <code>~/.ssh/authorized_keys</code>文件中。</p>
+<pre><code class="bash">cat ~/id_rsa.pub &gt; ~/.ssh/authorized_keys
+</code></pre>
+<p> 然后检查一下是否写入成功：</p>
+<pre><code class="bash">cat ~/.ssh/authorized_keys | more
+</code></pre>
+</li>
+<li><p>现在可以安全地删除公钥文件了：</p>
+<pre><code class="bash">rm ~/id_rsa.pub
+</code></pre>
+</li>
+<li><p>你可以在其他的主机上也添加这个公钥，只需要重复3-7步骤就可以啦。</p>
+</li>
+<li><p>现在你应该可以使用SSH登录到远程主机了。登录的主机是<a target="_blank" rel="noopener" href="http://cy198706.com/">cy198706.com</a>，登录时的用户名是serious，登录所用的电脑就是存有你刚才创建的私钥的这台电脑。</p>
+<p> 如果你刚才创建私钥时使用密码保护了，那么远程主机会要求你在SSH时输入密码（该密码并不会被传输到远程主机，只做本地验证）：</p>
+<pre><code class="bash">[serious@desktop ~]$ ssh serious@cy198706.com
+Enter passphrase for key &#39;~/.ssh/id_dsa&#39;:
+ Last login: Fri Jul 24 09:23:17 2015 from serious.somewhere.org
+</code></pre>
+<p> 如果你刚才在创建私钥时没有使用默认的文件名（或路径），则你需要用以下两种方法来进行SSH：</p>
+<ul>
+<li>在命令行中加入-i参数，并指定私钥的路径。例如你刚才把私钥存在了<code>~/.ssh/mykeys/my_host</code>，并要使用这个私钥来进行SSH的话：</li>
+</ul>
+<pre><code class="bash">  ssh -i ~/.ssh/mykeys/myhost serious@cy198706.com
+</code></pre>
+<ul>
+<li>修改配置文件。<br>SSH会依次从以下几处读取配置信息：<ol>
+<li>命令行参数</li>
+<li>~/.ssh/config（也许不存在）</li>
+<li>/etc/ssh/ssh_config两个文件中读取配置信息</li>
+</ol>
+</li>
+</ul>
+<p> SSH配置文件是一个包含关键词和参数的文本文件。要指定连接某台远程主机时要使用哪个私钥，只需要使用文件编辑器添加一条记录即可。</p>
+<p> 例如，要连接到<a target="_blank" rel="noopener" href="http://cy198706.com/">cy198706.com</a>，同时使用<code>~/.ssh/mykeys/cy_host</code>这个私钥，则需要在 <code>~/.ssh/config</code>（如果没有自行创建）文件中添加如下两行：</p>
+<pre><code class="bash">Host cy198706.com
+ IdentityFile ~/.ssh/mykeys/cy_host
+</code></pre>
+<p> 保存文件之后，SSH就会利用这个规则来访问指定的主机。</p>
+<p> 你也可以添加多条规则：</p>
+<pre><code class="bash">   Host host1.cy198706.com
+IdentityFile ~/.ssh/mykeys/cy_host1
+
+  Host host2.cy198706.com
+IdentityFile ~/.ssh/mykeys/cy_host2
+
+  Host host3.cy198706.com
+IdentityFile ~/.ssh/mykeys/cy_host3
+</code></pre>
+<p> 甚至可以使用通配符<code>*</code>来指定规则：</p>
+<pre><code class="bash">  Host *.cy198706.com
+IdentityFile ~/.ssh/mykeys/cy_host
+</code></pre>
+<p> 要想得知更多关于SSH配置文件的用法，查看<a target="_blank" rel="noopener" href="https://kb.iu.edu/d/afjm">帮助页面</a>，或者<code>man ssh_config</code>。</p>
+</li>
+</ol>
+<p><a href="#menu">Back to top</a></p>
+<div id="Windows">
+</div>
+
+<p>###在Windows上使用PuTTY设置SSH使用公钥</p>
+<p><em>PuTTY命令行客户端，还有用来生成key的PuTTYgen工具，以及Pageant SSH认证代理工具，还有PuTTY SCP，Putty SFTP工具都是打包在一起下载的。打包版可以在<a target="_blank" rel="noopener" href="http://the.earth.li/~sgtatham/putty/latest/x86/putty.zip">这儿</a>下载到。安装版可以在<a target="_blank" rel="noopener" href="http://the.earth.li/~sgtatham/putty/latest/x86/putty-0.64-installer.exe">这儿</a>下载到。</em></p>
+<p><em>墙内的同学你们有福了，该网站已被墙得体无完肤，我上传到了<a target="_blank" rel="noopener" href="http://pan.baidu.com/s/1eQpmNAE">度娘网盘</a>提供下载。</em></p>
+<p><em>下载完成后都有这些文件：</em></p>
+<figure>
+  <img src="/images/putty1.png" alt="PuTTY">
+</figure>
+
+<ol>
+<li><p>打开PuTTYgen，如图所示</p>
+<figure>
+<img src="/images/putty2.png" alt="PuTTY">
+</figure></li>
+<li><p>在下方的<code>Parameters</code>区域，可以选择<code>SSH-2 RSA</code>或者<code>SSH-2 DSA</code>加密方式。<code>Number of bits in a generated key</code>参数使用默认值就可以。</p>
+</li>
+<li><p>点击<code>Generate</code>，上方会出现一个进度条，并且提示你在空白区域移动鼠标（别移出去了！눈_눈），它就会随机生成一对key。然后公钥就会显示在上方的框里。如图所示。</p>
+<figure>
+<img src="/images/putty3.png" alt="PuTTY">
+</figure></li>
+<li><p>在<code>Key passphrase</code>和<code>Confirm passphrase</code>输入框中，输入一个密码来保护你的私钥。当然你也可以不输入。</p>
+</li>
+</ol>
+<p><em>UITS强烈建议使用密码来保护你的私钥。如果不使用密码的话，任何能访问你电脑的人都可以使用这个私钥来进行远程主机的登录。</em></p>
+<ol start="5">
+<li><p>点击下方<code>Save public key</code>，指定公钥的名称，保存公钥。</p>
+</li>
+<li><p>点击下方<code>Save private key</code>，指定私钥的名称，保存私钥。<br> <em>如果你没有使用密码保护私钥的话，这时PuTTYgen会提醒你是否确定不使用密码保护。</em></p>
+</li>
+<li><p>使用用户名密码登录远程主机。<br> <em>如果你没有权限登录远程主机，那么你需要联系网络管理员来帮你创建</em><code>~/.ssh/authorized_keys</code><em>文件。</em></p>
+</li>
+<li><p>如果你的远程主机中没有<code>~/.ssh/authorized_keys</code>文件，则需要手动创建一个：</p>
+<pre><code class="bash">mkdir -p ~/.ssh
+  touch ~/.ssh/authorized_keys
+</code></pre>
+<p> <em>如果已有这个文件，则上面的命令并没有什么卵用</em></p>
+</li>
+<li><p>在你的电脑上，在PuTTYgen中，将公钥的内容拷贝一下，然后，在远程主机中把内容复制到<code>~/.ssh/authorized_keys</code>文件中。</p>
+</li>
+<li><p>打开Pageant SSH认证代理工具。这玩意会在后台运行，你只能在系统托盘区域看到它。右击托盘区域中的图标，选择Add Key，然后找到你刚才保存的私钥，选择之。</p>
+<p>如果你在创建私钥时使用了密码保护，Pageant会询问你的密码是什么。</p>
+</li>
+<li><p>现在Pageant会把私钥保存在内存中，当你使用PuTTY访问远程主机时，该私钥就会起作用。</p>
+</li>
+<li><p>打开PuTTY客户端。如图。</p>
+<figure>
+<img src="/images/putty4.png" alt="PuTTY">
+</figure>
+
+<ul>
+<li><p><code>Session</code>页面的<code>Host Name (or IP address)</code>输入框中，输入远程主机的用户名和地址，例如<code>serious@cy198706.com</code>。</p>
+</li>
+<li><p>在<code>Connection type</code>中，选择SSH</p>
+</li>
+<li><p>在左侧列表的<code>Category</code>中，找到<code>Auth</code>页面（<code>Connection &gt; SSH &gt; Auth</code>）。在<code>Auth</code>页面的<code>Authentication methods</code>区域中，勾选<code>Attempt authentication using Pageant</code>。</p>
+<figure>
+<img src="/images/putty5.png" alt="PuTTY">
+</figure></li>
+<li><p>返回<code>Session</code>页面，在<code>Saved Sessions</code>区域中输入一个名称用来保存这套配置，然后点击保存。</p>
+</li>
+<li><p>点击<code>Open</code>连接到远程主机。当Pageant在后台运行时，PuTTY将会自动获得私钥并使用，在登录到远程主机的过程中不会再次询问私钥的保护密码之类的信息。</p>
+</li>
+</ul>
+<p><em>到这儿配置基本完成。需要注意的是，每次在开机之后，如果要使用Pageant，就必须手动启动它，添加私钥，再使用PuTTY。当然也有快捷的办法，下文将会继续介绍。</em></p>
+</li>
+<li><p>打开“启动”文件夹：</p>
+<ul>
+<li><p>Windows 8下，按Windows+R，输入<code>shell:startup</code>后回车就打开了。</p>
+</li>
+<li><p>Windows 7下，从开始菜单，点击所有程序，找到启动菜单，右击打开。</p>
+</li>
+<li><p>或者直接导航到“启动”文件夹：</p>
+<pre><code class="bash">C:\Users\your_name\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+</code></pre>
+</li>
+</ul>
+</li>
+<li><p>在文件夹中右键新建一个快捷方式。然后在弹出的对话框的输入框中输入你Pageant.exe的路径，也可以使用浏览找到它。接着在该路径的后面加一个空格，输入私钥的位置。例如：</p>
+<pre><code class="bash">&quot;C:\Program Files (x86)\PuTTY\pageant.exe&quot; &quot;C:\Users\your_name\ssh_key\putty_private.ppk&quot;
+</code></pre>
+<p>在下一步中，给快捷方式取个名字，点击完成。</p>
+<p>这样在以后电脑开机之后，就会自动加载该私钥到Pageant中，省去了手动启动的麻烦。</p>
+</li>
+</ol>
+<p><a href="#menu">Back to top</a></p>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/2015-12-31/my-2015/" title="我的2015"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: 我的2015</span></a><a class="button is-default" href="/2015-07-23/ssh-and-ssh2/" title="SSH 与 SSH2"><span class="has-text-weight-semibold">Next: SSH 与 SSH2</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>

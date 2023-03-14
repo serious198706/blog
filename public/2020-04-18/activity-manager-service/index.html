@@ -1,0 +1,838 @@
+<!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="ActivityManagerService 是 Android 提供的管理 Activity 运行状态的系统进程，其实大家别被名字迷惑了，ActivityManagerService（后称AMS）其实也兼任管理其他组件运行状态。
+
+
+AMS概述AMS启动流程根据这篇文章中提到的，init 进程是 Android 系统中的初始化进程，init 生成 Zygote 进程，Android 中大多数应用进程和系统进程都是通过 Zygote 进程生成的。
+
+上面的流程图展示了 AMS 的代码执行流程。我们接下来详细讲讲。
+AMS这种系统级别的服务，一般都是在启动的时候触发，我们可以看一下在 system_server 进程中，是如何启动 AMS 的：
+// com.android.server.SystemServ.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">关于 ActivityManagerService</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#AMS%E6%A6%82%E8%BF%B0"><span class="toc-text">AMS概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#AMS%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="toc-text">AMS启动流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Activity-%E7%8A%B6%E6%80%81%E7%AE%A1%E7%90%86"><span class="toc-text">Activity 状态管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Activity-%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="toc-text">Activity 的创建</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ActivityRecord%E3%80%81TaskRecord%E3%80%81ActivityStack"><span class="toc-text">ActivityRecord、TaskRecord、ActivityStack</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#ActivityRecord"><span class="toc-text">ActivityRecord</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Android-%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86-Activity-%E7%8A%B6%E6%80%81"><span class="toc-text">Android 如何管理 Activity 状态</span></a></li></ol></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/Android%20Framework"><i class="tag post-item-tag">Android Framework</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">关于 ActivityManagerService</h1><time class="has-text-grey" datetime="2020-04-17T16:00:00.000Z">2020-04-18</time><article class="mt-2 post-content"><p>ActivityManagerService 是 Android 提供的<strong>管理 Activity 运行状态的系统进程</strong>，其实大家别被名字迷惑了，ActivityManagerService（后称AMS）其实也兼任管理其他组件运行状态。</p>
+<span id="more"></span>
+
+<h2 id="AMS概述"><a href="#AMS概述" class="headerlink" title="AMS概述"></a>AMS概述</h2><h3 id="AMS启动流程"><a href="#AMS启动流程" class="headerlink" title="AMS启动流程"></a>AMS启动流程</h3><p>根据<a href="/android-boot/"></a>这篇文章中提到的，init 进程是 Android 系统中的初始化进程，init 生成 Zygote 进程，Android 中大多数应用进程和系统进程都是通过 Zygote 进程生成的。</p>
+<p><img src="/img/ams-1587379033.jpg"></p>
+<p>上面的流程图展示了 AMS 的代码执行流程。我们接下来详细讲讲。</p>
+<p>AMS这种系统级别的服务，一般都是在启动的时候触发，我们可以看一下在 system_server 进程中，是如何启动 AMS 的：</p>
+<pre><code class="java">// com.android.server.SystemServer.java;
+public final class SystemServer &#123;
+    /**
+     * The main entry point from zygote.
+     */
+    public static void main(String[] args) &#123;
+        new SystemServer().run();
+    &#125;
+
+    private void run() &#123;
+        ...
+        // Start services.
+        ...
+        startBootstrapServices();
+        ...
+    &#125;
+
+    private void startBootstrapServices() &#123;
+        ...
+        // Activity manager runs the show.
+        traceBeginAndSlog(&quot;StartActivityManager&quot;);
+        // TODO: Might need to move after migration to WM.
+        ActivityTaskManagerService atm = mSystemServiceManager.startService(
+                ActivityTaskManagerService.Lifecycle.class).getService();
+        // 这里真正启动了 AMS
+        mActivityManagerService = ActivityManagerService.Lifecycle.startService(
+                mSystemServiceManager, atm);
+        mActivityManagerService.setSystemServiceManager(mSystemServiceManager);
+        mActivityManagerService.setInstaller(installer);
+        mWindowManagerGlobalLock = atm.getGlobalLock();
+        ...
+        // 为 system 进程设置 Application 实例
+        mActivityManagerService.setSystemProcess();
+    &#125;
+&#125;
+</code></pre>
+<p>可以看到，启动 AMS 使用的是 AMS 自身的一个静态内部类的<code>startService()</code>方法，我们来看看：</p>
+<p><a target="_blank" rel="noopener" href="https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/am/ActivityManagerService.java">查看ActivityManagerService.java</a></p>
+<pre><code class="java">// ActivityManagerService.java
+public static final class Lifecycle extends SystemService &#123;
+    private final ActivityManagerService mService;
+    ...df
+    public static ActivityManagerService startService(
+            SystemServiceManager ssm, ActivityTaskManagerService atm) &#123;
+        sAtm = atm;
+        return ssm.startService(ActivityManagerService.Lifecycle.class).getService();
+    &#125;
+
+    @Override
+    public void onStart() &#123;
+        mService.start();
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p>这里又调用了<code>SystemServiceManager.startService(Class)</code>方法，我们来看一下：</p>
+<pre><code class="java">// com.android.server.SystemServiceManager.java
+/**
+    * Creates and starts a system service. The class must be a subclass of
+    * &#123;@link com.android.server.SystemService&#125;.
+    *
+    * @param serviceClass A Java class that implements the SystemService interface.
+    * @return The service instance, never null.
+    * @throws RuntimeException if the service fails to start.
+    */
+@SuppressWarnings(&quot;unchecked&quot;)
+public &lt;T extends SystemService&gt; T startService(Class&lt;T&gt; serviceClass) &#123;
+    ...
+    // 通过反射的方式实例化该 service
+    Constructor&lt;T&gt; constructor = serviceClass.getConstructor(Context.class);
+    service = constructor.newInstance(mContext);
+    ...
+    startService(service);
+    return service;
+&#125;
+
+public void startService(@NonNull final SystemService service) &#123;
+    // 注册
+    mServices.add(service);
+    ...
+    // 调用 Lifecycle 的 onStart() 方法
+    service.onStart();
+    ...
+&#125;
+</code></pre>
+<p>可以看到，最后调用到了<code>ActivityManagerService.Lifecycle.onStart()</code>方法，而<code>ActivityManagerService.Lifecycle.onStart()</code>方法又调用了<code>mService.start()</code>方法，进行了一些初始化的工作：</p>
+<pre><code class="java">private void start() &#123;
+    removeAllProcessGroups();
+    mProcessCpuThread.start();
+    mBatteryStatsService.publish();
+    mAppOpsService.publish(mContext);
+    Slog.d(&quot;AppOps&quot;, &quot;AppOpsService published&quot;);
+    LocalServices.addService(ActivityManagerInternal.class, new LocalService());
+    mActivityTaskManager.onActivityManagerInternalAdded();
+    mUgmInternal.onActivityManagerInternalAdded();
+    mPendingIntentController.onActivityManagerInternalAdded();
+    // Wait for the synchronized block started in mProcessCpuThread,
+    // so that any other access to mProcessCpuTracker from main thread
+    // will be blocked during mProcessCpuTracker initialization.
+    try &#123;
+        mProcessCpuInitLatch.await();
+    &#125; catch (InterruptedException e) &#123;
+        Slog.wtf(TAG, &quot;Interrupted wait during start&quot;, e);
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(&quot;Interrupted wait during start&quot;);
+    &#125;
+&#125;
+</code></pre>
+<p>初始化完成后，就会调用<code>mActivityManagerService.setSystemProcess()</code>方法：</p>
+<pre><code class="java">public void setSystemProcess() &#123;
+    ...
+    ServiceManager.addService(Context.ACTIVITY_SERVICE, this, /* allowIsolated= */ true,
+                DUMP_FLAG_PRIORITY_CRITICAL | DUMP_FLAG_PRIORITY_NORMAL | DUMP_FLAG_PROTO);
+    ServiceManager.addService(ProcessStats.SERVICE_NAME, mProcessStats);
+    ServiceManager.addService(&quot;meminfo&quot;, new MemBinder(this), /* allowIsolated= */ false,
+            DUMP_FLAG_PRIORITY_HIGH);
+    ServiceManager.addService(&quot;gfxinfo&quot;, new GraphicsBinder(this));
+    ServiceManager.addService(&quot;dbinfo&quot;, new DbBinder(this));
+    if (MONITOR_CPU_USAGE) &#123;
+        ServiceManager.addService(&quot;cpuinfo&quot;, new CpuBinder(this),
+                /* allowIsolated= */ false, DUMP_FLAG_PRIORITY_CRITICAL);
+    &#125;
+    ServiceManager.addService(&quot;permission&quot;, new PermissionController(this));
+    ServiceManager.addService(&quot;processinfo&quot;, new ProcessInfoService(this));
+    ...
+&#125;
+</code></pre>
+<p>可以看出，通过<code>ServiceManager.addService(Context.ACTIVITY_SERVICE, this, true)</code>方法注册了当前 AMS 的实例。AMS 是一个典型的 Binder Server，ServiceManager 还注册了与 AMS 有关的其他服务（如 CPU、PermissionController等），说明后面 AMS 会与这些服务有很多交互。</p>
+<p>刚才我们跳过了 AMS 的实例化过程，现在我们来看一下它的实例化中，具体都做了哪些工作：</p>
+<pre><code class="java">    // Note: This method is invoked on the main thread but may need to attach various
+    // handlers to other threads.  So take care to be explicit about the looper.
+    public ActivityManagerService(Context systemContext, ActivityTaskManagerService atm) &#123;
+        LockGuard.installLock(this, LockGuard.INDEX_ACTIVITY);
+        mInjector = new Injector();
+        mContext = systemContext;
+
+        mFactoryTest = FactoryTest.getMode();
+
+        // 第一步
+        mSystemThread = ActivityThread.currentActivityThread();
+        mUiContext = mSystemThread.getSystemUiContext();
+
+        Slog.i(TAG, &quot;Memory class: &quot; + ActivityManager.staticGetMemoryClass());
+
+        mHandlerThread = new ServiceThread(TAG,
+                THREAD_PRIORITY_FOREGROUND, false /*allowIo*/);
+        mHandlerThread.start();
+        mHandler = new MainHandler(mHandlerThread.getLooper());
+        mUiHandler = mInjector.getUiHandler(this);
+
+        mProcStartHandlerThread = new ServiceThread(TAG + &quot;:procStart&quot;,
+                THREAD_PRIORITY_FOREGROUND, false /* allowIo */);
+        mProcStartHandlerThread.start();
+        mProcStartHandler = new Handler(mProcStartHandlerThread.getLooper());
+
+        mConstants = new ActivityManagerConstants(mContext, this, mHandler);
+        final ActiveUids activeUids = new ActiveUids(this, true /* postChangesToAtm */);
+        mPlatformCompat = (PlatformCompat) ServiceManager.getService(
+                Context.PLATFORM_COMPAT_SERVICE);
+        mProcessList.init(this, activeUids, mPlatformCompat);
+        mLowMemDetector = new LowMemDetector(this);
+        mOomAdjuster = new OomAdjuster(this, mProcessList, activeUids);
+
+        // 第二步
+        // Broadcast policy parameters
+        final BroadcastConstants foreConstants = new BroadcastConstants(
+                Settings.Global.BROADCAST_FG_CONSTANTS);
+        foreConstants.TIMEOUT = BROADCAST_FG_TIMEOUT;
+
+        final BroadcastConstants backConstants = new BroadcastConstants(
+                Settings.Global.BROADCAST_BG_CONSTANTS);
+        backConstants.TIMEOUT = BROADCAST_BG_TIMEOUT;
+
+        final BroadcastConstants offloadConstants = new BroadcastConstants(
+                Settings.Global.BROADCAST_OFFLOAD_CONSTANTS);
+        offloadConstants.TIMEOUT = BROADCAST_BG_TIMEOUT;
+        // by default, no &quot;slow&quot; policy in this queue
+        offloadConstants.SLOW_TIME = Integer.MAX_VALUE;
+
+        mEnableOffloadQueue = SystemProperties.getBoolean(
+                &quot;persist.device_config.activity_manager_native_boot.offload_queue_enabled&quot;, false);
+        mFgBroadcastQueue = new BroadcastQueue(this, mHandler,
+                &quot;foreground&quot;, foreConstants, false);
+        mBgBroadcastQueue = new BroadcastQueue(this, mHandler,
+                &quot;background&quot;, backConstants, true);
+        mOffloadBroadcastQueue = new BroadcastQueue(this, mHandler,
+                &quot;offload&quot;, offloadConstants, true);
+        mBroadcastQueues[0] = mFgBroadcastQueue;
+        mBroadcastQueues[1] = mBgBroadcastQueue;
+        mBroadcastQueues[2] = mOffloadBroadcastQueue;
+
+        // 第三步
+        mServices = new ActiveServices(this);
+        mProviderMap = new ProviderMap(this);
+        mPackageWatchdog = PackageWatchdog.getInstance(mUiContext);
+        mAppErrors = new AppErrors(mUiContext, this, mPackageWatchdog);
+
+        // 第四步
+        final File systemDir = SystemServiceManager.ensureSystemDir();
+
+        // TODO: Move creation of battery stats service outside of activity manager service.
+        mBatteryStatsService = new BatteryStatsService(systemContext, systemDir,
+                BackgroundThread.get().getHandler());
+        mBatteryStatsService.getActiveStatistics().readLocked();
+        mBatteryStatsService.scheduleWriteToDisk();
+        mOnBattery = DEBUG_POWER ? true
+                : mBatteryStatsService.getActiveStatistics().getIsOnBattery();
+        mBatteryStatsService.getActiveStatistics().setCallback(this);
+        mOomAdjProfiler.batteryPowerChanged(mOnBattery);
+
+        mProcessStats = new ProcessStatsService(this, new File(systemDir, &quot;procstats&quot;));
+
+        mAppOpsService = mInjector.getAppOpsService(new File(systemDir, &quot;appops.xml&quot;), mHandler);
+
+        mUgmInternal = LocalServices.getService(UriGrantsManagerInternal.class);
+
+        // 第五步
+        mUserController = new UserController(this);
+
+        mPendingIntentController = new PendingIntentController(
+                mHandlerThread.getLooper(), mUserController);
+                
+        if (SystemProperties.getInt(&quot;sys.use_fifo_ui&quot;, 0) != 0) &#123;
+            mUseFifoUiScheduling = true;
+        &#125;
+
+        mTrackingAssociations = &quot;1&quot;.equals(SystemProperties.get(&quot;debug.track-associations&quot;));
+        mIntentFirewall = new IntentFirewall(new IntentFirewallInterface(), mHandler);
+
+        mActivityTaskManager = atm;
+
+        mActivityTaskManager.initialize(mIntentFirewall, mPendingIntentController,
+                DisplayThread.get().getLooper());
+        mAtmInternal = LocalServices.getService(ActivityTaskManagerInternal.class);
+
+        // 第六步
+        mProcessCpuThread = new Thread(&quot;CpuTracker&quot;) &#123;
+            @Override
+            public void run() &#123;
+                synchronized (mProcessCpuTracker) &#123;
+                    mProcessCpuInitLatch.countDown();
+                    mProcessCpuTracker.init();
+                &#125;
+                while (true) &#123;
+                    try &#123;
+                        try &#123;
+                            synchronized(this) &#123;
+                                final long now = SystemClock.uptimeMillis();
+                                long nextCpuDelay = (mLastCpuTime.get()+MONITOR_CPU_MAX_TIME)-now;
+                                long nextWriteDelay = (mLastWriteTime+BATTERY_STATS_TIME)-now;
+                                //Slog.i(TAG, &quot;Cpu delay=&quot; + nextCpuDelay
+                                //        + &quot;, write delay=&quot; + nextWriteDelay);
+                                if (nextWriteDelay &lt; nextCpuDelay) &#123;
+                                    nextCpuDelay = nextWriteDelay;
+                                &#125;
+                                if (nextCpuDelay &gt; 0) &#123;
+                                    mProcessCpuMutexFree.set(true);
+                                    this.wait(nextCpuDelay);
+                                &#125;
+                            &#125;
+                        &#125; catch (InterruptedException e) &#123;
+                        &#125;
+                        updateCpuStatsNow();
+                    &#125; catch (Exception e) &#123;
+                        Slog.e(TAG, &quot;Unexpected exception collecting process stats&quot;, e);
+                    &#125;
+                &#125;
+            &#125;
+        &#125;;
+
+        mHiddenApiBlacklist = new HiddenApiSettings(mHandler, mContext);
+
+        Watchdog.getInstance().addMonitor(this);
+        Watchdog.getInstance().addThread(mHandler);
+
+        // bind background threads to little cores
+        // this is expected to fail inside of framework tests because apps can&#39;t touch cpusets directly
+        // make sure we&#39;ve already adjusted system_server&#39;s internal view of itself first
+        updateOomAdjLocked(OomAdjuster.OOM_ADJ_REASON_NONE);
+        try &#123;
+            Process.setThreadGroupAndCpuset(BackgroundThread.get().getThreadId(),
+                    Process.THREAD_GROUP_SYSTEM);
+            Process.setThreadGroupAndCpuset(
+                    mOomAdjuster.mAppCompact.mCompactionThread.getThreadId(),
+                    Process.THREAD_GROUP_SYSTEM);
+        &#125; catch (Exception e) &#123;
+            Slog.w(TAG, &quot;Setting background thread cpuset failed&quot;);
+        &#125;
+    &#125;
+</code></pre>
+<p>我总共将 AMS 的实例化过程总体分为了六个步骤：</p>
+<ol>
+<li>构造一些 Context、Handler 和 Thread，如 uiHandler 等，用来处理 UI 相关的工作；</li>
+<li>定义了容纳前台和后台的广播队列，这也说明了 AMS 不仅仅关注 Activity，也负责其他组件状态的管理；</li>
+<li>管理 Service 和 Provider 的对象数组；</li>
+<li>初始化system下面需要的一系列文件目录。例如权限文件、进程状态信息文件等等；</li>
+<li>管理 ActivityStack，也管理 Activity 启动时用到的 Intent 和 flag；</li>
+<li>启动一个线程专门跟进 cpu 当前状态信息，AMS 对当前 cpu 状态了如指掌，可以更加高效的安排其他工作。</li>
+</ol>
+<h2 id="Activity-状态管理"><a href="#Activity-状态管理" class="headerlink" title="Activity 状态管理"></a>Activity 状态管理</h2><p>先提出几个问题，我们根据问题去看下面的部分：</p>
+<blockquote>
+<p>Activity 是如何被创建的？</p>
+<p>Android 是如何管理 Activity 状态的？</p>
+<p>一个 Task 包含一个或者多个 Activity，一个 Stack 包含一个或者多个 Task，这儿引入 ActivityStack，还有ActivityStackSupervisor 负责管理所有的 Stack。那么这些对象都是如何管理的？</p>
+</blockquote>
+<h3 id="Activity-的创建"><a href="#Activity-的创建" class="headerlink" title="Activity 的创建"></a>Activity 的创建</h3><p>我们在<a href="/about-activity/">关于 Activity 的一切</a>这篇文章中讲过，Activity 是由 ActivityThread 创建的实例，那么 ActivityThread 是由谁创建的？AMS 又是如何介入的呢？我们来看一下。</p>
+<p>在前文中讲过，system_server 在它的<code>main()</code>方法中创建了 SystemServer 的实例，并调用了它的<code>run()</code>方法，在这里有这么一段：</p>
+<pre><code class="java">private void run() &#123;
+    ...
+    // Initialize the system context.
+    createSystemContext();
+    ...
+&#125;
+
+private void createSystemContext() &#123;
+    ActivityThread activityThread = ActivityThread.systemMain();
+    mSystemContext = activityThread.getSystemContext();
+    mSystemContext.setTheme(DEFAULT_SYSTEM_THEME);
+    final Context systemUiContext = activityThread.getSystemUiContext();
+    systemUiContext.setTheme(DEFAULT_SYSTEM_THEME);
+&#125;
+</code></pre>
+<p>system_server 进程似乎是创建了 ActivityThread 的实例，我们看看<code>ActivityThread.systemMain()</code>方法做了什么：</p>
+<pre><code class="java">final ApplicationThread mAppThread = new ApplicationThread();
+
+@UnsupportedAppUsage
+public static ActivityThread systemMain() &#123;
+    ...
+    ActivityThread thread = new ActivityThread();
+    thread.attach(true, 0);
+    return thread;
+&#125;
+
+private void attach(boolean system, long startSeq) &#123;
+    ...
+    // 找到了，AMS 在这里介入了
+    final IActivityManager mgr = ActivityManager.getService();
+    try &#123;
+        mgr.attachApplication(mAppThread, startSeq);
+    &#125; catch (RemoteException ex) &#123;
+        throw ex.rethrowFromSystemServer();
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p>ApplicationThread 是 IApplicationThread.Stub 的子类，而 IApplicationThread 是 AMS 用来与应用进程通讯的接口。</p>
+<p>IActivityManager 是 AMS 的 Binder 接口，应用进程会通过这个接口，用 Binder 机制与 AMS 进行通讯。</p>
+<p>所以，<code>attachApplication()</code>方法一经调用，就将应用进程与 AMS 联系了起来，AMS 就可以管理应用进程中的 Activity 状态了。</p>
+<p>实际上我们仔细看一下 ActivityThread 的代码，我们会发现，AMS 在很多地方都介入了管理，比如下面几处：</p>
+<pre><code class="java">private void handleReceiver(ReceiverData data) &#123;
+    ...
+    IActivityManager mgr = ActivityManager.getService();
+    ...
+    data.sendFinished(mgr);
+    ...
+&#125;
+
+private void handleCreateService(CreateServiceData data) &#123;
+    ...
+    service.attach(context, this, data.info.name, data.token, app,
+                    ActivityManager.getService());
+    ...
+
+&#125;
+
+private void handleBindService(BindServiceData data) &#123;
+    ...
+    if (!data.rebind) &#123;
+        IBinder binder = s.onBind(data.intent);
+        ActivityManager.getService().publishService(
+                data.token, data.intent, binder);
+    &#125; else &#123;
+        s.onRebind(data.intent);
+        ActivityManager.getService().serviceDoneExecuting(
+                data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p>可见，AMS 真的如开头所说，是个多面手，管理了许多 Android 组件的状态与数据。</p>
+<h3 id="ActivityRecord、TaskRecord、ActivityStack"><a href="#ActivityRecord、TaskRecord、ActivityStack" class="headerlink" title="ActivityRecord、TaskRecord、ActivityStack"></a>ActivityRecord、TaskRecord、ActivityStack</h3><p>先来一张图，挑明这三者的关系：</p>
+<p><img src="/img/ams-1587440232.png"></p>
+<ul>
+<li>一个 ActivityStack 中包含多个 TaskRecord</li>
+<li>一个 TaskRecord 中包含一个或多个 ActivityRecord，</li>
+<li>一个 ActivityRecord 就对应着一个 Activity，保存了它的所有信息；同时一个 Activity 可能会生成多个 ActivityRecord，因为由于其启动模式决定了，它有可能被多次启动，会存在多个实例</li>
+</ul>
+<p>那么我们从下往上分析，先来看看 ActivityRecord。</p>
+<h4 id="ActivityRecord"><a href="#ActivityRecord" class="headerlink" title="ActivityRecord"></a>ActivityRecord</h4><blockquote>
+<p>An entry in the history stack, representing an activity.</p>
+</blockquote>
+<p>如代码注释中所言，ActivityRecord 是 Activity 历史栈中的一个条目，代表了一个 Activity。我们看看它比较重要的部分代码：</p>
+<pre><code class="java">// package com.android.server.wm.ActivityRecord.java
+
+final class ActivityRecord extends ConfigurationContainer &#123;
+    final ActivityTaskManagerService mAtmService; // owner
+    final IApplicationToken.Stub appToken; // window manager token
+    final ActivityInfo info; // all about me
+    ApplicationInfo appInfo; // information about activity&#39;s app
+    final Intent intent;    // the original intent that generated us
+    final ComponentName mActivityComponent;  // the intent component, or target of an alias.
+    final String taskAffinity; // as per ActivityInfo.taskAffinity
+    private TaskRecord task;        // the task this is in.
+    ActivityRecord resultTo; // who started this entry, so will get our reply
+    final int requestCode;  // code given by requester (resultTo)
+    int launchMode;         // the launch mode activity attribute.
+    final ActivityStackSupervisor mStackSupervisor;
+&#125;
+</code></pre>
+<h3 id="Android-如何管理-Activity-状态"><a href="#Android-如何管理-Activity-状态" class="headerlink" title="Android 如何管理 Activity 状态"></a>Android 如何管理 Activity 状态</h3><p>先来一张图，我们看看 Activity 的各种生命周期方法是在何时被调用：</p>
+<p><img src="/img/ams-1587435208.jpg"></p>
+<p>这儿写明了回调各个流程的时机，其中包含这对 Activity 状态的处理，这一点非常重要，Android 系统处理的 Activity 很多，我们准确指示当前 Activity 的状态，可以保证 Activity 调用的正确性。</p>
+<p>我们来仔细分析一个事件：Activity 的<code>onPause()</code>事件是如何从触摸屏幕开始触发的。因为触发<code>onPause()</code>的途径有很多种，我们选择一种 —— <strong>按下了 HOME 键</strong>。这是一个非常复杂的过程，我们得一步步来。</p>
+<p>我们在<a href="/view-event-dispatch/">View事件传递机制</a>中提到过，触摸作为一个 InputEvent，由 InputManagerService 来进行处理。</p>
+<p>InputManagerService 此时会收到来自 Native 层的调用：</p>
+<pre><code class="cpp">void NativeInputManager::onPointerDownOutsideFocus(const sp&lt;IBinder&gt;&amp; touchedToken) &#123;
+    ATRACE_CALL();
+    JNIEnv* env = jniEnv();
+    ScopedLocalFrame localFrame(env);
+    jobject touchedTokenObj = javaObjectForIBinder(env, touchedToken);
+    env-&gt;CallVoidMethod(mServiceObj, gServiceClassInfo.onPointerDownOutsideFocus, touchedTokenObj);
+    checkAndClearExceptionFromCallback(env, &quot;onPointerDownOutsideFocus&quot;);
+&#125;
+</code></pre>
+<p>调用了它的<code>onPointerDownOutsideFocus()</code>方法：</p>
+<pre><code class="java">// Native callback. 
+private void onPointerDownOutsideFocus(IBinder touchedToken) &#123;
+    /**
+     * Notifies window manager that a &#123;@link android.view.MotionEvent#ACTION_DOWN&#125; pointer event
+     * occurred on a window that did not have focus.
+     *
+     * @param touchedToken The token for the window that received the input event.
+     */
+    mWindowManagerCallbacks.onPointerDownOutsideFocus(touchedToken);
+&#125;
+</code></pre>
+<p>此处的<code>mWindowManagerCallback</code>是 system_server 在<code>startOtherServices()</code>方法中赋值的，代码如下：</p>
+<pre><code class="java">// com.android.server.SystemServer.java
+
+private void startOtherServices() &#123;
+    ...
+    inputManager = new InputManagerService(context);
+    ...
+    wm = WindowManagerService.main(context, inputManager, !mFirstBoot, mOnlyCore,
+                    new PhoneWindowManager(), mActivityManagerService.mActivityTaskManager);
+    ...
+    inputManager.setWindowManagerCallbacks(wm.getInputManagerCallback());
+&#125;
+</code></pre>
+<p>所以此处的<code>onPointerDownOutsideFocus()</code>方法将由 InputManagerCallback 来实现：</p>
+<pre><code class="java">// com.android.server.wm.InputManagerCallback.java
+
+@Override
+public void onPointerDownOutsideFocus(IBinder touchedToken) &#123;
+    // mService 也即 WindowManagerService 的实例，它的 mH 是一个自定义的 Handler 实例
+    mService.mH.obtainMessage(ON_POINTER_DOWN_OUTSIDE_FOCUS, touchedToken).sendToTarget();
+&#125;
+</code></pre>
+<pre><code class="java">// com.android.server.wm.WindowManagerService.java
+
+class H extends Handler &#123;
+    @Override
+    public void handleMessage(Message msg) &#123;
+        switch(msg.what) &#123;
+            ...
+            case ON_POINTER_DOWN_OUTSIDE_FOCUS: &#123;
+                synchronized (mGlobalLock) &#123;
+                    final IBinder touchedToken = (IBinder) msg.obj;
+                    onPointerDownOutsideFocusLocked(touchedToken);
+                &#125;
+                break;
+            &#125;
+            ...
+        &#125;
+    &#125;
+&#125;
+
+private void onPointerDownOutsideFocusLocked(IBinder touchedToken) &#123;
+    ...
+    handleDisplayFocusChange(touchedWindow);
+&#125;
+
+private void handleDisplayFocusChange(WindowState window) &#123;
+    final DisplayContent displayContent = window.getDisplayContent();
+    ...
+    // For compatibility, only the topmost activity is allowed to be resumed for pre-Q
+    // app. Ensure the topmost activities are resumed whenever a display is moved to top.
+    // TODO(b/123761773): Investigate whether we can move this into
+    // RootActivityContainer#updateTopResumedActivityIfNeeded(). Currently, it is risky
+    // to do so because it seems possible to resume activities as part of a larger
+    // transaction and it&#39;s too early to resume based on current order when performing
+    // updateTopResumedActivityIfNeeded().
+    displayContent.mAcitvityDisplay.ensureActivitiesVisible(null /* starting */,
+            0 /* configChanges */, !PRESERVE_WINDOWS, true /* notifyClients */);
+&#125;
+</code></pre>
+<p>DisplayContent.mAcitvityDisplay 是一个 ActivityDisplay 类型的变量。一个 ActivityDisplay 表示一块屏幕，一般情况下，ActivityDisplay 在 Android 系统中，都只有一个实例。下面是 ActivityDisplay 的简介，可以回头再看。</p>
+<p>::: tip</p>
+<p><strong>关于 ActivityDisplay</strong></p>
+<p>ActivityDisplay 维护了一个 ActivityStack 的栈，并且有添加和移除的方法</p>
+<pre><code class="java">/**
+ * Exactly one of these classes per Display in the system. Capable of holding zero or more
+ * attached &#123;@link ActivityStack&#125;s.
+ */
+class ActivityDisplay &#123;
+    ...
+    /**
+     * All of the stacks on this display. Order matters, topmost stack is in front of all other
+     * stacks, bottommost behind. Accessed directly by ActivityManager package classes. Any calls
+     * changing the list should also call &#123;@link #onStackOrderChanged()&#125;.
+     */
+    final ArrayList&lt;ActivityStack&gt; mStacks = new ArrayList&lt;ActivityStack&gt;();
+    ...
+    void addChild(ActivityStack stack, int position) &#123;
+        if (position == POSITION_BOTTOM) &#123;
+            position = 0;
+        &#125; else if (position == POSITION_TOP) &#123;
+            position = mStacks.size();
+        &#125;
+        addStackReferenceIfNeeded(stack);
+        positionChildAt(stack, position);
+    &#125;
+
+    void removeChild(ActivityStack stack) &#123;
+        mStacks.remove(stack);
+        ...
+        onStackOrderChanged(stack);
+    &#125;
+
+    private void positionChildAt(ActivityStack stack, int position, boolean includingParents,
+            String updateLastFocusedStackReason) &#123;
+        ...
+        final int insertPosition = getTopInsertPosition(stack, position);
+        mStacks.add(insertPosition, stack);
+        ...
+        onStackOrderChanged(stack);
+    &#125;
+&#125;
+</code></pre>
+<p>:::</p>
+<p>我们来看<code>ActivityDisplay.ensureActivitiesVisible()</code>方法的代码：</p>
+<pre><code class="java">void ensureActivitiesVisible(ActivityRecord starting, int configChanges,
+        boolean preserveWindows, boolean notifyClients) &#123;
+    for (int stackNdx = getChildCount() - 1; stackNdx &gt;= 0; --stackNdx) &#123;
+        final ActivityStack stack = getChildAt(stackNdx);
+        stack.ensureActivitiesVisibleLocked(starting, configChanges, preserveWindows,
+                notifyClients);
+    &#125;
+&#125;
+</code></pre>
+<p>循环调用了栈内的 ActivityStack 的<code>ensureActivitiesVisibleLocked()</code>方法：</p>
+<pre><code class="java">// com.android.server.vm.ActivityStack.java
+/**
+ * Ensure visibility with an option to also update the configuration of visible activities.
+ * @see #ensureActivitiesVisibleLocked(ActivityRecord, int, boolean)
+ * @see RootActivityContainer#ensureActivitiesVisible(ActivityRecord, int, boolean)
+ */
+// TODO: Should be re-worked based on the fact that each task as a stack in most cases.
+// 由这个 TODO 可以看出，日后 Android 必定会变成一个 task 中只有一个 stack，毕竟大多数情况下是这样的
+final void ensureActivitiesVisibleLocked(ActivityRecord starting, int configChanges,
+        boolean preserveWindows, boolean notifyClients) &#123;
+    ...
+        for (int taskNdx = mTaskHistory.size() - 1; taskNdx &gt;= 0; --taskNdx) &#123;
+            ...
+            final TaskRecord task = mTaskHistory.get(taskNdx);
+            final ArrayList&lt;ActivityRecord&gt; activities = task.mActivities;
+            for (int activityNdx = activities.size() - 1; activityNdx &gt;= 0; --activityNdx) &#123;
+                final ActivityRecord r = activities.get(activityNdx);
+                ...
+                r.makeClientVisible();
+                ...
+            &#125;
+&#125;
+</code></pre>
+<p>来到了<code>ActivityRecord.makeClientVisible()</code>：</p>
+<pre><code class="java">// com.android.server.wm.ActivityRecord.java
+
+/** Send visibility change message to the client and pause if needed. */
+void makeClientVisible() &#123;
+    ...
+    makeActiveIfNeeded(null /* activeActivity*/);
+    ...
+&#125;
+
+/**
+ * Make activity resumed or paused if needed.
+ * @param activeActivity an activity that is resumed or just completed pause action.
+ *                       We won&#39;t change the state of this activity.
+ */
+boolean makeActiveIfNeeded(ActivityRecord activeActivity) &#123;
+    if (shouldResumeActivity(activeActivity)) &#123;
+        return getActivityStack().resumeTopActivityUncheckedLocked(activeActivity /* prev */,
+                null /* options */);
+    &#125; else if (shouldPauseActivity(activeActivity)) &#123;
+        ...
+    &#125;
+    return false;
+&#125;
+</code></pre>
+<p>又调用了 ActivityStack 的<code>resumeTopActivityUncheckedLocked()</code>方法：</p>
+<pre><code class="java">// com.android.server.wm.ActivityStack.java
+
+/**
+ * Ensure that the top activity in the stack is resumed.
+ *
+ * @param prev The previously resumed activity, for when in the process
+ * of pausing; can be null to call from elsewhere.
+ * @param options Activity options.
+ *
+ * @return Returns true if something is being resumed, or false if
+ * nothing happened.
+ *
+ * NOTE: It is not safe to call this method directly as it can cause an activity in a
+ *       non-focused stack to be resumed.
+ *       Use &#123;@link RootActivityContainer#resumeFocusedStacksTopActivities&#125; to resume the
+ *       right activity for the current system state.
+ */
+@GuardedBy(&quot;mService&quot;)
+boolean resumeTopActivityUncheckedLocked(ActivityRecord prev, ActivityOptions options) &#123;
+    ...
+    result = resumeTopActivityInnerLocked(prev, options);
+    ...
+    return result;
+&#125;
+
+@GuardedBy(&quot;mService&quot;)
+private boolean resumeTopActivityInnerLocked(ActivityRecord prev, ActivityOptions options) &#123;
+    ...
+    pausing |= startPausingLocked(userLeaving, false, next, false);
+    ...
+&#125;
+</code></pre>
+<!--上一节中我们讲过 ActivityRecord、ActivityClientRecord、Activity 的关系，那么Android系统又是如何利用这层对应关系的呢。比如启动 Activity 时需要令上一个 Activity 执行 onPause() 方法。这时会经历以下方法调用链：
+
+ ```java
+ActivityStack.startPausingLocked() 
+IApplicationThread.schudulePauseActivity() 
+ActivityThread.sendMessage() 
+ActivityThread.H.sendMessage(); 
+ActivityThread.H.handleMessage() 
+ActivityThread.handlePauseActivity() 
+ActivityThread.performPauseActivity() 
+Activity.performPause() 
+Activity.onPause() 
+ActivityManagerNative.getDefault().activityPaused(token) 
+ActivityManagerService.activityPaused() 
+ActivityStack.activityPausedLocked() 
+ActivityStack.completePauseLocked()
+``` -->
+
+<pre><code class="java">// com.android.server.wm.ActivityStack.java
+ActivityTaskManagerService mService;
+
+final boolean startPausingLocked(boolean userLeaving, boolean uiSleeping,
+            ActivityRecord resuming, boolean pauseImmediately) &#123;
+    ...
+    ActivityRecord prev = mResumedActivity;
+    ...
+    if (prev.attachedToProcess()) &#123;
+        ...
+        try &#123;
+            ...
+            //prev 就是当前获得焦点的 ActivityRecord，现在的目的是令该 ActivityRecord 对应的 Activity 调用 onPause() 方法
+            ...
+            mService.getLifecycleManager().scheduleTransaction(prev.app.getThread(),
+                    prev.appToken, PauseActivityItem.obtain(prev.finishing, userLeaving,
+                            prev.configChangeFlags, pauseImmediately));
+        &#125; catch (Exception e) &#123;
+            ...
+            mPausingActivity = null;
+            mLastPausedActivity = null;
+            mLastNoHistoryActivity = null;
+        &#125;
+    &#125; else &#123;
+        mPausingActivity = null;
+        mLastPausedActivity = null;
+        mLastNoHistoryActivity = null;
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p><code>mService</code>也即 ActivityTaskManagerService，它的<code>getLifecycleManager()</code>获取了一个 ClientLifecycleManager 的内部实例，然后调用它的<code>schedultTransaction()</code>方法。PauseActivityItem 是 ActivityLifecycleItem 的派生类：</p>
+<pre><code class="java">// com.android.server.wm.ActivityStack.java
+void scheduleTransaction(@NonNull IApplicationThread client, @NonNull IBinder activityToken,
+        @NonNull ActivityLifecycleItem stateRequest) throws RemoteException &#123;
+    final ClientTransaction clientTransaction = transactionWithState(client, activityToken,
+            stateRequest);
+    scheduleTransaction(clientTransaction);
+&#125;
+
+void scheduleTransaction(ClientTransaction transaction) throws RemoteException &#123;
+    final IApplicationThread client = transaction.getClient();
+    transaction.schedule();
+    if (!(client instanceof Binder)) &#123;
+        // If client is not an instance of Binder - it&#39;s a remote call and at this point it is
+        // safe to recycle the object. All objects used for local calls will be recycled after
+        // the transaction is executed on client in ActivityThread.
+        transaction.recycle();
+    &#125;
+&#125;
+</code></pre>
+<p>ClientTransaction 类是一个 Parcelable，看命名方式，就知道这又涉及到 Binder 通讯了：</p>
+<pre><code class="java">// android.app.servertransaction.ClientTransaction
+public class ClientTransaction implements Parcelable, ObjectPoolItem &#123;
+    ...
+    private IApplicationThread mClient;
+    ...
+    // 这里的处理分为3步：
+    // 1. client 端调用 preExecute(ClientTransactionHandler)，将会触发一系列的准备工作，包括设置回调，生命周期管理等等
+    // 2. 准备传递的消息
+    // 3. client 端调用 TransactionExecutor.execute(ClientTransaction)，将会执行所有的回调和生命周期方法
+    public void schedule() throws RemoteException &#123;
+        mClient.scheduleTransaction(this);
+    &#125;
+&#125;
+</code></pre>
+<p>也即将 pauseActivity 的工作交给了交给了应用进程的 ActivityThread：</p>
+<pre><code class="java">@Override
+public void scheduleTransaction(ClientTransaction transaction) throws RemoteException &#123;
+    ActivityThread.this.scheduleTransaction(transaction);
+&#125;
+</code></pre>
+<p>但是 ActivityThread 并没有直接处理这个 transaction，而是又调用了<code>scheduleTransaction()</code>这个方法，这个方法来自于它的<strong>抽象父类</strong>ClientTransactionHandler：</p>
+<pre><code class="java">/**
+ * Defines operations that a &#123;@link android.app.servertransaction.ClientTransaction&#125; or its items
+ * can perform on client.
+ * @hide
+ */
+public abstract class ClientTransactionHandler &#123;
+    // Schedule phase related logic and handlers.
+
+    /** Prepare and schedule transaction for execution. */
+    void scheduleTransaction(ClientTransaction transaction) &#123;
+        transaction.preExecute(this);
+        // H extends Handler， 它定义了 ActivityThread 所需要处理的所有事件的 code
+        // EXECUTE_TRANSACTION 就是其中之一，代表要转换 Activity 的状态了
+        // 而 sendMessage 方法由 ActivityThread 方法实现，最终将消息发送到 ActivityThread 的成员变量 mH 中（H类的实例）
+        sendMessage(ActivityThread.H.EXECUTE_TRANSACTION, transaction);
+    &#125;
+&#125;
+</code></pre>
+<p>我们来看看这个 H 做了什么：</p>
+<pre><code class="java">switch(msg.what) &#123;
+    ...
+    case EXECUTE_TRANSACTION:
+        final ClientTransaction transaction = (ClientTransaction) msg.obj;
+        mTransactionExecutor.execute(transaction);
+        if (isSystem()) &#123;
+            // Client transactions inside system process are recycled on the client side
+            // instead of ClientLifecycleManager to avoid being cleared before this
+            // message is handled.
+            transaction.recycle();
+        &#125;
+        // TODO(lifecycler): Recycle locally scheduled transactions.
+        break;
+    ...
+&#125;
+</code></pre>
+<p>啊。。绕得还真远，又出现了一个 TransactionExecutor 类。这个类的作用是<strong>保证一个 transaction 转换过程能够按照正确的顺序执行</strong>。</p>
+<p>经过一系列调用，最终会运行到它的这一句：</p>
+<pre><code class="java">performLifecycleSequence(r, path, transaction);
+</code></pre>
+<p>这个方法的定义如下：</p>
+<pre><code class="java">private void performLifecycleSequence(ActivityClientRecord r, IntArray path,
+                                                  ClientTransaction transaction) &#123;
+    final int size = path.size();
+        for (int i = 0, state; i &lt; size; i++) &#123;   
+            state = path.get(i);
+            switch (state) &#123;  
+                ...
+                case ON_PAUSE:
+                    mTransactionHandler.handlePauseActivity(r.token, false /* finished */,
+                            false /* userLeaving */, 0 /* configChanges */, mPendingActions,
+                            &quot;LIFECYCLER_PAUSE_ACTIVITY&quot;);
+                    break;
+                ...
+            &#125;                                               
+</code></pre>
+<p>绕啊绕啊绕，最终还是绕回了<code>ActivityThread.handlePauseActivity()</code>方法：</p>
+<pre><code class="java">@Override
+public void handlePauseActivity(IBinder token, boolean finished, boolean userLeaving,
+        int configChanges, PendingTransactionActions pendingActions, String reason) &#123;
+    ActivityClientRecord r = mActivities.get(token);
+    if (r != null) &#123;
+        if (userLeaving) &#123;
+            performUserLeavingActivity(r);
+        &#125;
+
+        r.activity.mConfigChangeFlags |= configChanges;
+        performPauseActivity(r, finished, reason, pendingActions);
+
+        // Make sure any pending writes are now committed.
+        if (r.isPreHoneycomb()) &#123;
+            QueuedWork.waitToFinish();
+        &#125;
+        mSomeActivitiesChanged = true;
+    &#125;
+&#125;
+
+final Bundle performPauseActivity(ActivityClientRecord r, boolean finished, String reason,
+            PendingTransactionActions pendingActions) &#123;
+    ...
+    // 之前启动Activity时会调用 performLaunchActivity()，并在最后以 token 为 Key，ActivityClientRecord 为 value 保存 ActivityClientRecord。
+    // 然后到了 performPauseActivity() 中又会根据 token 取出对应 ActivityClientRecord。
+    // 再调用 ActivityClientRecord 中保存的 activity 的 onPause() 方法
+    performPauseActivityIfNeeded(r, reason);
+    ...
+&#125;
+
+private void performPauseActivityIfNeeded(ActivityClientRecord r, String reason) &#123;
+    ...
+    mInstrumentation.callActivityOnPause(r.activity);
+    ...
+&#125;
+
+public class Instrumentation &#123;
+    public void callActivityOnPause(Activity activity) &#123;
+        activity.performPause();
+    &#125;
+&#125;
+</code></pre>
+<p>至此，才完成了 Activity 的 pause 过程。</p>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/2020-04-20/android-serialization/" title="Android 中的序列化"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: Android 中的序列化</span></a><a class="button is-default" href="/2020-04-02/job-interview/" title="Android 面试题合集"><span class="has-text-weight-semibold">Next: Android 面试题合集</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>
