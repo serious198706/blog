@@ -5,7 +5,7 @@
 
 一、OkHttp 解决了什么问题从库的名字不难看出，OkHttp 解决的是网络问题。在 Android 开发中，网络问题自古以来便是开发者比较头疼的问题。
 在互联网时代，几乎没有任何应用可以完全脱离互联网使用，良好的网络通信设计，对衡量一款 APP 的质量来说，无疑是尤为重要的加分项。
-在上古时期(🙅‍♂️)，Android 开发者们还在使用 HttpUrlConnection.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">透读源码之 OkHttp</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">点击返回顶部</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81OkHttp-%E8%A7%A3%E5%86%B3%E4%BA%86%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="toc-text">一、OkHttp 解决了什么问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84"><span class="toc-text">二、代码结构</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/%E4%B8%89%E6%96%B9%E5%BA%93"><i class="tag post-item-tag">三方库</i></a><a href="/tags/OkHttp"><i class="tag post-item-tag">OkHttp</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">透读源码之 OkHttp</h1><time class="has-text-grey" datetime="2023-03-14T05:00:00.000Z">2023-03-14</time><article class="mt-2 post-content"><p>做 Android 开发的同学们几乎没有不知道 OkHttp 这个网络请求库的了。这个库可以帮我们完成几乎所有类型的、涵盖几乎所有需求的网络请求。</p>
+在上古时期(🙅‍♂️)，Android 开发者们还在使用 HttpUrlConnection.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">透读源码之 OkHttp</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81OkHttp-%E8%A7%A3%E5%86%B3%E4%BA%86%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="toc-text">一、OkHttp 解决了什么问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84"><span class="toc-text">二、代码结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81OkHttp-%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%8C%E6%88%90%E5%AE%83%E7%9A%84%E4%B8%BB%E8%A6%81%E7%9B%AE%E6%A0%87-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E4%B8%80%E6%AC%A1%E7%BD%91%E7%BB%9C%E8%AF%B7%E6%B1%82%E7%9A%84"><span class="toc-text">三、OkHttp 是如何完成它的主要目标 —— 完成一次网络请求的</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/%E4%B8%89%E6%96%B9%E5%BA%93"><i class="tag post-item-tag">三方库</i></a><a href="/tags/OkHttp"><i class="tag post-item-tag">OkHttp</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">透读源码之 OkHttp</h1><time class="has-text-grey" datetime="2023-03-14T05:00:00.000Z">2023-03-14</time><article class="mt-2 post-content"><p>做 Android 开发的同学们几乎没有不知道 OkHttp 这个网络请求库的了。这个库可以帮我们完成几乎所有类型的、涵盖几乎所有需求的网络请求。</p>
 <p>它与大家耳熟能详的 LeakCanary、Retrofit 一样来自大名鼎鼎的 <a target="_blank" rel="noopener" href="https://square.github.io/">Square 公司</a>，截至本文写下时，该库在 Github 上已有 43.7k 的 Start 数量。</p>
 <span id="more"></span>
 
@@ -25,60 +25,60 @@
 <li><code>buildSrc</code>: 项目打包时的一些脚本，可以略过。</li>
 <li><code>logging-interceptor</code>: 日志拦截器。负责记录网络请求和返回内容并打印日志，帮助记录与排查问题。使用方法如下：</li>
 </ol>
-<pre><code class="groovy">    implementation(&quot;com.squareup.okhttp3:logging-interceptor:4.10.0&quot;)
+<pre><code class="groovy">implementation(&quot;com.squareup.okhttp3:logging-interceptor:4.10.0&quot;)
 </code></pre>
-<pre><code class="kotlin">    val logging = HttpLoggingInterceptor()
-    logging.setLevel(HttpLoggingInterceptor.Level.BASIC)
-    val client = OkHttpClient.Builder()
-        .addInterceptor(logging)
-        .build()
+<pre><code class="kotlin">val logging = HttpLoggingInterceptor()
+logging.setLevel(HttpLoggingInterceptor.Level.BASIC)
+val client = OkHttpClient.Builder()
+    .addInterceptor(logging)
+    .build()
 </code></pre>
 <ol start="3">
 <li><code>mockwebserver(3/3-juni4/3-junit5)</code>: 模拟服务器，一般用于本地的模拟 API 请求测试，针对不同的 junit 版本做出了适配。使用方法如下：</li>
 </ol>
-<pre><code class="groovy">    testImplementation(&quot;com.squareup.okhttp3:mockwebserver:4.10.0&quot;)
+<pre><code class="groovy">testImplementation(&quot;com.squareup.okhttp3:mockwebserver:4.10.0&quot;)
 </code></pre>
-<pre><code class="kotlin">    @Throws(Exception::class)
-    fun test() &#123;
-        // 创建 MokWebServer 的实例。每个单元测试都可以创建不同的实例。
-        val server = MockWebServer()
+<pre><code class="kotlin">@Throws(Exception::class)
+fun test() &#123;
+    // 创建 MokWebServer 的实例。每个单元测试都可以创建不同的实例。
+    val server = MockWebServer()
 
-        // 计划一些回应消息
-        server.enqueue(MockResponse(body = &quot;hello, world!&quot;))
-        server.enqueue(MockResponse(body = &quot;sup, bra?&quot;))
-        server.enqueue(MockResponse(body = &quot;yo dog&quot;))
+    // 计划一些回应消息
+    server.enqueue(MockResponse(body = &quot;hello, world!&quot;))
+    server.enqueue(MockResponse(body = &quot;sup, bra?&quot;))
+    server.enqueue(MockResponse(body = &quot;yo dog&quot;))
 
-        // 启动服务
-        server.start()
+    // 启动服务
+    server.start()
 
-        val baseUrl: okhttp3.HttpUrl = server.url(&quot;/v1/chat/&quot;)
+    val baseUrl: okhttp3.HttpUrl = server.url(&quot;/v1/chat/&quot;)
 
-        // 模拟请求
-        val chat = Chat(baseUrl)
-        chat.loadMore()
-        assertEquals(&quot;hello, world!&quot;, chat.messages())
-        chat.loadMore()
-        chat.loadMore()
-        assertEquals(
-        &quot;&quot;&quot;
-            hello, world!
-            sup, bra?
-            yo dog
-            &quot;&quot;&quot;.trimIndent(), chat.messages()
-        )
+    // 模拟请求
+    val chat = Chat(baseUrl)
+    chat.loadMore()
+    assertEquals(&quot;hello, world!&quot;, chat.messages())
+    chat.loadMore()
+    chat.loadMore()
+    assertEquals(
+    &quot;&quot;&quot;
+        hello, world!
+        sup, bra?
+        yo dog
+        &quot;&quot;&quot;.trimIndent(), chat.messages()
+    )
 
-        // 可选：确定你的应用请求了正确路径
-        val request1 = server.takeRequest()
-        assert(&quot;/v1/chat/messages/&quot; == request1.path)
-        assert(request1.getHeader(&quot;Authorization&quot;) != null)
-        val request2 = server.takeRequest()
-        assert(&quot;/v1/chat/messages/2&quot; == request2.path)
-        val request3 = server.takeRequest()
-        assert(&quot;/v1/chat/messages/3&quot; == request3.path)
+    // 可选：确定你的应用请求了正确路径
+    val request1 = server.takeRequest()
+    assert(&quot;/v1/chat/messages/&quot; == request1.path)
+    assert(request1.getHeader(&quot;Authorization&quot;) != null)
+    val request2 = server.takeRequest()
+    assert(&quot;/v1/chat/messages/2&quot; == request2.path)
+    val request3 = server.takeRequest()
+    assert(&quot;/v1/chat/messages/3&quot; == request3.path)
 
-        // 关闭服务
-        server.shutdown()
-    &#125;
+    // 关闭服务
+    server.shutdown()
+&#125;
 </code></pre>
 <p>这部分代码我们在之后会再进行介绍。</p>
 <ol start="4">
@@ -87,23 +87,23 @@
 <li><code>okhttp-android</code>: 针对 Android 系统增加的一些文件，主要是一些 Extension 方法，以及 Android 上的 DNS 解析器。</li>
 <li><code>okhttp-bom</code>: 针对 Gradle 的<a target="_blank" rel="noopener" href="https://docs.gradle.org/6.2/userguide/platforms.html#sub:bom_import">BOM(Bill-of-Materials)</a>特性的编译脚本，能够让 gradle 支持如下写法：</li>
 </ol>
-<pre><code class="groovy">    dependencies &#123;
-       // define a BOM and its version
-       implementation(platform(&quot;com.squareup.okhttp3:okhttp-bom:4.10.0&quot;))
+<pre><code class="groovy">dependencies &#123;
+    // define a BOM and its version
+    implementation(platform(&quot;com.squareup.okhttp3:okhttp-bom:4.10.0&quot;))
 
-       // define any required OkHttp artifacts without version
-       implementation(&quot;com.squareup.okhttp3:okhttp&quot;)
-       implementation(&quot;com.squareup.okhttp3:logging-interceptor&quot;)
-    &#125;
+    // define any required OkHttp artifacts without version
+    implementation(&quot;com.squareup.okhttp3:okhttp&quot;)
+    implementation(&quot;com.squareup.okhttp3:logging-interceptor&quot;)
+&#125;
 </code></pre>
 <ol start="8">
 <li><code>okhttp-brotli</code>: 使用 <a target="_blank" rel="noopener" href="https://github.com/google/brotli">Brotli 压缩算法</a> 制作的拦截器。主要用来实现网络传输中的 GZip 压缩。它依赖了 brotli 库。使用方法如下：</li>
 </ol>
-<pre><code class="groovy">    implementation(&quot;com.squareup.okhttp3:okhttp-brotli:4.10.0&quot;)
+<pre><code class="groovy">implementation(&quot;com.squareup.okhttp3:okhttp-brotli:4.10.0&quot;)
 </code></pre>
-<pre><code class="kotlin">    val client = OkHttpClient.Builder()
-        .addInterceptor(BrotliInterceptor.INSTANCE)
-        .build() 
+<pre><code class="kotlin">val client = OkHttpClient.Builder()
+    .addInterceptor(BrotliInterceptor.INSTANCE)
+    .build() 
 </code></pre>
 <ol start="9">
 <li><code>okhttp-coroutines</code>: 该 module 用来支持 Kotlin 的协程。</li>
@@ -115,4 +115,220 @@
 <li><code>okhttp-urlconnection</code>: 从 <code>java.net</code> 包中集成了 <code>Authenticator</code> 和 <code>CookieHandler</code>。主要用于测试。</li>
 <li><code>samples</code>: 一些使用例子。初次使用建议先从 Samples 看起，可以了解一些初级用法和高级用法。但大多数时候，官网的教程足以涵盖绝大多数需求。</li>
 </ol>
-</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em><a class="button is-default" href="/2023-03-14/thesourcecode/" title="透读源码之开篇"><span class="has-text-weight-semibold">下一页: 透读源码之开篇</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>
+<h3 id="三、OkHttp-是如何完成它的主要目标-——-完成一次网络请求的"><a href="#三、OkHttp-是如何完成它的主要目标-——-完成一次网络请求的" class="headerlink" title="三、OkHttp 是如何完成它的主要目标 —— 完成一次网络请求的"></a>三、OkHttp 是如何完成它的主要目标 —— 完成一次网络请求的</h3><p>带着问题，我们来看代码。</p>
+<p>第一步，我们先来整体看核心部分的代码。如下图所示：</p>
+<p><img src="/img/okhttp-2.png"></p>
+<p>在 <code>api</code> 目录中有个 <code>okhttp.api</code> 文件，其内容如下：</p>
+<pre><code>public final class okhttp3/Address &#123;
+    public final fun -deprecated_certificatePinner ()Lokhttp3/CertificatePinner;
+    public final fun -deprecated_connectionSpecs ()Ljava/util/List;
+    public final fun -deprecated_dns ()Lokhttp3/Dns;
+    public final fun -deprecated_hostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
+    public final fun -deprecated_protocols ()Ljava/util/List;
+    public final fun -deprecated_proxy ()Ljava/net/Proxy;
+    public final fun -deprecated_proxyAuthenticator ()Lokhttp3/Authenticator;
+    public final fun -deprecated_proxySelector ()Ljava/net/ProxySelector;
+    public final fun -deprecated_socketFactory ()Ljavax/net/SocketFactory;
+    public final fun -deprecated_sslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
+    public final fun -deprecated_url ()Lokhttp3/HttpUrl;
+    public fun &lt;init&gt; (Ljava/lang/String;ILokhttp3/Dns;Ljavax/net/SocketFactory;Ljavax/net/ssl/SSLSocketFactory;Ljavax/net/ssl/HostnameVerifier;Lokhttp3/CertificatePinner;Lokhttp3/Authenticator;Ljava/net/Proxy;Ljava/util/List;Ljava/util/List;Ljava/net/ProxySelector;)V
+    public final fun certificatePinner ()Lokhttp3/CertificatePinner;
+    public final fun connectionSpecs ()Ljava/util/List;
+    public final fun dns ()Lokhttp3/Dns;
+    public fun equals (Ljava/lang/Object;)Z
+    public fun hashCode ()I
+    public final fun hostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
+    public final fun protocols ()Ljava/util/List;
+    public final fun proxy ()Ljava/net/Proxy;
+    public final fun proxyAuthenticator ()Lokhttp3/Authenticator;
+    public final fun proxySelector ()Ljava/net/ProxySelector;
+    public final fun socketFactory ()Ljavax/net/SocketFactory;
+    public final fun sslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
+    public fun toString ()Ljava/lang/String;
+    public final fun url ()Lokhttp3/HttpUrl;
+&#125;
+...
+</code></pre>
+<p>我只截取了其中一部分，这个文件是为了使用 <a target="_blank" rel="noopener" href="https://go-zero.dev/cn/docs/goctl/goctl/">goctl</a>，以自动生成代码。类似的工具还有 Google 发明的 protobuf。有兴趣的可以去 goctl 的官网看一下。</p>
+<p>第二步，我们从代码的入口开始看。</p>
+<p>我们先来看看，平时在使用 OkHttp 时，是如何使用的：</p>
+<pre><code class="kotlin">val client = OkHttpClient()
+val request = Request.Builder()
+    .url(&quot;https://www.google.com&quot;)
+    .build()
+
+// 同步方法
+try &#123;
+    val response = client.newCall(request).execute() 
+    print(response.body.string())
+&#125; catch (e: IOException) &#123;
+    e.printStackTrace()
+&#125;
+
+// 异步回调方法
+try &#123;
+    client.newCall(request).enqueue(object : Callback &#123;
+        override fun onFailure(call: Call, e: IOException) &#123;
+        &#125;
+
+        override fun onResponse(call: Call, response: Response) &#123;
+        &#125;
+    &#125;)
+&#125; catch (e: Exception) &#123;
+    e.printStackTrace()
+&#125;
+</code></pre>
+<p>先创建 <code>OkHttpClient</code> 实例，接着使用 Builder 模式构建一个 <code>Request</code> 实例，然后请求，得到结果。</p>
+<p>我们一个个看，先看 <code>OkHttpClient</code>。</p>
+<pre><code class="kotlin">// okhttp3.OkHttpClient
+/**
+ * Factory for [calls][Call], which can be used to send HTTP requests and read their responses.
+ *
+ * ## OkHttpClients Should Be Shared
+ *
+ * OkHttp performs best when you create a single `OkHttpClient` instance and reuse it for all of
+ * your HTTP calls. This is because each client holds its own connection pool and thread pools.
+ * Reusing connections and threads reduces latency and saves memory. Conversely, creating a client
+ * for each request wastes resources on idle pools.
+ ..
+**/
+open class OkHttpClient internal constructor(
+  builder: Builder
+) : Call.Factory, WebSocket.Factory &#123;
+    @get:JvmName(&quot;dispatcher&quot;)
+    val dispatcher: Dispatcher = builder.dispatcher  // 请求调度器
+
+    ...
+    constructor() : this(Builder())
+    ...
+
+
+    init &#123;
+        if (connectionSpecs.none &#123; it.isTls &#125;) &#123;
+            this.sslSocketFactoryOrNull = null
+            this.certificateChainCleaner = null
+            this.x509TrustManager = null
+            this.certificatePinner = CertificatePinner.DEFAULT
+        &#125; else if (builder.sslSocketFactoryOrNull != null) &#123;
+            this.sslSocketFactoryOrNull = builder.sslSocketFactoryOrNull
+            this.certificateChainCleaner = builder.certificateChainCleaner!!
+            this.x509TrustManager = builder.x509TrustManagerOrNull!!
+            this.certificatePinner = builder.certificatePinner.withCertificateChainCleaner(certificateChainCleaner!!)
+        &#125; else &#123;
+            this.x509TrustManager = Platform.get().platformTrustManager()
+            this.sslSocketFactoryOrNull = Platform.get().newSslSocketFactory(x509TrustManager!!)
+            this.certificateChainCleaner = CertificateChainCleaner.get(x509TrustManager!!)
+            this.certificatePinner = builder.certificatePinner.withCertificateChainCleaner(certificateChainCleaner!!)
+        &#125;
+
+        verifyClientState()
+    &#125;
+
+    private fun verifyClientState() &#123;
+        check(null !in (interceptors as List&lt;Interceptor?&gt;)) &#123;
+            &quot;Null interceptor: $interceptors&quot;
+        &#125;
+        check(null !in (networkInterceptors as List&lt;Interceptor?&gt;)) &#123;
+            &quot;Null network interceptor: $networkInterceptors&quot;
+        &#125;
+
+        if (connectionSpecs.none &#123; it.isTls &#125;) &#123;
+            check(sslSocketFactoryOrNull == null)
+            check(certificateChainCleaner == null)
+            check(x509TrustManager == null)
+            check(certificatePinner == CertificatePinner.DEFAULT)
+        &#125; else &#123;
+            checkNotNull(sslSocketFactoryOrNull) &#123; &quot;sslSocketFactory == null&quot; &#125;
+            checkNotNull(certificateChainCleaner) &#123; &quot;certificateChainCleaner == null&quot; &#125;
+            checkNotNull(x509TrustManager) &#123; &quot;x509TrustManager == null&quot; &#125;
+        &#125;
+    &#125;
+&#125;
+</code></pre>
+<p>我们看到，<code>OkHttpClient</code> 的构造函数中，调用了内部的一个 <code>Builder</code> 类。然后在 <code>init</code> 方法中进行了一些初始化与检查。</p>
+<pre><code class="kotlin">class Builder() &#123;
+    internal var dispatcher: Dispatcher = Dispatcher()
+    internal var connectionPool: ConnectionPool = ConnectionPool()
+    internal val interceptors: MutableList&lt;Interceptor&gt; = mutableListOf()
+    internal val networkInterceptors: MutableList&lt;Interceptor&gt; = mutableListOf()
+    internal var eventListenerFactory: EventListener.Factory = EventListener.NONE.asFactory()
+    internal var retryOnConnectionFailure = true
+    internal var fastFallback = true
+    internal var authenticator: Authenticator = Authenticator.NONE
+    internal var followRedirects = true
+    internal var followSslRedirects = true
+    internal var cookieJar: CookieJar = CookieJar.NO_COOKIES
+    internal var cache: Cache? = null
+    internal var dns: Dns = Dns.SYSTEM
+    internal var proxy: Proxy? = null
+    internal var proxySelector: ProxySelector? = null
+    internal var proxyAuthenticator: Authenticator = Authenticator.NONE
+    internal var socketFactory: SocketFactory = SocketFactory.getDefault()
+    internal var sslSocketFactoryOrNull: SSLSocketFactory? = null
+    internal var x509TrustManagerOrNull: X509TrustManager? = null
+    internal var connectionSpecs: List&lt;ConnectionSpec&gt; = DEFAULT_CONNECTION_SPECS
+    internal var protocols: List&lt;Protocol&gt; = DEFAULT_PROTOCOLS
+    internal var hostnameVerifier: HostnameVerifier = OkHostnameVerifier
+    internal var certificatePinner: CertificatePinner = CertificatePinner.DEFAULT
+    internal var certificateChainCleaner: CertificateChainCleaner? = null
+    internal var callTimeout = 0
+    internal var connectTimeout = 10_000
+    internal var readTimeout = 10_000
+    internal var writeTimeout = 10_000
+    internal var pingInterval = 0
+    internal var minWebSocketMessageToCompress = RealWebSocket.DEFAULT_MINIMUM_DEFLATE_SIZE
+    internal var routeDatabase: RouteDatabase? = null
+    internal var taskRunner: TaskRunner? = null
+    ...
+&#125;
+</code></pre>
+<p>在 <code>Builder</code> 的初始化中，赋值了各种内部成员变量的初始值。</p>
+<p>接下来，Client 就会等待提交新的 Request。</p>
+<pre><code class="kotlin">/** Prepares the [request] to be executed at some point in the future. */
+override fun newCall(request: Request): Call = RealCall(this, request, forWebSocket = false)
+</code></pre>
+<pre><code class="kotlin">// okhttp3.internal.connection.RealCall
+
+/**
+ * Bridge between OkHttp&#39;s application and network layers. This class exposes high-level application
+ * layer primitives: connections, requests, responses, and streams.
+ *
+ * This class supports [asynchronous canceling][cancel]. This is intended to have the smallest
+ * blast radius possible. If an HTTP/2 stream is active, canceling will cancel that stream but not
+ * the other streams sharing its connection. But if the TLS handshake is still in progress then
+ * canceling may break the entire connection.
+ */
+class RealCall(
+    val client: OkHttpClient,
+    /** The application&#39;s original request unadulterated by redirects or auth headers. */
+    val originalRequest: Request,
+    val forWebSocket: Boolean
+) : Call, Cloneable &#123;
+    ...
+&#125;
+</code></pre>
+<p>注释机翻：这个类是 OkHttp 的应用层和网络层之间的桥梁。它暴露了高级应用层的基本操作：连接、请求、响应和流。此类支持异步取消操作，旨在尽可能地减少影响范围。如果存在活跃的 HTTP/2 流，取消操作将取消该流，但不会影响共享同一连接的其他流。但是，如果 TLS 握手仍在进行中，则取消操作可能会中断整个连接。</p>
+<p>说人话版：这个类的功能就是前面说的『它是一个基于传输层（还记得网络的7层架构吗？）实现应用层协议的网络框架』。它起到了一个承上启下的作用，为底层<strong>网络层</strong>与上层<strong>应用层</strong>进行连接，同时也有一些自己的小九九，比如支持异步取消等。</p>
+<p>初始化完成后，如果是执行 <code>execute()</code> 方法，我们来看看是如何执行的：</p>
+<pre><code class="kotlin">override fun execute(): Response &#123;
+    // AtomicBoolean 保证原子操作的唯一性
+    check(executed.compareAndSet(false, true)) &#123; &quot;Already Executed&quot; &#125;
+
+    timeout.enter()
+    callStart()
+    try &#123;
+        // 将此次请求的信息交给 OkHttpClient 中的请求调度器
+        client.dispatcher.executed(this)
+        return getResponseWithInterceptorChain()
+    &#125; finally &#123;
+        client.dispatcher.finished(this)
+    &#125;
+&#125;
+
+private fun callStart() &#123;
+    this.callStackTrace = Platform.get().getStackTraceForCloseable(&quot;response.body().close()&quot;)
+    eventListener.callStart(this)
+&#125;
+</code></pre>
+<p><code>callStart()</code> 方法用来设置事件回调，如果你设置了监听事件（比如使用了 logging-interceptor），在触发相应事件时就会得到回调。</p>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em><a class="button is-default" href="/2023-03-14/thesourcecode/" title="透读源码之开篇"><span class="has-text-weight-semibold">Next: 透读源码之开篇</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>
