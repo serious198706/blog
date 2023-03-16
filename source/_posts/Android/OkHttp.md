@@ -159,7 +159,7 @@ val client = OkHttpClient.Builder()
 
 在 `api` 目录中有个 `okhttp.api` 文件，其内容如下：
 
-```
+```java
 public final class okhttp3/Address {
 	public final fun -deprecated_certificatePinner ()Lokhttp3/CertificatePinner;
 	public final fun -deprecated_connectionSpecs ()Ljava/util/List;
@@ -396,3 +396,536 @@ private fun callStart() {
 ```
 
 `callStart()` 方法用来设置事件回调，如果你设置了监听事件（比如使用了 logging-interceptor），在触发相应事件时就会得到回调。
+
+然后 `RealCall` 对象就通过 `client.dispatcher.executed(this)` 被交给了 `OkHttpClient` 中的 `Dispatcher`：
+
+```kotlin
+// okhttp3.Dispatcher
+
+/**
+ * Policy on when async requests are executed.
+ *
+ * Each dispatcher uses an [ExecutorService] to run calls internally. If you supply your own
+ * executor, it should be able to run [the configured maximum][maxRequests] number of calls
+ * concurrently.
+ */
+class Dispatcher() {
+    ...
+    private var executorServiceOrNull: ExecutorService? = null
+
+    @get:Synchronized
+    @get:JvmName("executorService")
+    val executorService: ExecutorService
+        get() {
+            if (executorServiceOrNull == null) {
+                executorServiceOrNull = ThreadPoolExecutor(0, Int.MAX_VALUE, 60, TimeUnit.SECONDS,
+                    SynchronousQueue(), threadFactory("$okHttpName Dispatcher", false)
+                )
+            }
+            return executorServiceOrNull!!
+        }
+
+    /** Ready async calls in the order they'll be run. */
+    private val readyAsyncCalls = ArrayDeque<AsyncCall>()
+
+    /** Running asynchronous calls. Includes canceled calls that haven't finished yet. */
+    private val runningAsyncCalls = ArrayDeque<AsyncCall>()
+
+    /** Running synchronous calls. Includes canceled calls that haven't finished yet. */
+    private val runningSyncCalls = ArrayDeque<RealCall>()
+
+    constructor(executorService: ExecutorService) : this() {
+        this.executorServiceOrNull = executorService
+    }
+
+    ...
+
+    /** Used by [Call.execute] to signal it is in-flight. */
+    @Synchronized
+    internal fun executed(call: RealCall) {
+        runningSyncCalls.add(call)
+    }
+
+    /** Used by [Call.execute] to signal completion. */
+    internal fun finished(call: RealCall) {
+        finished(runningSyncCalls, call)
+    }
+
+    private fun <T> finished(calls: Deque<T>, call: T) {
+        val idleCallback: Runnable?
+        synchronized(this) {
+            if (!calls.remove(call)) throw AssertionError("Call wasn't in-flight!")
+            idleCallback = this.idleCallback
+        }
+
+        val isRunning = promoteAndExecute()
+
+        if (!isRunning && idleCallback != null) {
+            idleCallback.run()
+        }
+    }
+    ...
+}
+```
+
+可以看到，Dispatcher 是一个基于 `ExecutorService` + `ArrayDeque` 实现的调度器，当有新的请求过来时，请求会被扔到 `runningSyncCalls` 中。而 `executorService` 是一个 `0` 核心线程，使用 `SynchronousQueue` 来做为工作队列的线程池。`ArrayDeque` 是 Java 中的标准类，是 `Array Double Ended Queue` 的缩写，它的功能是可以允许在数组的两端插入或移除元素。
+
+接下来我们看看比较重要的 `getResponseWithInterceptorChain()`：
+
+```kotlin
+@Throws(IOException::class)
+internal fun getResponseWithInterceptorChain(): Response {
+    // Build a full stack of interceptors.
+    val interceptors = mutableListOf<Interceptor>()
+    interceptors += client.interceptors    // 用户自定义的拦截器
+    interceptors += RetryAndFollowUpInterceptor(client)     // 请求失败重试拦截器
+    interceptors += BridgeInterceptor(client.cookieJar)     // 网络请求『桥梁』拦截器，该拦截器负责将网络请求传递到网络层，并根据网络层返回的数据生成 Response
+    interceptors += CacheInterceptor(client.cache)          // 缓存拦截器，用于从缓存中读取请求，并将返回结果写入缓存
+    interceptors += ConnectInterceptor                      // 开启向目标服务器的链接，然后继续传递向下一个拦截器
+    if (!forWebSocket) {
+        interceptors += client.networkInterceptors          // 如果是 webSocket 请求，则要添加对应的拦截器
+    }
+    interceptors += CallServerInterceptor(forWebSocket)     // 这是最后一个拦截器，用于给服务器疯狂打Call（大雾）
+
+    val chain = RealInterceptorChain(                       // 拦截器链
+        call = this,
+        interceptors = interceptors,
+        index = 0,
+        exchange = null,                                    // 在 RealInterceptorChain 的注释中提到，如果该拦截器链是给应用层的，
+        request = originalRequest,                          // 那么 exchange 必须为 null；如果该拦截器链是给网络层的，那必须不为 null。
+        connectTimeoutMillis = client.connectTimeoutMillis,
+        readTimeoutMillis = client.readTimeoutMillis,
+        writeTimeoutMillis = client.writeTimeoutMillis
+    )
+
+    var calledNoMoreExchanges = false
+    try {
+        val response = chain.proceed(originalRequest)       // 开始链式处理
+        if (isCanceled()) {
+            response.closeQuietly()
+            throw IOException("Canceled")
+        }
+        return response
+    } catch (e: IOException) {
+        calledNoMoreExchanges = true
+        throw noMoreExchanges(e) as Throwable
+    } finally {
+        if (!calledNoMoreExchanges) {
+            noMoreExchanges(null)
+        }
+    }
+}
+```
+
+该方法加入了很多默认的拦截器(interceptor)，以及开发者自定义的拦截器(`client.interceptors`)，拦截器类的定义如下：
+
+```kotlin
+/**
+ * Observes, modifies, and potentially short-circuits requests going out and the corresponding
+ * responses coming back in. Typically interceptors add, remove, or transform headers on the request
+ * or response.
+ *
+ * Implementations of this interface throw [IOException] to signal connectivity failures. This
+ * includes both natural exceptions such as unreachable servers, as well as synthetic exceptions
+ * when responses are of an unexpected type or cannot be decoded.
+ *
+ * Other exception types cancel the current call:
+ *
+ *  * For synchronous calls made with [Call.execute], the exception is propagated to the caller.
+ *
+ *  * For asynchronous calls made with [Call.enqueue], an [IOException] is propagated to the caller
+ *    indicating that the call was canceled. The interceptor's exception is delivered to the current
+ *    thread's [uncaught exception handler][Thread.UncaughtExceptionHandler]. By default this
+ *    crashes the application on Android and prints a stacktrace on the JVM. (Crash reporting
+ *    libraries may customize this behavior.)
+ *
+ * A good way to signal a failure is with a synthetic HTTP response:
+ *
+ * ```
+ *   @Throws(IOException::class)
+ *   override fun intercept(chain: Interceptor.Chain): Response {
+ *     if (myConfig.isInvalid()) {
+ *       return Response.Builder()
+ *           .request(chain.request())
+ *           .protocol(Protocol.HTTP_1_1)
+ *           .code(400)
+ *           .message("client config invalid")
+ *           .body("client config invalid".toResponseBody(null))
+ *           .build()
+ *     }
+ *
+ *     return chain.proceed(chain.request())
+ *   }
+ * ```
+ */
+fun interface Interceptor {
+  @Throws(IOException::class)
+  fun intercept(chain: Chain): Response
+
+  companion object {
+    /**
+     * Constructs an interceptor for a lambda. This compact syntax is most useful for inline
+     * interceptors.
+     *
+     * val interceptor = Interceptor { chain: Interceptor.Chain ->
+     *     chain.proceed(chain.request())
+     * }
+     * 
+     */
+    inline operator fun invoke(crossinline block: (chain: Chain) -> Response): Interceptor =
+      Interceptor { block(it) }
+  }
+
+  interface Chain {
+    fun request(): Request
+
+    @Throws(IOException::class)
+    fun proceed(request: Request): Response
+
+    /**
+     * 返回要执行的请求的 Connection 对象，只对网络层拦截器有效，对应用层拦截器永远返回 null。
+     */
+    fun connection(): Connection?
+
+    fun call(): Call
+
+    fun connectTimeoutMillis(): Int
+
+    fun withConnectTimeout(timeout: Int, unit: TimeUnit): Chain
+
+    fun readTimeoutMillis(): Int
+
+    fun withReadTimeout(timeout: Int, unit: TimeUnit): Chain
+
+    fun writeTimeoutMillis(): Int
+
+    fun withWriteTimeout(timeout: Int, unit: TimeUnit): Chain
+  }
+}
+```
+
+每一个自定义的拦截器需要覆盖 `intercept(chain: Chain)` 方法，同时在返回值里调用 `chain.proceed(chain.request())` 来将当前的 `Request` 对象交给下一个拦截器。因此，拦截器添加的**顺序**很重要。
+
+我们看三个比较重要的拦截器：`BridgeInterceptor`、`ConnectInterceptor` 和 `CallServerInterceptor`。
+
+```kotlin
+// okhttp3.internal.http.BridgeInterceptor
+
+/**
+ * Bridges from application code to network code. First it builds a network request from a user
+ * request. Then it proceeds to call the network. Finally it builds a user response from the network
+ * response.
+ *
+ * 机翻：应用代码与网络代码之间的桥梁。它会从用户的 Request 中先创建一个网络 Request，然后给网络层疯狂打 Call，最后将网络层的返回打包成一个用户所需的 Response。
+ */
+class BridgeInterceptor(private val cookieJar: CookieJar) : Interceptor {
+
+    @Throws(IOException::class)
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val userRequest = chain.request()
+        val requestBuilder = userRequest.newBuilder()
+
+        val body = userRequest.body
+        if (body != null) {
+            val contentType = body.contentType()
+            if (contentType != null) {
+                requestBuilder.header("Content-Type", contentType.toString())
+            }
+
+            val contentLength = body.contentLength()
+            if (contentLength != -1L) {
+                requestBuilder.header("Content-Length", contentLength.toString())
+                requestBuilder.removeHeader("Transfer-Encoding")
+            } else {
+                requestBuilder.header("Transfer-Encoding", "chunked")
+                requestBuilder.removeHeader("Content-Length")
+            }
+        }
+
+        if (userRequest.header("Host") == null) {
+            requestBuilder.header("Host", userRequest.url.toHostHeader())
+        }
+
+        if (userRequest.header("Connection") == null) {
+            requestBuilder.header("Connection", "Keep-Alive")
+        }
+
+        // If we add an "Accept-Encoding: gzip" header field we're responsible for also decompressing
+        // the transfer stream.
+        var transparentGzip = false
+        if (userRequest.header("Accept-Encoding") == null && userRequest.header("Range") == null) {
+            transparentGzip = true
+            requestBuilder.header("Accept-Encoding", "gzip")
+        }
+
+        val cookies = cookieJar.loadForRequest(userRequest.url)
+        if (cookies.isNotEmpty()) {
+            requestBuilder.header("Cookie", cookieHeader(cookies))
+        }
+
+        if (userRequest.header("User-Agent") == null) {
+            requestBuilder.header("User-Agent", userAgent)
+        }
+
+        val networkRequest = requestBuilder.build()
+
+        ////// 1️⃣ 此处代码暂停向下进行，先将请求传递给下一个拦截器处理
+        val networkResponse = chain.proceed(networkRequest)
+
+        cookieJar.receiveHeaders(networkRequest.url, networkResponse.headers)
+
+        val responseBuilder = networkResponse.newBuilder()
+            .request(networkRequest)
+
+        if (transparentGzip &&
+            "gzip".equals(networkResponse.header("Content-Encoding"), ignoreCase = true) &&
+            networkResponse.promisesBody()
+        ) {
+            val responseBody = networkResponse.body
+            if (responseBody != null) {
+                val gzipSource = GzipSource(responseBody.source())
+                val strippedHeaders = networkResponse.headers.newBuilder()
+                    .removeAll("Content-Encoding")
+                    .removeAll("Content-Length")
+                    .build()
+                responseBuilder.headers(strippedHeaders)
+                val contentType = networkResponse.header("Content-Type")
+                responseBuilder.body(RealResponseBody(contentType, -1L, gzipSource.buffer()))
+            }
+        }
+
+        return responseBuilder.build()
+    }
+
+    /** Returns a 'Cookie' HTTP request header with all cookies, like `a=b; c=d`. */
+    private fun cookieHeader(cookies: List<Cookie>): String = buildString {
+        cookies.forEachIndexed { index, cookie ->
+            if (index > 0) append("; ")
+            append(cookie.name).append('=').append(cookie.value)
+        }
+    }
+}
+```
+
+在 1️⃣ 处，我们可以看到，`Request` 被添加了一些 `Headers` 后，暂时交给了下一个拦截器，从拦截器的顺序来看，是 `CacheInterceptor`：
+
+```kotlin
+//okhttp3.internal.cache
+
+/** Serves requests from the cache and writes responses to the cache. */
+class CacheInterceptor(internal val cache: Cache?) : Interceptor {
+
+    @Throws(IOException::class)
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val call = chain.call()
+        val cacheCandidate = cache?.get(chain.request())
+
+        val now = System.currentTimeMillis()
+
+        val strategy = CacheStrategy.Factory(now, chain.request(), cacheCandidate).compute()
+        val networkRequest = strategy.networkRequest
+        val cacheResponse = strategy.cacheResponse
+
+        cache?.trackResponse(strategy)
+        val listener = (call as? RealCall)?.eventListener ?: EventListener.NONE
+
+        if (cacheCandidate != null && cacheResponse == null) {
+            // The cache candidate wasn't applicable. Close it.
+            cacheCandidate.body.closeQuietly()
+        }
+
+        // If we're forbidden from using the network and the cache is insufficient, fail.
+        if (networkRequest == null && cacheResponse == null) {
+            return Response.Builder()
+                .request(chain.request())
+                .protocol(Protocol.HTTP_1_1)
+                .code(HTTP_GATEWAY_TIMEOUT)
+                .message("Unsatisfiable Request (only-if-cached)")
+                .sentRequestAtMillis(-1L)
+                .receivedResponseAtMillis(System.currentTimeMillis())
+                .build().also {
+                    listener.satisfactionFailure(call, it)
+                }
+        }
+
+        // If we don't need the network, we're done.
+        if (networkRequest == null) {
+            return cacheResponse!!.newBuilder()
+                .cacheResponse(cacheResponse.stripBody())
+                .build().also {
+                    listener.cacheHit(call, it)
+                }
+        }
+
+        if (cacheResponse != null) {
+            listener.cacheConditionalHit(call, cacheResponse)
+        } else if (cache != null) {
+            listener.cacheMiss(call)
+        }
+
+        var networkResponse: Response? = null
+        try {
+            ////// 2️⃣ 此处交给下一个拦截器
+            networkResponse = chain.proceed(networkRequest)
+        } finally {
+            // If we're crashing on I/O or otherwise, don't leak the cache body.
+            if (networkResponse == null && cacheCandidate != null) {
+                cacheCandidate.body.closeQuietly()
+            }
+        }
+
+        // If we have a cache response too, then we're doing a conditional get.
+        if (cacheResponse != null) {
+            if (networkResponse?.code == HTTP_NOT_MODIFIED) {
+                val response = cacheResponse.newBuilder()
+                    .headers(combine(cacheResponse.headers, networkResponse.headers))
+                    .sentRequestAtMillis(networkResponse.sentRequestAtMillis)
+                    .receivedResponseAtMillis(networkResponse.receivedResponseAtMillis)
+                    .cacheResponse(cacheResponse.stripBody())
+                    .networkResponse(networkResponse.stripBody())
+                    .build()
+
+                networkResponse.body.close()
+
+                // Update the cache after combining headers but before stripping the
+                // Content-Encoding header (as performed by initContentStream()).
+                cache!!.trackConditionalCacheHit()
+                cache.update(cacheResponse, response)
+                return response.also {
+                    listener.cacheHit(call, it)
+                }
+            } else {
+                cacheResponse.body.closeQuietly()
+            }
+        }
+
+        val response = networkResponse!!.newBuilder()
+            .cacheResponse(cacheResponse?.stripBody())
+            .networkResponse(networkResponse.stripBody())
+            .build()
+
+        if (cache != null) {
+            if (response.promisesBody() && CacheStrategy.isCacheable(response, networkRequest)) {
+                // Offer this request to the cache.
+                val cacheRequest = cache.put(response)
+                return cacheWritingResponse(cacheRequest, response).also {
+                    if (cacheResponse != null) {
+                        // This will log a conditional cache miss only.
+                        listener.cacheMiss(call)
+                    }
+                }
+            }
+
+            if (HttpMethod.invalidatesCache(networkRequest.method)) {
+                try {
+                    cache.remove(networkRequest)
+                } catch (_: IOException) {
+                    // The cache cannot be written.
+                }
+            }
+        }
+
+        return response
+    }
+
+    /**
+     * Returns a new source that writes bytes to [cacheRequest] as they are read by the source
+     * consumer. This is careful to discard bytes left over when the stream is closed; otherwise we
+     * may never exhaust the source stream and therefore not complete the cached response.
+     */
+    @Throws(IOException::class)
+    private fun cacheWritingResponse(cacheRequest: CacheRequest?, response: Response): Response {
+        ...
+    }
+
+    ...
+}
+
+```
+
+在 2️⃣ 处交给下一个拦截器 `ConnectInterceptor`：
+
+```kotlin
+// okhtp3.internal.connection
+
+/**
+ * Opens a connection to the target server and proceeds to the next interceptor. The network might
+ * be used for the returned response, or to validate a cached response with a conditional GET.
+ */
+object ConnectInterceptor : Interceptor {
+    @Throws(IOException::class)
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val realChain = chain as RealInterceptorChain
+        val exchange = realChain.call.initExchange(realChain)
+        val connectedChain = realChain.copy(exchange = exchange)
+        val result = connectedChain.proceed(realChain.request)
+        return result
+    }
+}
+```
+
+别看就短短几行代码，该拦截器执行了几个重要的操作：
+
+1. `realChain.call.initExchange(realChain)` 这句话调用的是 `RealCall` 中的 `initExchange()` 方法，创建了一个 `Exchange` 实例 `exchange`；
+2. 重新生成一个 `RealInterceptorChain` 实例，并将上一步的 `exchange` 扔进去；
+3. 使用新生成的拦截器链，将请求传递给下一个拦截器。
+
+`Exchange` 类的作用是使用特定的编码器，将数据写入流；或使用解码器，从流中读出数据
+
+
+`finished()` 会调用以下方法：
+
+```kotlin
+/**
+    * Promotes eligible calls from [readyAsyncCalls] to [runningAsyncCalls] and runs them on the
+    * executor service. Must not be called with synchronization because executing calls can call
+    * into user code.
+    *
+    * @return true if the dispatcher is currently running calls.
+    */
+private fun promoteAndExecute(): Boolean {
+    this.assertThreadDoesntHoldLock()
+
+    val executableCalls = mutableListOf<AsyncCall>()
+    val isRunning: Boolean
+    synchronized(this) {
+        val i = readyAsyncCalls.iterator()
+        while (i.hasNext()) {
+            val asyncCall = i.next()
+
+            if (runningAsyncCalls.size >= this.maxRequests) break // Max capacity.
+            if (asyncCall.callsPerHost.get() >= this.maxRequestsPerHost) continue // Host max capacity.
+
+            i.remove()
+            asyncCall.callsPerHost.incrementAndGet()
+            executableCalls.add(asyncCall)
+            runningAsyncCalls.add(asyncCall)
+        }
+        isRunning = runningCallsCount() > 0
+    }
+
+    // Avoid resubmitting if we can't logically progress
+    // particularly because RealCall handles a RejectedExecutionException
+    // by executing on the same thread.
+    if (executorService.isShutdown) {
+        for (i in 0 until executableCalls.size) {
+            val asyncCall = executableCalls[i]
+            asyncCall.callsPerHost.decrementAndGet()
+
+            synchronized(this) {
+                runningAsyncCalls.remove(asyncCall)
+            }
+
+            asyncCall.failRejected()
+        }
+        idleCallback?.run()
+    } else {
+        for (i in 0 until executableCalls.size) {
+            val asyncCall = executableCalls[i]
+            asyncCall.executeOn(executorService)
+        }
+    }
+
+    return isRunning
+}
+```
