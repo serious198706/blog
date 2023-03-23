@@ -491,8 +491,8 @@ internal fun getResponseWithInterceptorChain(): Response {
         call = this,
         interceptors = interceptors,
         index = 0,
-        exchange = null,                                    // 在 RealInterceptorChain 的注释中提到，如果该拦截器链是给应用层的，
-        request = originalRequest,                          // 那么 exchange 必须为 null；如果该拦截器链是给网络层的，那必须不为 null。
+        exchange = null,                                    // 在 RealInterceptorChain 的注释中提到，如果该拦截器链是给应用层的，那么 exchange 必须为 null；如果该拦截器链是给网络层的，那必须不为 null。
+        request = originalRequest,
         connectTimeoutMillis = client.connectTimeoutMillis,
         readTimeoutMillis = client.readTimeoutMillis,
         writeTimeoutMillis = client.writeTimeoutMillis
@@ -604,7 +604,13 @@ fun interface Interceptor {
 }
 ```
 
-每一个自定义的拦截器需要覆盖 `intercept(chain: Chain)` 方法，同时在返回值里调用 `chain.proceed(chain.request())` 来将当前的 `Request` 对象交给下一个拦截器。因此，拦截器添加的**顺序**很重要。
+每一个自定义的拦截器需要覆盖 `intercept(chain: Chain)` 方法，同时在返回值里调用 `chain.proceed(chain.request())` 来将当前的 `Request` 对象交给下一个拦截器。这形成了一个**拦截器链**。因此，拦截器添加的**顺序**很重要。
+
+顺带提一下，这种设计模式的名字叫**责任链模式**。
+
+    责任链模式是一种行为设计模式， 允许你将请求沿着处理者链进行发送。 收到请求后， 每个处理者均可对请求进行处理， 或将其传递给链上的下个处理者。有兴趣可以看看[这里](https://refactoringguru.cn/design-patterns/chain-of-responsibility)
+
+![](https://refactoringguru.cn/images/patterns/content/chain-of-responsibility/chain-of-responsibility.png?id=56c10d0dc712546cc283cfb3fb463458)
 
 我们看三个比较重要的拦截器：`BridgeInterceptor`、`ConnectInterceptor` 和 `CallServerInterceptor`。
 
@@ -870,62 +876,110 @@ object ConnectInterceptor : Interceptor {
 2. 重新生成一个 `RealInterceptorChain` 实例，并将上一步的 `exchange` 扔进去；
 3. 使用新生成的拦截器链，将请求传递给下一个拦截器。
 
-`Exchange` 类的作用是使用特定的编码器，将数据写入流；或使用解码器，从流中读出数据
+```kotlin
+// okhttp3.internal.connection.RealCall
+/** Finds a new or pooled connection to carry a forthcoming request and response. */
+// 找到一个新的或者已经在池里的连接，用来承载即将到来的请求和响应
+internal fun initExchange(chain: RealInterceptorChain): Exchange {
+    synchronized(this) {
+        check(expectMoreExchanges) { "released" }
+        check(!responseBodyOpen)
+        check(!requestBodyOpen)
+    }
 
+    val exchangeFinder = this.exchangeFinder!!
+    val connection = exchangeFinder.find()
+    val codec = connection.newCodec(client, chain)
+    val result = Exchange(this, eventListener, exchangeFinder, codec)
+    this.interceptorScopedExchange = result
+    this.exchange = result
+    synchronized(this) {
+        this.requestBodyOpen = true
+        this.responseBodyOpen = true
+    }
 
-`finished()` 会调用以下方法：
+    if (canceled) throw IOException("Canceled")
+    return result
+}
+```
+
+`Exchange` 类的作用是使用特定的编码器，将数据写入流；或使用解码器，从流中读出数据：
 
 ```kotlin
 /**
-    * Promotes eligible calls from [readyAsyncCalls] to [runningAsyncCalls] and runs them on the
-    * executor service. Must not be called with synchronization because executing calls can call
-    * into user code.
-    *
-    * @return true if the dispatcher is currently running calls.
-    */
-private fun promoteAndExecute(): Boolean {
-    this.assertThreadDoesntHoldLock()
+ * Transmits a single HTTP request and a response pair. This layers connection management and events
+ * on [ExchangeCodec], which handles the actual I/O.
+ * 机翻：持有一个 HTTP 请求和响应的『对』。进行连接管理和事件处理，是真正的 I/O 部分。
+ */
+class Exchange(
+  internal val call: RealCall,
+  internal val eventListener: EventListener,
+  internal val finder: ExchangeFinder,
+  private val codec: ExchangeCodec
+) {
+    ...
 
-    val executableCalls = mutableListOf<AsyncCall>()
-    val isRunning: Boolean
-    synchronized(this) {
-        val i = readyAsyncCalls.iterator()
-        while (i.hasNext()) {
-            val asyncCall = i.next()
-
-            if (runningAsyncCalls.size >= this.maxRequests) break // Max capacity.
-            if (asyncCall.callsPerHost.get() >= this.maxRequestsPerHost) continue // Host max capacity.
-
-            i.remove()
-            asyncCall.callsPerHost.incrementAndGet()
-            executableCalls.add(asyncCall)
-            runningAsyncCalls.add(asyncCall)
-        }
-        isRunning = runningCallsCount() > 0
-    }
-
-    // Avoid resubmitting if we can't logically progress
-    // particularly because RealCall handles a RejectedExecutionException
-    // by executing on the same thread.
-    if (executorService.isShutdown) {
-        for (i in 0 until executableCalls.size) {
-            val asyncCall = executableCalls[i]
-            asyncCall.callsPerHost.decrementAndGet()
-
-            synchronized(this) {
-                runningAsyncCalls.remove(asyncCall)
-            }
-
-            asyncCall.failRejected()
-        }
-        idleCallback?.run()
-    } else {
-        for (i in 0 until executableCalls.size) {
-            val asyncCall = executableCalls[i]
-            asyncCall.executeOn(executorService)
+    fun writeRequestHeaders(request: Request) {
+        try {
+            eventListener.requestHeadersStart(call)
+            codec.writeRequestHeaders(request)
+            eventListener.requestHeadersEnd(call, request)
+        } catch (e: IOException) {
+            eventListener.requestFailed(call, e)
+            trackFailure(e)
+            throw e
         }
     }
 
-    return isRunning
+    fun createRequestBody(request: Request, duplex: Boolean): Sink {
+        ...
+        eventListener.requestBodyStart(call)
+        val rawRequestBody = codec.createRequestBody(request, contentLength)
+        ...
+    }
+
+    fun flushRequest() {
+        try {
+            codec.flushRequest()
+        } catch (e: IOException) {
+            eventListener.requestFailed(call, e)
+            trackFailure(e)
+            throw e
+        }
+    }
+    ...
 }
 ```
+
+可以看到，真正的工作是交给了 ExchangeCodec 去完成的，我们再来看看 ExchangeCodec：
+
+```kotlin
+/** Encodes HTTP requests and decodes HTTP responses. */
+interface ExchangeCodec {
+    /** Returns an output stream where the request body can be streamed. */
+    @Throws(IOException::class)
+    fun createRequestBody(request: Request, contentLength: Long): Sink
+
+    /** This should update the HTTP engine's sentRequestMillis field. */
+    @Throws(IOException::class)
+    fun writeRequestHeaders(request: Request)
+
+    ...
+}
+```
+
+不出意外的，`ExchangeCode` 是一个接口，因为针对不同的 HTTP 版本，需要有不同的编/解码器。我们使用 Android Studio 的小功能来看看都有哪几个实现：
+
+![](/img/okhttp-3.png)
+
+我们不再缀述这两种方式的实现，只拿 `Http2ExchangeCodec` 为例简单说一下。`Http2ExchangeCodec` 会按照 `HTTP2` 的协议方式，使用二进制格式进行传输。并且在底层的代码中，引用了 Square 自家的 `[okio](https://square.github.io/okio/)` 库。
+
+接下来，按照上面拦截器的反向顺序，将 `Response` 一步步返回给上层。
+
+可以用一张图来总结拦截器的流程：
+
+![](/img/okhttp-4.png)
+
+### 四、我们从这个库里可以学到什么
+
+Okhttp 最核心的点就是拦截链，这个有点类似 `rxJava` 的核心点链式调用。拦截链模式在平时开发中的应用场景还是有的，比如我需要连续请求几个 API 获取最终结果，就不再需要各种回调，而且链条上的每个节点都可以有自己的逻辑。

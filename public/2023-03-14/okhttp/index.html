@@ -5,7 +5,7 @@
 
 一、OkHttp 解决了什么问题从库的名字不难看出，OkHttp 解决的是网络问题。在 Android 开发中，网络问题自古以来便是开发者比较头疼的问题。
 在互联网时代，几乎没有任何应用可以完全脱离互联网使用，良好的网络通信设计，对衡量一款 APP 的质量来说，无疑是尤为重要的加分项。
-在上古时期(🙅‍♂️)，Android 开发者们还在使用 HttpUrlConnection.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">透读源码之 OkHttp</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81OkHttp-%E8%A7%A3%E5%86%B3%E4%BA%86%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="toc-text">一、OkHttp 解决了什么问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84"><span class="toc-text">二、代码结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81OkHttp-%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%8C%E6%88%90%E5%AE%83%E7%9A%84%E4%B8%BB%E8%A6%81%E7%9B%AE%E6%A0%87-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E4%B8%80%E6%AC%A1%E7%BD%91%E7%BB%9C%E8%AF%B7%E6%B1%82%E7%9A%84"><span class="toc-text">三、OkHttp 是如何完成它的主要目标 —— 完成一次网络请求的</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/%E4%B8%89%E6%96%B9%E5%BA%93"><i class="tag post-item-tag">三方库</i></a><a href="/tags/OkHttp"><i class="tag post-item-tag">OkHttp</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">透读源码之 OkHttp</h1><time class="has-text-grey" datetime="2023-03-14T05:00:00.000Z">2023-03-14</time><article class="mt-2 post-content"><p>做 Android 开发的同学们几乎没有不知道 OkHttp 这个网络请求库的了。这个库可以帮我们完成几乎所有类型的、涵盖几乎所有需求的网络请求。</p>
+在上古时期(🙅‍♂️)，Android 开发者们还在使用 HttpUrlConnection.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">透读源码之 OkHttp</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81OkHttp-%E8%A7%A3%E5%86%B3%E4%BA%86%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="toc-text">一、OkHttp 解决了什么问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84"><span class="toc-text">二、代码结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81OkHttp-%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%8C%E6%88%90%E5%AE%83%E7%9A%84%E4%B8%BB%E8%A6%81%E7%9B%AE%E6%A0%87-%E2%80%94%E2%80%94-%E5%AE%8C%E6%88%90%E4%B8%80%E6%AC%A1%E7%BD%91%E7%BB%9C%E8%AF%B7%E6%B1%82%E7%9A%84"><span class="toc-text">三、OkHttp 是如何完成它的主要目标 —— 完成一次网络请求的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%88%91%E4%BB%AC%E4%BB%8E%E8%BF%99%E4%B8%AA%E5%BA%93%E9%87%8C%E5%8F%AF%E4%BB%A5%E5%AD%A6%E5%88%B0%E4%BB%80%E4%B9%88"><span class="toc-text">四、我们从这个库里可以学到什么</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/%E4%B8%89%E6%96%B9%E5%BA%93"><i class="tag post-item-tag">三方库</i></a><a href="/tags/OkHttp"><i class="tag post-item-tag">OkHttp</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">透读源码之 OkHttp</h1><time class="has-text-grey" datetime="2023-03-14T05:00:00.000Z">2023-03-14</time><article class="mt-2 post-content"><p>做 Android 开发的同学们几乎没有不知道 OkHttp 这个网络请求库的了。这个库可以帮我们完成几乎所有类型的、涵盖几乎所有需求的网络请求。</p>
 <p>它与大家耳熟能详的 LeakCanary、Retrofit 一样来自大名鼎鼎的 <a target="_blank" rel="noopener" href="https://square.github.io/">Square 公司</a>，截至本文写下时，该库在 Github 上已有 43.7k 的 Start 数量。</p>
 <span id="more"></span>
 
@@ -419,8 +419,8 @@ internal fun getResponseWithInterceptorChain(): Response &#123;
         call = this,
         interceptors = interceptors,
         index = 0,
-        exchange = null,                                    // 在 RealInterceptorChain 的注释中提到，如果该拦截器链是给应用层的，
-        request = originalRequest,                          // 那么 exchange 必须为 null；如果该拦截器链是给网络层的，那必须不为 null。
+        exchange = null,                                    // 在 RealInterceptorChain 的注释中提到，如果该拦截器链是给应用层的，那么 exchange 必须为 null；如果该拦截器链是给网络层的，那必须不为 null。
+        request = originalRequest,
         connectTimeoutMillis = client.connectTimeoutMillis,
         readTimeoutMillis = client.readTimeoutMillis,
         writeTimeoutMillis = client.writeTimeoutMillis
@@ -528,7 +528,11 @@ fun interface Interceptor &#123;
   &#125;
 &#125;
 </code></pre>
-<p>每一个自定义的拦截器需要覆盖 <code>intercept(chain: Chain)</code> 方法，同时在返回值里调用 <code>chain.proceed(chain.request())</code> 来将当前的 <code>Request</code> 对象交给下一个拦截器。因此，拦截器添加的<strong>顺序</strong>很重要。</p>
+<p>每一个自定义的拦截器需要覆盖 <code>intercept(chain: Chain)</code> 方法，同时在返回值里调用 <code>chain.proceed(chain.request())</code> 来将当前的 <code>Request</code> 对象交给下一个拦截器。这形成了一个<strong>拦截器链</strong>。因此，拦截器添加的<strong>顺序</strong>很重要。</p>
+<p>顺带提一下，这种设计模式的名字叫<strong>责任链模式</strong>。</p>
+<pre><code>责任链模式是一种行为设计模式， 允许你将请求沿着处理者链进行发送。 收到请求后， 每个处理者均可对请求进行处理， 或将其传递给链上的下个处理者。有兴趣可以看看[这里](https://refactoringguru.cn/design-patterns/chain-of-responsibility)
+</code></pre>
+<p><img src="https://refactoringguru.cn/images/patterns/content/chain-of-responsibility/chain-of-responsibility.png?id=56c10d0dc712546cc283cfb3fb463458"></p>
 <p>我们看三个比较重要的拦截器：<code>BridgeInterceptor</code>、<code>ConnectInterceptor</code> 和 <code>CallServerInterceptor</code>。</p>
 <pre><code class="kotlin">// okhttp3.internal.http.BridgeInterceptor
 
@@ -783,59 +787,95 @@ object ConnectInterceptor : Interceptor &#123;
 <li>重新生成一个 <code>RealInterceptorChain</code> 实例，并将上一步的 <code>exchange</code> 扔进去；</li>
 <li>使用新生成的拦截器链，将请求传递给下一个拦截器。</li>
 </ol>
-<p><code>Exchange</code> 类的作用是使用特定的编码器，将数据写入流；或使用解码器，从流中读出数据</p>
-<p><code>finished()</code> 会调用以下方法：</p>
-<pre><code class="kotlin">/**
-    * Promotes eligible calls from [readyAsyncCalls] to [runningAsyncCalls] and runs them on the
-    * executor service. Must not be called with synchronization because executing calls can call
-    * into user code.
-    *
-    * @return true if the dispatcher is currently running calls.
-    */
-private fun promoteAndExecute(): Boolean &#123;
-    this.assertThreadDoesntHoldLock()
-
-    val executableCalls = mutableListOf&lt;AsyncCall&gt;()
-    val isRunning: Boolean
+<pre><code class="kotlin">// okhttp3.internal.connection.RealCall
+/** Finds a new or pooled connection to carry a forthcoming request and response. */
+// 找到一个新的或者已经在池里的连接，用来承载即将到来的请求和响应
+internal fun initExchange(chain: RealInterceptorChain): Exchange &#123;
     synchronized(this) &#123;
-        val i = readyAsyncCalls.iterator()
-        while (i.hasNext()) &#123;
-            val asyncCall = i.next()
-
-            if (runningAsyncCalls.size &gt;= this.maxRequests) break // Max capacity.
-            if (asyncCall.callsPerHost.get() &gt;= this.maxRequestsPerHost) continue // Host max capacity.
-
-            i.remove()
-            asyncCall.callsPerHost.incrementAndGet()
-            executableCalls.add(asyncCall)
-            runningAsyncCalls.add(asyncCall)
-        &#125;
-        isRunning = runningCallsCount() &gt; 0
+        check(expectMoreExchanges) &#123; &quot;released&quot; &#125;
+        check(!responseBodyOpen)
+        check(!requestBodyOpen)
     &#125;
 
-    // Avoid resubmitting if we can&#39;t logically progress
-    // particularly because RealCall handles a RejectedExecutionException
-    // by executing on the same thread.
-    if (executorService.isShutdown) &#123;
-        for (i in 0 until executableCalls.size) &#123;
-            val asyncCall = executableCalls[i]
-            asyncCall.callsPerHost.decrementAndGet()
-
-            synchronized(this) &#123;
-                runningAsyncCalls.remove(asyncCall)
-            &#125;
-
-            asyncCall.failRejected()
-        &#125;
-        idleCallback?.run()
-    &#125; else &#123;
-        for (i in 0 until executableCalls.size) &#123;
-            val asyncCall = executableCalls[i]
-            asyncCall.executeOn(executorService)
-        &#125;
+    val exchangeFinder = this.exchangeFinder!!
+    val connection = exchangeFinder.find()
+    val codec = connection.newCodec(client, chain)
+    val result = Exchange(this, eventListener, exchangeFinder, codec)
+    this.interceptorScopedExchange = result
+    this.exchange = result
+    synchronized(this) &#123;
+        this.requestBodyOpen = true
+        this.responseBodyOpen = true
     &#125;
 
-    return isRunning
+    if (canceled) throw IOException(&quot;Canceled&quot;)
+    return result
 &#125;
 </code></pre>
-</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><em></em><a class="button is-default" href="/2023-03-14/thesourcecode/" title="透读源码之开篇"><span class="has-text-weight-semibold">Next: 透读源码之开篇</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>
+<p><code>Exchange</code> 类的作用是使用特定的编码器，将数据写入流；或使用解码器，从流中读出数据：</p>
+<pre><code class="kotlin">/**
+ * Transmits a single HTTP request and a response pair. This layers connection management and events
+ * on [ExchangeCodec], which handles the actual I/O.
+ * 机翻：持有一个 HTTP 请求和响应的『对』。进行连接管理和事件处理，是真正的 I/O 部分。
+ */
+class Exchange(
+  internal val call: RealCall,
+  internal val eventListener: EventListener,
+  internal val finder: ExchangeFinder,
+  private val codec: ExchangeCodec
+) &#123;
+    ...
+
+    fun writeRequestHeaders(request: Request) &#123;
+        try &#123;
+            eventListener.requestHeadersStart(call)
+            codec.writeRequestHeaders(request)
+            eventListener.requestHeadersEnd(call, request)
+        &#125; catch (e: IOException) &#123;
+            eventListener.requestFailed(call, e)
+            trackFailure(e)
+            throw e
+        &#125;
+    &#125;
+
+    fun createRequestBody(request: Request, duplex: Boolean): Sink &#123;
+        ...
+        eventListener.requestBodyStart(call)
+        val rawRequestBody = codec.createRequestBody(request, contentLength)
+        ...
+    &#125;
+
+    fun flushRequest() &#123;
+        try &#123;
+            codec.flushRequest()
+        &#125; catch (e: IOException) &#123;
+            eventListener.requestFailed(call, e)
+            trackFailure(e)
+            throw e
+        &#125;
+    &#125;
+    ...
+&#125;
+</code></pre>
+<p>可以看到，真正的工作是交给了 ExchangeCodec 去完成的，我们再来看看 ExchangeCodec：</p>
+<pre><code class="kotlin">/** Encodes HTTP requests and decodes HTTP responses. */
+interface ExchangeCodec &#123;
+    /** Returns an output stream where the request body can be streamed. */
+    @Throws(IOException::class)
+    fun createRequestBody(request: Request, contentLength: Long): Sink
+
+    /** This should update the HTTP engine&#39;s sentRequestMillis field. */
+    @Throws(IOException::class)
+    fun writeRequestHeaders(request: Request)
+
+    ...
+&#125;
+</code></pre>
+<p>不出意外的，<code>ExchangeCode</code> 是一个接口，因为针对不同的 HTTP 版本，需要有不同的编/解码器。我们使用 Android Studio 的小功能来看看都有哪几个实现：</p>
+<p><img src="/img/okhttp-3.png"></p>
+<p>我们不再缀述这两种方式的实现，只拿 <code>Http2ExchangeCodec</code> 为例简单说一下。<code>Http2ExchangeCodec</code> 会按照 <code>HTTP2</code> 的协议方式，使用二进制格式进行传输。并且在底层的代码中，引用了 Square 自家的 <code>[okio](https://square.github.io/okio/)</code> 库。</p>
+<p>接下来，按照上面拦截器的反向顺序，将 <code>Response</code> 一步步返回给上层。</p>
+<p>可以用一张图来总结拦截器的流程：</p>
+<p><img src="/img/okhttp-4.png"></p>
+<h3 id="四、我们从这个库里可以学到什么"><a href="#四、我们从这个库里可以学到什么" class="headerlink" title="四、我们从这个库里可以学到什么"></a>四、我们从这个库里可以学到什么</h3><p>Okhttp 最核心的点就是拦截链，这个有点类似 <code>rxJava</code> 的核心点链式调用。拦截链模式在平时开发中的应用场景还是有的，比如我需要连续请求几个 API 获取最终结果，就不再需要各种回调，而且链条上的每个节点都可以有自己的逻辑。</p>
+</article><section class="jump-container is-flex is-justify-content-space-between my-6"><!-- em is empty placeholder--><a class="button is-default" href="/2023-03-18/openai/" title="OpenAI"><i class="iconfont icon-prev mr-2 has-text-grey"></i><span class="has-text-weight-semibold">Previous: OpenAI</span></a><a class="button is-default" href="/2023-03-14/thesourcecode/" title="透读源码之开篇"><span class="has-text-weight-semibold">Next: 透读源码之开篇</span><i class="iconfont icon-next ml-2 has-text-grey"></i></a></section><article class="mt-6 comment-container" id="vcomments" data-comment_valine_id="b7rbKQnQFa9DYl1anYfacJRz-gzGzoHsz" data-comment_valine_key="nUuKvGHOJBRylruJLW2Fmekg"></article></div></div></main></main><footer class="is-flex is-flex-direction-column is-align-items-center is-flex-shrink-0 is-family-serif"><section class="sns-container"><a title="twitter" target="_blank" rel="noopener nofollow" href="//twitter.com/serious008/"><i class="iconfont icon-twitter"></i></a><!-- Github--><a title="github" target="_blank" rel="noopener nofollow" href="//github.com/serious198706"><i class="iconfont icon-github"></i></a><!-- Ins--><a title="instagram" target="_blank" rel="noopener nofollow" href="//www.instagram.com/serious008/"><i class="iconfont icon-ins"></i></a><!-- RSS--><!-- 知乎--><a title="zhihu" target="_blank" rel="noopener nofollow" href="//zhihu.com/people/cy198706"><i class="iconfont icon-zhihu"></i></a><!-- 领英--><a title="linkedin" target="_blank" rel="noopener nofollow" href="//www.linkedin.com/in/serious_chen/"><i class="iconfont icon-linkedin"></i></a><!-- 脸书--><a title="facebook" target="_blank" rel="noopener nofollow" href="//www.facebook.com/serious008/"><i class="iconfont icon-tian7_facebook"></i></a></section><p><span>Copyright ©</span><span> Notex 2023</span></p><div class="is-flex is-justify-content-center is-flex-wrap-wrap"><p>Powered by Hexo &verbar;&nbsp;</p><p class="is-flex is-justify-content-center"><a title="京ICP备2022033375号" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">京ICP备2022033375号 </a></p></div><div><span></span></div></footer><script async defer src="https://buttons.github.io/buttons.js"></script><script src="/js/jquery-3.6.1.min.js"></script><script src="/js/jquery-fancybox.min.js"></script><script src="/js/img_zoom.js"></script><script src="/js/post.js"></script></body></html>
