@@ -76,7 +76,7 @@ Glide 的**主要**目标在于让列表中的图片滑动起来不卡顿，但�
 
 - [透读源码之 OkHttp](/2023-03-14/okhttp)
 - [透读源码之 Glide](/glide)
-- [透读源码之 Retrofit](/retrofit)
+- [透读源码之 Retrofit](/2023-03-23/retrofit)
 - [透读源码之 ActivityManager](/activitymanager)
 - [透读源码之 LeakCanary](/leakcanary)
 

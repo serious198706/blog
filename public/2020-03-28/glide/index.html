@@ -1,21 +1,37 @@
 <!DOCTYPE html><html class="appearance-user-can-set" lang="zh"><head><meta charset="UTF-8"><title>Notex</title><meta name="description" content="Keep low profile, he said."><meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, initial-scale=1"><!-- Google Analytics --><!-- End Google Analytics -->
-<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="Glide 是比较著名的图片加载库之一，类似的库还有 Picasso。这篇文章来讲讲 Glide 是如何加载图片到显示的，并且讲一讲它有哪些设计精妙的地方。
-该文章使用的是 Glide 目前的最新版本4.11.0。
+<!-- Baidu Analytics --><!-- End Baidu Analytics --><link rel="icon" href="/images/favicon.ico"><link rel="stylesheet" href="/style/common/bulma.css"><link rel="stylesheet" href="/style/base.css"><link rel="stylesheet" href="/style/common/helper.css"><script src="/js/common.js"></script><link rel="stylesheet" href="/style/post.css"><link rel="stylesheet" href="/style/themes/highlight-theme-light.css"><link rel="stylesheet" href="/style/common/jquery.fancybox.min.css"><script src="/js/highlight.pack.js"></script><meta name="description" content="Glide 是比较著名的图片加载库之一，类似的库还有 Picasso、COIL。这篇文章来讲讲 Glide 是如何加载图片到显示的，并且讲一讲它有哪些设计精妙的地方。
+该文章使用的是 Glide 4.15.0。
 
 
-我们先看一下 Glide 在4.0+版本的基本用法。
-// 单一 imageview
-ImageView imageView = (ImageView) findViewById(R.id.my_image_view);
-Glide.with(this).load(&amp;quot;http://image.url&amp;quot;).into(imageView);
+一、代码结构拉取最新的代码后，使用 Android Studio 打开，可以看到 Glide 的项目结构如下：
 
-// list 中的 imageview
-@Override 
-public View getView(int position, V.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">关于 Glide 的一切</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#with"><span class="toc-text">with()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#load"><span class="toc-text">load()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#into"><span class="toc-text">into()</span></a></li></ol></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/Glide"><i class="tag post-item-tag">Glide</i></a><a href="/tags/%E4%B8%89%E6%96%B9%E5%BA%93"><i class="tag post-item-tag">三方库</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">关于 Glide 的一切</h1><time class="has-text-grey" datetime="2020-03-27T16:00:00.000Z">2020-03-28</time><article class="mt-2 post-content"><p>Glide 是比较著名的图片加载库之一，类似的库还有 Picasso。这篇文章来讲讲 Glide 是如何加载图片到显示的，并且讲一讲它有哪些设计精妙的地方。</p>
-<p>该文章使用的是 Glide 目前的最新版本<a target="_blank" rel="noopener" href="https://search.maven.org/artifact/com.github.bumptech.glide/glide/4.11.0/jar">4.11.0</a>。</p>
+
+annotation: Glide 有几个非常有用的注解，如 @GlideModule、@GlideOption 等，需要在本 module 里进行解析。
+benchmark: 一些基准测试，可以忽略
+glide: 主打包脚本
+instrumentation: 一些测试，可以忽略
+integration: 可以集成使用的三方库，比如 okhttp3、recyclerview 等，用.."><script src="//unpkg.com/valine/dist/Valine.min.js"></script><meta name="generator" content="Hexo 5.4.2"></head><body class="is-flex is-flex-direction-column"><header class="header-widget is-flex-shrink-0 is-hidden-mobile"><div class="container is-fullhd is-flex is-justify-content-space-between is-align-items-center is-full-height"><section class="is-hidden-mobile is-flex-shrink-0"><h2><!-- a(href= url_for("/"))= (theme.user && theme.user.name || config.author) + "'s blog"--><a href="/">Notex</a></h2></section><h3 class="is-hidden-mobile is-family-serif is-full-height is-flex is-align-items-center is-flex-shrink-0"><div class="is-full-height" id="postTopic"><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">关于 Glide 的一切</p><p class="is-full-height is-flex-shrink-0 is-flex is-align-items-center is-justify-content-center">Click back to the top</p></div></h3><aside class="is-flex-shrink-0"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></aside></div></header><header class="is-flex header-widget is-flex-shrink-0 is-align-items-center is-justify-content-center is-hidden-tablet"><h3 class="is-inline-block"><a href="/">主页</a></h3><h3 class="is-inline-block"><a href="/about">关于</a></h3><h3 class="is-inline-block"><a href="/archives">归档</a></h3></header><main><main class="container is-max-widescreen content section post-page pt-4 px-4"><div class="columns is-flex-desktop is-justify-content-center is-flex-direction-row-reverse"><div class="column is-3 is-hidden-mobile"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84"><span class="toc-text">一、代码结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Glide-%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%9B%BE%E7%89%87%E7%9A%84%E5%8A%A0%E8%BD%BD"><span class="toc-text">二、Glide 如何实现图片的加载</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#load"><span class="toc-text">load()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#into"><span class="toc-text">into()</span></a></div><div class="column is-9"><header class="my-4"><a href="/tags/Android"><i class="tag post-item-tag">Android</i></a><a href="/tags/Glide"><i class="tag post-item-tag">Glide</i></a><a href="/tags/%E4%B8%89%E6%96%B9%E5%BA%93"><i class="tag post-item-tag">三方库</i></a></header><h1 class="mt-0 mb-1 is-family-serif" id="postTitle">关于 Glide 的一切</h1><time class="has-text-grey" datetime="2020-03-27T16:00:00.000Z">2020-03-28</time><article class="mt-2 post-content"><p>Glide 是比较著名的图片加载库之一，类似的库还有 <a target="_blank" rel="noopener" href="https://square.github.io/picasso/">Picasso</a>、<a target="_blank" rel="noopener" href="https://coil-kt.github.io/coil/">COIL</a>。这篇文章来讲讲 Glide 是如何加载图片到显示的，并且讲一讲它有哪些设计精妙的地方。</p>
+<p>该文章使用的是 Glide <a target="_blank" rel="noopener" href="https://bumptech.github.io/glide/doc/download-setup.html">4.15.0</a>。</p>
 <span id="more"></span>
 
-<p>我们先看一下 Glide 在4.0+版本的基本用法。</p>
-<pre><code class="java">// 单一 imageview
+<h3 id="一、代码结构"><a href="#一、代码结构" class="headerlink" title="一、代码结构"></a>一、代码结构</h3><p>拉取最新的代码后，使用 Android Studio 打开，可以看到 Glide 的项目结构如下：</p>
+<p><img src="/img/glide-1.png"></p>
+<ol>
+<li><code>annotation</code>: Glide 有几个非常有用的注解，如 <code>@GlideModule</code>、<code>@GlideOption</code> 等，需要在本 module 里进行解析。</li>
+<li><code>benchmark</code>: 一些基准测试，可以忽略</li>
+<li><code>glide</code>: 主打包脚本</li>
+<li><code>instrumentation</code>: 一些测试，可以忽略</li>
+<li><code>integration</code>: 可以集成使用的三方库，比如 okhttp3、recyclerview 等，用于打包时进行集成。比如， Glide 支持插件化替换网络请求模块，此 module 便提供该支持</li>
+<li><code>library</code>: 主 module，也是后面我们主要分析的模块</li>
+<li><code>mocks</code>: 用于测试时模拟请求</li>
+<li><code>samples</code>: 一些示例，可以看到基本用法和高级用法</li>
+<li><code>testutil</code>: 顾名思义，测试工具类</li>
+<li><code>third_party</code>: 使用的三方库，包含 <code>disklrucache</code> 和 <code>gif_decoder</code>。</li>
+</ol>
+<p>我们会在下面主要分析 <code>annotation</code> 和 <code>library</code> 模块。</p>
+<h3 id="二、Glide-如何实现图片的加载"><a href="#二、Glide-如何实现图片的加载" class="headerlink" title="二、Glide 如何实现图片的加载"></a>二、Glide 如何实现图片的加载</h3><p>我们先看一下 Glide 在4.0+版本的基本用法。</p>
+<pre><code class="java">
+// 单一 imageview
 ImageView imageView = (ImageView) findViewById(R.id.my_image_view);
 Glide.with(this).load(&quot;http://image.url&quot;).into(imageView);
 
@@ -41,38 +57,70 @@ public View getView(int position, View recycled, ViewGroup container) &#123;
   return myImageView;
 &#125;
 </code></pre>
-<p>通过两种调用方式，我们可以看出，Glide 用了非常经典的 Builder 设计模式，将各种参数收集、处理，最后调用<code>into()</code>方法，将图片交给 ImageView。接下来我们来一步步分析。</p>
-<h2 id="with"><a href="#with" class="headerlink" title="with()"></a><code>with()</code></h2><p>首先看<code>Glide.with()</code>方法的源码，该方法有5个重载，大体相同，但也有不同的地方，我们在下面会解释：</p>
-<pre><code class="java">@NonNull
-public static RequestManager with(@NonNull Context context) &#123;
-    return getRetriever(context).get(context);
-&#125;
+<p>通过两种调用方式，我们可以看出，Glide 用了非常经典的 Builder 设计模式，将各种参数收集、处理，最后调用<code>into()</code>方法，将图片交给 ImageView。接下来我们来一步步阅读源码，看看 Glide 为了完成图片加载功能，都经过了哪些步骤。</p>
+<p>首先看<code>Glide.with()</code>方法的源码，该方法有5个重载，大体相同，但也有不同的地方，我们在下面会解释：</p>
+<pre><code class="java">public class Glide implements ComponentCallbacks2 &#123;
+    ...
 
-@NonNull
-public static RequestManager with(@NonNull Activity activity) &#123;
-    return getRetriever(activity).get(activity);
-&#125;
+    @GuardedBy(&quot;Glide.class&quot;)
+    private static volatile Glide glide;
 
-@NonNull
-public static RequestManager with(@NonNull FragmentActivity activity) &#123;
-    return getRetriever(activity).get(activity);
-&#125;
+    @GuardedBy(&quot;managers&quot;)
+    private final List&lt;RequestManager&gt; managers = new ArrayList&lt;&gt;();
 
-@NonNull
-public static RequestManager with(@NonNull Fragment fragment) &#123;
-    return getRetriever(fragment.getContext()).get(fragment);
-&#125;
+    /**
+     * Begin a load with Glide by passing in a context.
+     *
+     * &lt;p&gt;Any requests started using a context will only have the application level options applied
+     * and will not be started or stopped based on lifecycle events. In general, loads should be
+     * started at the level the result will be used in. If the resource will be used in a view in a
+     * child fragment, the load should be started with &#123;@link #with(android.app.Fragment)&#125;&#125; using that
+     * child fragment. Similarly, if the resource will be used in a view in the parent fragment, the
+     * load should be started with &#123;@link #with(android.app.Fragment)&#125; using the parent fragment. In
+     * the same vein, if the resource will be used in a view in an activity, the load should be
+     * started with &#123;@link #with(android.app.Activity)&#125;&#125;.
+     *
+     * &lt;p&gt;This method is appropriate for resources that will be used outside of the normal fragment or
+     * activity lifecycle (For example in services, or for notification thumbnails).
+     *
+     * @param context Any context, will not be retained.
+     * @return A RequestManager for the top level application that can be used to start a load.
+     * @see #with(android.app.Activity)
+     * @see #with(android.app.Fragment)
+     * @see #with(androidx.fragment.app.Fragment)
+     * @see #with(androidx.fragment.app.FragmentActivity)
+     */
+    @NonNull
+    public static RequestManager with(@NonNull Context context) &#123;
+        return getRetriever(context).get(context);
+    &#125;
 
-@SuppressWarnings(&quot;deprecation&quot;)
-@Deprecated
-@NonNull
-public static RequestManager with(@NonNull android.app.Fragment fragment) &#123;
-    return getRetriever(fragment.getActivity()).get(fragment);
-&#125;
+    @NonNull
+    public static RequestManager with(@NonNull Activity activity) &#123;
+        return getRetriever(activity).get(activity);
+    &#125;
 
-@NonNull
-public static RequestManager with(@NonNull View view) &#123;
-    return getRetriever(view.getContext()).get(view);
+    @NonNull
+    public static RequestManager with(@NonNull FragmentActivity activity) &#123;
+        return getRetriever(activity).get(activity);
+    &#125;
+
+    @NonNull
+    public static RequestManager with(@NonNull Fragment fragment) &#123;
+        return getRetriever(fragment.getContext()).get(fragment);
+    &#125;
+
+    @SuppressWarnings(&quot;deprecation&quot;)
+    @Deprecated
+    @NonNull
+    public static RequestManager with(@NonNull android.app.Fragment fragment) &#123;
+        return getRetriever(fragment.getActivity()).get(fragment);
+    &#125;
+
+    @NonNull
+    public static RequestManager with(@NonNull View view) &#123;
+        return getRetriever(view.getContext()).get(view);
+    &#125;
 &#125;
 </code></pre>
 <p>可以看到，<code>with(android.app.Fragment)</code>方法已经被弃用了，取而代之的是<code>with(androidx.fragment.app.Fragment)</code>，我们接下来不再讨论被弃用的这个方法。</p>

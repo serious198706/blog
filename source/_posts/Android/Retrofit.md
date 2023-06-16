@@ -2,6 +2,7 @@
 title: Retrofit 实现原理解析
 link: retrofit
 toc: true
+date: 2023-03-23
 tag: 
     - Android
     - Retrofit
@@ -70,7 +71,7 @@ public @interface Path {
 }
 ```
 
-它有两个参数，一个是value，一个是是否已经经过URL encoded。
+它有两个参数，一个是`value`，一个是是否已经经过`URL encoded`。
 
 那么，retrofit是如何将注解使用起来的呢？我们来看看它的原理。
 
@@ -122,7 +123,7 @@ public <T> T create(final Class<T> service) {
 }
 ```
 
-我们从这几行代码可以看出，Retrofit 是使用了动态代理的方式创建了一个实现service接口的对象，当外部调用 service 接口方法，会调用invoke方法，然后加载当前 method 对应的 ServiceMethod，并调用该 ServiceMethod 的 invoke。ServiceMethod 是个抽象类，那么，这里实际上是调用了 ServiceMethod 某一个实现类的 invoke 方法。具体的我们会在后面分析。
+我们从这几行代码可以看出，Retrofit 是使用了动态代理的方式创建了一个实现service接口的对象，当外部调用 service 接口方法，会调用`invoke`方法，然后加载当前 method 对应的 ServiceMethod，并调用该 ServiceMethod 的 `invoke`。ServiceMethod 是个抽象类，那么，这里实际上是调用了 ServiceMethod 某一个实现类的 `invoke` 方法。具体的我们会在后面分析。
 
 先看看`validateServiceInterface()`方法：
 
@@ -617,7 +618,7 @@ abstract class HttpServiceMethod<ResponseT, ReturnT> extends ServiceMethod<Retur
 }
 ```
 
-HttpServiceMethod类的主要功能，是创建了一个 CallAdapter 对象，这个对象是用来把 OkHttpCall 适配为我们定义的方法的返回值类型的；创建 Converter 对象，用于把 ResponseBody 转换为我们最终需要的类型；生成 HttpServiceMethod 的三种派生类其中一种的实例，返回并放到 serviceMethodCashe 中。
+HttpServiceMethod类的主要功能，是创建了一个 CallAdapter 对象，这个对象是用来把 OkHttpCall 适配为我们定义的方法的返回值类型的；创建 Converter 对象，用于把 ResponseBody 转换为我们最终需要的类型；生成 HttpServiceMethod 的三种派生类其中一种的实例，返回并放到 `serviceMethodCashe` 中。
 
 上面的代码中有两处比较重要的地方，用序号标注了出来，我们来单独讲讲：
 
@@ -660,7 +661,7 @@ public static final class Builder {
 
     public Retrofit build() {
         ...
-        // 初始化 okhttoclient 等等
+        // 初始化 okhttpclient 等等
         ...
         // 执行器
         Executor callbackExecutor = this.callbackExecutor;
@@ -732,7 +733,7 @@ final class DefaultCallAdapterFactory extends CallAdapter.Factory {
 }
 ```
 
-CallAdapter 的实现类终于处是找到了，但是它的 adapt() 方法才是真正起作用的方法。从上到下，调用到`adapt()`的时候，返回的是一个ExcutorCallbackCall的实例。
+CallAdapter 的实现类终于处是找到了，但是它的 `adapt()` 方法才是真正起作用的方法。从上到下，调用到 `adapt()` 的时候，返回的是一个ExcutorCallbackCall的实例。
 
 ## 特性 ❷ Converter
 
@@ -813,7 +814,7 @@ OK，所有初始化完成，接下来进入调用阶段，我们接着文章开
 ```java
 ...
 GitHubService service = retrofit.create(GitHubService.class);
-Call<List<Repo>> call = service.listRepos("cy198706");
+Call<List<Repo>> call = service.listRepos("notex");
 call.enqueue(new Callback<List<Repo>>() {
     @Override 
     public void onResponse(Call<List<Repo>> call, Response<List<Repo>> response) {
@@ -903,9 +904,9 @@ static final class ExecutorCallbackCall<T> implements Call<T> {
 }
 ```
 
-delegate 是 OkHttpCall 对象，使用过 OkHttp 的应该知道它的 enqueue 是执行在子线程的，所以 ExecutorCallbackCall 为我们做的就是把在子线程的回调中，通过 MainThreadExecutor 在主线程中调用 retrofit2.Callback 的回调。当然这个 enqueue 还不是真正的 OkHttp 的 enqueue，它做了封装。
+`delegate` 是 OkHttpCall 对象，使用过 OkHttp 的应该知道它的 `enqueue` 是执行在子线程的，所以 ExecutorCallbackCall 为我们做的就是把在子线程的回调中，通过 MainThreadExecutor 在主线程中调用 `retrofit2.Callback` 的回调。当然这个 `enqueue` 还不是真正的 OkHttp 的 `enqueue`，它做了封装。
 
-接着就看看`OkHttpCall.enqueue()`方法：
+接着就看看`OkHttpCall.enqueue()`方法：
 
 ```java
 // retrofit2.OkhttpCall.java

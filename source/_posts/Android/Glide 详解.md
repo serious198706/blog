@@ -13,15 +13,37 @@ category:
 date: 2020-03-28
 ---
 
-Glide 是比较著名的图片加载库之一，类似的库还有 Picasso。这篇文章来讲讲 Glide 是如何加载图片到显示的，并且讲一讲它有哪些设计精妙的地方。
+Glide 是比较著名的图片加载库之一，类似的库还有 [Picasso](https://square.github.io/picasso/)、[COIL](https://coil-kt.github.io/coil/)。这篇文章来讲讲 Glide 是如何加载图片到显示的，并且讲一讲它有哪些设计精妙的地方。
 
-该文章使用的是 Glide 目前的最新版本[4.11.0](https://search.maven.org/artifact/com.github.bumptech.glide/glide/4.11.0/jar)。
+该文章使用的是 Glide [4.15.0](https://bumptech.github.io/glide/doc/download-setup.html)。
 
 <!-- more -->
+
+### 一、代码结构
+
+拉取最新的代码后，使用 Android Studio 打开，可以看到 Glide 的项目结构如下：
+
+![](/img/glide-1.png)
+
+1. `annotation`: Glide 有几个非常有用的注解，如 `@GlideModule`、`@GlideOption` 等，需要在本 module 里进行解析。
+2. `benchmark`: 一些基准测试，可以忽略
+3. `glide`: 主打包脚本
+4. `instrumentation`: 一些测试，可以忽略
+5. `integration`: 可以集成使用的三方库，比如 okhttp3、recyclerview 等，用于打包时进行集成。比如， Glide 支持插件化替换网络请求模块，此 module 便提供该支持
+6. `library`: 主 module，也是后面我们主要分析的模块
+7. `mocks`: 用于测试时模拟请求
+8. `samples`: 一些示例，可以看到基本用法和高级用法
+9. `testutil`: 顾名思义，测试工具类
+10. `third_party`: 使用的三方库，包含 `disklrucache` 和 `gif_decoder`。
+
+我们会在下面主要分析 `annotation` 和 `library` 模块。
+
+### 二、Glide 如何实现图片的加载
 
 我们先看一下 Glide 在4.0+版本的基本用法。
 
 ```java
+
 // 单一 imageview
 ImageView imageView = (ImageView) findViewById(R.id.my_image_view);
 Glide.with(this).load("http://image.url").into(imageView);
@@ -49,44 +71,75 @@ public View getView(int position, View recycled, ViewGroup container) {
 }
 ```
 
-通过两种调用方式，我们可以看出，Glide 用了非常经典的 Builder 设计模式，将各种参数收集、处理，最后调用`into()`方法，将图片交给 ImageView。接下来我们来一步步分析。
-
-## `with()`
+通过两种调用方式，我们可以看出，Glide 用了非常经典的 Builder 设计模式，将各种参数收集、处理，最后调用`into()`方法，将图片交给 ImageView。接下来我们来一步步阅读源码，看看 Glide 为了完成图片加载功能，都经过了哪些步骤。
 
 首先看`Glide.with()`方法的源码，该方法有5个重载，大体相同，但也有不同的地方，我们在下面会解释：
 
 ```java
-@NonNull
-public static RequestManager with(@NonNull Context context) {
-    return getRetriever(context).get(context);
+public class Glide implements ComponentCallbacks2 {
+    ...
+
+    @GuardedBy("Glide.class")
+    private static volatile Glide glide;
+
+    @GuardedBy("managers")
+    private final List<RequestManager> managers = new ArrayList<>();
+
+    /**
+     * Begin a load with Glide by passing in a context.
+     *
+     * <p>Any requests started using a context will only have the application level options applied
+     * and will not be started or stopped based on lifecycle events. In general, loads should be
+     * started at the level the result will be used in. If the resource will be used in a view in a
+     * child fragment, the load should be started with {@link #with(android.app.Fragment)}} using that
+     * child fragment. Similarly, if the resource will be used in a view in the parent fragment, the
+     * load should be started with {@link #with(android.app.Fragment)} using the parent fragment. In
+     * the same vein, if the resource will be used in a view in an activity, the load should be
+     * started with {@link #with(android.app.Activity)}}.
+     *
+     * <p>This method is appropriate for resources that will be used outside of the normal fragment or
+     * activity lifecycle (For example in services, or for notification thumbnails).
+     *
+     * @param context Any context, will not be retained.
+     * @return A RequestManager for the top level application that can be used to start a load.
+     * @see #with(android.app.Activity)
+     * @see #with(android.app.Fragment)
+     * @see #with(androidx.fragment.app.Fragment)
+     * @see #with(androidx.fragment.app.FragmentActivity)
+     */
+    @NonNull
+    public static RequestManager with(@NonNull Context context) {
+        return getRetriever(context).get(context);
+    }
+
+    @NonNull
+    public static RequestManager with(@NonNull Activity activity) {
+        return getRetriever(activity).get(activity);
+    }
+
+    @NonNull
+    public static RequestManager with(@NonNull FragmentActivity activity) {
+        return getRetriever(activity).get(activity);
+    }
+
+    @NonNull
+    public static RequestManager with(@NonNull Fragment fragment) {
+        return getRetriever(fragment.getContext()).get(fragment);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    @NonNull
+    public static RequestManager with(@NonNull android.app.Fragment fragment) {
+        return getRetriever(fragment.getActivity()).get(fragment);
+    }
+
+    @NonNull
+    public static RequestManager with(@NonNull View view) {
+        return getRetriever(view.getContext()).get(view);
+    }
 }
 
-@NonNull
-public static RequestManager with(@NonNull Activity activity) {
-    return getRetriever(activity).get(activity);
-}
-
-@NonNull
-public static RequestManager with(@NonNull FragmentActivity activity) {
-    return getRetriever(activity).get(activity);
-}
-
-@NonNull
-public static RequestManager with(@NonNull Fragment fragment) {
-    return getRetriever(fragment.getContext()).get(fragment);
-}
-
-@SuppressWarnings("deprecation")
-@Deprecated
-@NonNull
-public static RequestManager with(@NonNull android.app.Fragment fragment) {
-    return getRetriever(fragment.getActivity()).get(fragment);
-}
-
-@NonNull
-public static RequestManager with(@NonNull View view) {
-    return getRetriever(view.getContext()).get(view);
-}
 ```
 
 可以看到，`with(android.app.Fragment)`方法已经被弃用了，取而代之的是`with(androidx.fragment.app.Fragment)`，我们接下来不再讨论被弃用的这个方法。
